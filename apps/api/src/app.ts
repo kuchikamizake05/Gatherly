@@ -7,6 +7,7 @@ import helmet from "helmet";
 import { env } from "./config/env.js";
 import { AppError } from "./lib/app-error.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
+import { organizerRouter } from "./modules/organizers/organizer.routes.js";
 
 export const app = express();
 
@@ -37,6 +38,7 @@ app.get("/api/v1/health", (_request, response) => {
 });
 
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/organizers", organizerRouter);
 
 app.use((_request, response) => {
   response.status(404).json({
