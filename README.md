@@ -64,7 +64,7 @@ The repository currently contains the documentation and application directory pl
 
 ## Local Development
 
-Install dependencies from the repository root, copy `apps/api/.env.example` to `apps/api/.env`, then start both applications:
+Install dependencies from the repository root, copy `backend/.env.example` to `backend/.env`, then start both applications:
 
 ```bash
 npm install

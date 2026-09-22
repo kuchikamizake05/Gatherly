@@ -5,9 +5,9 @@ Gatherly uses one repository for both applications. The frontend and API remain 
 ```text
 Browser
   ↓
-apps/web (Next.js App Router)
+frontend (Next.js App Router)
   ↓ HTTP API
-apps/api (ExpressJS)
+backend (ExpressJS)
   ↓
 MongoDB
 ```
@@ -21,12 +21,12 @@ Modular monolith: satu aplikasi Express dengan modul akun, acara, order/pembayar
 Usulan struktur ketika scaffold dibuat:
 
 ```text
-apps/web/src/
+frontend/
   app/                  routes dan layouts
   features/             auth, events, checkout, tickets, organizer, committee
   components/           komponen UI bersama
   lib/                  API client, format uang/tanggal
-apps/api/src/
+backend/src/
   modules/              auth, organizers, events, orders, payments, tickets
   middleware/           session, permission, validation, error handling
   jobs/                 rekonsiliasi payment/reservasi
