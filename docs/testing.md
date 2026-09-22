@@ -2,7 +2,7 @@
 
 Pembagian role: **FE 1 — Ancung**, **FE 2 — Nasta**, **BE 1 — Sako**, **BE 2 — Dien**. Lihat [tanggung jawab tim](team-workflow.md).
 
-Rencana, belum hasil uji. Setiap issue memiliki acceptance criteria. Simpan hasil relevan pada PR/Linear: kondisi, input, hasil yang diharapkan, hasil aktual, dan bukti. Jangan menulis passed sebelum dijalankan.
+Rencana, belum hasil uji. Setiap issue memiliki acceptance criteria. Simpan hasil relevan pada PR atau GitHub Issue: kondisi, input, hasil yang diharapkan, hasil aktual, dan bukti. Jangan menulis passed sebelum dijalankan.
 
 ## Matriks pengujian
 

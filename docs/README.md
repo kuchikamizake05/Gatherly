@@ -22,8 +22,6 @@ Diperbarui 22 September 2026. Paket ini adalah rancangan kerja, bukan laporan ap
 | [team-workflow.md](team-workflow.md) | Kepemilikan, review, kerja paralel, aturan AI | Semua anggota |
 | [integrations.md](integrations.md) | Kebutuhan eksternal, biaya, konfigurasi | BE dan penanggung jawab deployment |
 | [testing.md](testing.md) | Pengujian risiko dan bukti rubrik | Semua anggota |
-| [linear-workflow.md](linear-workflow.md) | Arsip rencana workflow Linear yang tidak lagi dipakai | Leader |
-| [linear-backlog.md](linear-backlog.md) | Referensi backlog awal yang telah dipindahkan ke GitHub Issues | Leader + semua anggota |
 
 ## Cara memakai
 
