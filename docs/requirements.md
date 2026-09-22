@@ -1,6 +1,6 @@
 # Gatherly — MVP Requirements
 
-Status: planning baseline, not implemented functionality. Updated 22 September 2026. Confirmed stack: Next.js frontend, ExpressJS backend, MongoDB database. Team structure: two frontend and two backend responsibilities; member names and deadlines remain undecided. Product defaults below are proposals for team review.
+Status: planning baseline, not implemented functionality. Updated 22 September 2026. Confirmed stack: Next.js frontend, ExpressJS backend, MongoDB database. Confirmed ownership: Ancung (FE 1), Nasta (FE 2), Sako (BE 1 and team lead), and Dien (BE 2). Deadlines remain undecided. Product defaults below are proposals for team review.
 
 ## Background
 
@@ -96,7 +96,7 @@ Inventory invariant: total capacity = available + reserved + sold; all values re
 
 Seat maps, resale, ticket transfer, coupons, organizer payouts, automatic refunds, social login, offline admission, and travel booking.
 
-Work tracking: [Linear workflow](linear-workflow.md). Initial work items: [Linear backlog](linear-backlog.md).
+Work tracking: [GitHub Project Gatherly MVP](https://github.com/users/kuchikamizake05/projects/3/views/1). Initial work items are maintained in [GitHub Issues](https://github.com/kuchikamizake05/Gatherly/issues).
 
 ## Budget and success boundary
 

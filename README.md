@@ -8,7 +8,7 @@
 <p align="center">
   <a href="docs/README.md">Documentation</a> ·
   <a href="docs/requirements.md">Product Specification</a> ·
-  <a href="https://linear.app/kuchikamizake05/project/gatherly-mvp-be81067026fb/overview">Project Board</a>
+  <a href="https://github.com/users/kuchikamizake05/projects/3/views/1">Project Board</a>
 </p>
 
 ---

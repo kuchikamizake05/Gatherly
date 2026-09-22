@@ -6,8 +6,8 @@ Diperbarui 22 September 2026. Paket ini adalah rancangan kerja, bukan laporan ap
 
 - Next.js untuk frontend, ExpressJS untuk backend, MongoDB untuk database.
 - Satu monorepo, dengan dua aplikasi pada `apps/web` dan `apps/api`.
-- Pembagian tanggung jawab FE 1, FE 2, BE 1, BE 2; nama anggota belum ditetapkan.
-- Linear untuk pekerjaan tim, GitHub untuk kode dan review.
+- Pembagian final: Ancung — FE 1, Nasta — FE 2, Sako — BE 1 sekaligus leader, Dien — BE 2.
+- GitHub Issues dan GitHub Project untuk pekerjaan tim, kode, dan review.
 - Target biaya Rp0; pembayaran Midtrans sandbox; email otomatis ditunda.
 
 ## Urutan baca
@@ -22,8 +22,6 @@ Diperbarui 22 September 2026. Paket ini adalah rancangan kerja, bukan laporan ap
 | [team-workflow.md](team-workflow.md) | Kepemilikan, review, kerja paralel, aturan AI | Semua anggota |
 | [integrations.md](integrations.md) | Kebutuhan eksternal, biaya, konfigurasi | BE dan penanggung jawab deployment |
 | [testing.md](testing.md) | Pengujian risiko dan bukti rubrik | Semua anggota |
-| [linear-workflow.md](linear-workflow.md) | Konfigurasi project Linear | Leader |
-| [linear-backlog.md](linear-backlog.md) | Urutan milestone dan parent issue | Leader + semua anggota |
 
 ## Cara memakai
 
@@ -34,9 +32,9 @@ Rancangan teknis awal menggunakan TypeScript, npm workspaces, sesi berbasis cook
 ## Pertemuan pertama
 
 1. Baca PRD: pastikan batas pembelian, reservasi 15 menit, dan aturan perubahan acara diterima tim.
-2. Tetapkan anggota ke empat posisi dan penanggung jawab koordinasi/deployment.
+2. Gunakan pembagian posisi yang disepakati; tetapkan owner pekerjaan bersama seperti deployment.
 3. Review contoh API dan wireflow; tandai keputusan yang memerlukan perubahan.
-4. Masukkan backlog ke Linear, baru pilih pekerjaan yang siap dikerjakan.
+4. Gunakan [GitHub Project Gatherly MVP](https://github.com/users/kuchikamizake05/projects/3/views/1) untuk memperbarui status pekerjaan, lalu pilih issue yang siap dikerjakan.
 5. Demonstrasi integrasi pertama: login organizer → buat dan publikasikan acara → tampil di katalog peserta.
 
-Tenggat dan nama owner tidak diada-adakan. Tidak ada workspace atau issue Linear yang dibuat oleh penyusunan dokumen ini.
+Project [Gatherly MVP](https://github.com/users/kuchikamizake05/projects/3/views/1) dan 25 issue sudah dibuat di GitHub. Semua issue masih berada di Backlog tanpa assignee akun GitHub dan tanpa deadline. Tenggat belum ditetapkan.
