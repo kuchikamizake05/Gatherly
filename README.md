@@ -62,6 +62,17 @@ Gatherly/
 
 The repository currently contains the documentation and application directory placeholders. Technical plans and development workflows are available in [docs](docs/README.md).
 
+## Local Development
+
+Install dependencies from the repository root, copy `apps/api/.env.example` to `apps/api/.env`, then start both applications:
+
+```bash
+npm install
+npm run dev
+```
+
+The web app runs at `http://localhost:3000`; the API health check is available at `http://localhost:4000/api/v1/health`. A running MongoDB instance is required for the API.
+
 ## Team 11
 
 | Name | Student ID |
