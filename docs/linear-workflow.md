@@ -1,16 +1,16 @@
-# Gatherly — Linear workflow
+# Gatherly — Linear workflow (archived)
 
-Status: proposed setup; no workspace or issues have been created in Linear by this change.
+Status: archived. The team selected GitHub Issues and [GitHub Project Gatherly MVP](https://github.com/users/kuchikamizake05/projects/3/views/1) as the only active work tracker. Do not create or update duplicate Linear work items.
 
 ## Structure
 
-| Object | Proposed value |
+| Object | Current value |
 | --- | --- |
-| Workspace | Gatherly, or the team's existing workspace |
-| Team | Gatherly |
-| Issue identifier | GAT |
-| Project | Gatherly MVP — Community Event Ticketing |
-| Members | Four members of Tim 11; assignments to be agreed later |
+| Workspace | Kuchikamizake |
+| Team | Kuchikamizake |
+| Issue identifier | KUC |
+| Project | [Gatherly MVP](https://linear.app/kuchikamizake05/project/gatherly-mvp-be81067026fb/overview) |
+| Role owners | Ancung: FE 1; Nasta: FE 2; Sako: BE 1 and leader; Dien: BE 2 |
 
 Keep frontend and backend in one team; use labels to distinguish work. Linear owns task status; GitHub owns code and pull-request review. Avoid manually duplicating the backlog into GitHub Issues.
 
@@ -25,7 +25,7 @@ Backlog → Todo → In Progress → In Review → Done. Add Canceled as a cance
 Area labels: frontend, backend, fullstack, infrastructure, documentation.
 Type labels: feature, bug, test.
 
-- One accountable owner per issue, assigned after team discussion.
+- One accountable owner per issue, following the agreed role ownership. Shared work still needs one explicit owner.
 - Aim for one principal in-progress issue per member.
 - Todo means acceptance criteria and dependencies are clear.
 - In Review means the deliverable is ready for another member to inspect.
@@ -75,7 +75,7 @@ Suggested automation: PR ready for review → In Review; merge to main → Done.
 1. Create or select workspace, team, project; invite the four members.
 2. Configure statuses, labels, milestones, and repository/spec links.
 3. Copy work items from `linear-backlog.md`; B01 etc. are local references, not Linear IDs.
-4. Map dependencies to the generated Linear IDs. Leave owners and deadlines unset until agreed.
+4. Map dependencies to the generated Linear IDs. Assign the corresponding account using the agreed role ownership; confirm account identity before assignment. Leave deadlines unset until agreed.
 5. Start B01, then B02, before implementation decisions that depend on them.
 
 Official references, checked 21 September 2026:

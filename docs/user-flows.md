@@ -1,5 +1,7 @@
 # Gatherly — Alur pengguna dan halaman
 
+Pembagian role: **FE 1 — Ancung**, **FE 2 — Nasta**, **BE 1 — Sako**, **BE 2 — Dien**. Lihat [tanggung jawab tim](team-workflow.md).
+
 Dokumen fungsional untuk wireframe; bukan keputusan final gaya visual. Bahasa Indonesia, rupiah, dan zona waktu eksplisit. Harga/kuota dihitung backend.
 
 ## Daftar halaman

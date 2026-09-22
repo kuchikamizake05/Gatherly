@@ -1,15 +1,15 @@
 # Gatherly — Pembagian FE–BE dan kerja tim
 
-Pembagian posisi sudah direncanakan, nama anggota menunggu kesepakatan. Jangan menganggap urutan nama README sebagai urutan posisi.
+Pembagian disepakati: Ancung sebagai FE 1, Nasta sebagai FE 2, Sako sebagai BE 1 sekaligus leader, dan Dien sebagai BE 2. Nama panggilan mengikuti kesepakatan tim; urutan nama pada README bukan urutan posisi.
 
-| Posisi | Kepemilikan | Kolaborasi |
-| --- | --- | --- |
-| FE 1 | Public discovery/detail, auth/account, checkout/order status, My Tickets/QR; API client dan auth state web | Review FE 2; konsumsi BE 1 dan BE 2 |
-| FE 2 | Organizer setup/dashboard/editor, inventory/order/attendee screens, assignment UI, committee scanner; shell dashboard dan tabel | Review FE 1; konsumsi BE 1 dan BE 2 |
-| BE 1 | Auth/session/CSRF, organizer profiles, event/ticket-type CRUD, poster upload, committee assignments | Review BE 2; bantu test transaksi dan deployment |
-| BE 2 | Reservations/orders, payment sessions/webhooks/reconciliation, issuance, check-in, summary/order/attendee APIs | Review BE 1; kontrak inventori bersama BE 1 |
+| Anggota | Posisi | Kepemilikan | Kolaborasi |
+| --- | --- | --- | --- |
+| Ancung | FE 1 | Public discovery/detail, auth/account, checkout/order status, My Tickets/QR; API client dan auth state web | Review FE 2; konsumsi BE 1 dan BE 2 |
+| Nasta | FE 2 | Organizer setup/dashboard/editor, inventory/order/attendee screens, assignment UI, committee scanner; shell dashboard dan tabel | Review FE 1; konsumsi BE 1 dan BE 2 |
+| Sako | BE 1 | Auth/session/CSRF, organizer profiles, event/ticket-type CRUD, poster upload, committee assignments | Review BE 2; bantu test transaksi dan deployment |
+| Dien | BE 2 | Reservations/orders, payment sessions/webhooks/reconciliation, issuance, check-in, summary/order/attendee APIs | Review BE 1; kontrak inventori bersama BE 1 |
 
-Leader tetap memegang satu posisi dengan scope lebih kecil untuk mengimbangi koordinasi. Beban transaksi BE 2 paling berisiko; BE 1 membantu test concurrency/recovery setelah fondasi auth/event siap. Deployment tidak otomatis dibebankan seluruhnya kepada BE 2.
+Sako menangani BE 1 sekaligus koordinasi tim. Beban transaksi BE 2 paling berisiko; Sako membantu pengujian concurrency/recovery setelah fondasi auth/event siap. Review, pengujian integrasi, dan deployment dibagi bersama; tentukan owner per pekerjaan agar koordinasi tidak menambah seluruh beban implementasi ke Dien.
 
 ## Batas file dan aturan domain
 
@@ -27,8 +27,8 @@ Per fitur, buat child issue FE dan BE, ditambah verifikasi integrasi. Child FE t
 
 ## Git dan Definition of Done
 
-- Branch memakai ID Linear aktual, contoh format `gat-12-event-api` (bukan issue yang sudah ada).
-- PR kecil menjelaskan masalah/hasil, bukti verifikasi, dan perubahan kontrak/env bila ada.
+- Branch memakai nomor GitHub Issue aktual, contoh `3-event-discovery` atau `15-checkout-states`.
+- PR kecil menautkan issue terkait, menjelaskan masalah/hasil, bukti verifikasi, dan perubahan kontrak/env bila ada.
 - Minimal satu reviewer lain. Review mencakup perilaku dan akses, bukan hanya format kode.
 - Owner bertanggung jawab sampai integrasi berjalan; scaffold/generate AI belum berarti selesai.
 - Done: acceptance criteria dipenuhi, validasi relevan lulus, review selesai, kode digabung, dokumentasi terkait diperbarui.

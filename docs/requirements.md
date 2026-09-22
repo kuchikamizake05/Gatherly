@@ -1,6 +1,6 @@
 # Gatherly — MVP Requirements
 
-Status: planning baseline, not implemented functionality. Updated 22 September 2026. Confirmed stack: Next.js frontend, ExpressJS backend, MongoDB database. Team structure: two frontend and two backend responsibilities; member names and deadlines remain undecided. Product defaults below are proposals for team review.
+Status: planning baseline, not implemented functionality. Updated 22 September 2026. Confirmed stack: Next.js frontend, ExpressJS backend, MongoDB database. Confirmed ownership: Ancung (FE 1), Nasta (FE 2), Sako (BE 1 and team lead), and Dien (BE 2). Deadlines remain undecided. Product defaults below are proposals for team review.
 
 ## Background
 

@@ -1,6 +1,6 @@
 # Gatherly — Initial Linear backlog
 
-Status: local planning backlog, not created in Linear. B-codes are cross-references, not Linear issue IDs. Each row is an issue seed: copy the outcome and acceptance criteria into the issue template. All issues start in Backlog without assignees or deadlines. Milestone names follow `linear-workflow.md`.
+Status: historical planning reference. The 25 work items now exist as [GitHub Issues](https://github.com/kuchikamizake05/Gatherly/issues) in [Gatherly MVP](https://github.com/users/kuchikamizake05/projects/3/views/1), all initially in Backlog without assignees or deadlines. B-codes remain local references, not GitHub issue numbers. Role owners are Ancung (FE 1), Nasta (FE 2), Sako (BE 1), and Dien (BE 2). GitHub Projects is the source of truth for status and assignments.
 
 ## M1 — Foundations
 
@@ -76,14 +76,14 @@ The rows above are parent outcomes. Split them into the following child issues w
 
 | Parent | Frontend child | Backend child | Integration dependency |
 | --- | --- | --- | --- |
-| B05 | FE 1: Next scaffold, FE 2 reviews shared shell | BE 1: Express/Mongo/config scaffold | Both apps run from documented setup |
-| B06–B07 | FE 1: auth screens/session handling | BE 1: session/auth/permissions | Login and protected request demo |
-| B08–B09 | FE 2: organizer forms/poster/ticket editor | BE 1: event/ticket/upload endpoints | Publish appears in public API |
-| B10 | FE 1: discovery/detail | BE 1: catalog filters/detail | Real API replaces matching mock |
-| B11–B13, B15 | FE 1: checkout and payment result states | BE 2: reservation/payment/reconciliation | Sandbox webhook to verified state |
-| B14, B16 | FE 1: My Tickets/QR/print | BE 2: issuance/owner ticket API | Paid order yields exact ticket count |
-| B17 | FE 2: assignment UI/event picker | BE 1: assignment/scoped events APIs | Revocation changes effective access |
-| B18–B19 | FE 2: scanner/manual/results | BE 2: atomic check-in/lookup | Real camera + duplicate scan test |
-| B20 | FE 2: operational dashboard | BE 2: aggregates/orders/attendees | Counters match database fixtures |
+| B05 | Ancung (FE 1): Next scaffold, FE 2 reviews shared shell | Sako (BE 1): Express/Mongo/config scaffold | Both apps run from documented setup |
+| B06–B07 | Ancung (FE 1): auth screens/session handling | Sako (BE 1): session/auth/permissions | Login and protected request demo |
+| B08–B09 | Nasta (FE 2): organizer forms/poster/ticket editor | Sako (BE 1): event/ticket/upload endpoints | Publish appears in public API |
+| B10 | Ancung (FE 1): discovery/detail | Sako (BE 1): catalog filters/detail | Real API replaces matching mock |
+| B11–B13, B15 | Ancung (FE 1): checkout and payment result states | Dien (BE 2): reservation/payment/reconciliation | Sandbox webhook to verified state |
+| B14, B16 | Ancung (FE 1): My Tickets/QR/print | Dien (BE 2): issuance/owner ticket API | Paid order yields exact ticket count |
+| B17 | Nasta (FE 2): assignment UI/event picker | Sako (BE 1): assignment/scoped events APIs | Revocation changes effective access |
+| B18–B19 | Nasta (FE 2): scanner/manual/results | Dien (BE 2): atomic check-in/lookup | Real camera + duplicate scan test |
+| B20 | Nasta (FE 2): operational dashboard | Dien (BE 2): aggregates/orders/attendees | Counters match database fixtures |
 
 For frontend children, dependency is the reviewed endpoint contract, allowing mocks before BE completion. Integration depends on both FE and BE children. BE 1 helps BE 2 with concurrency/recovery tests; B21–B24 are shared outcomes with explicitly assigned owners after team discussion.

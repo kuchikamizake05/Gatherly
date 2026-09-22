@@ -1,5 +1,7 @@
 # Gatherly — Kontrak API v1 (draft kerja)
 
+Pembagian role: **FE 1 — Ancung**, **FE 2 — Nasta**, **BE 1 — Sako**, **BE 2 — Dien**. Lihat [tanggung jawab tim](team-workflow.md).
+
 Basis `/api/v1`, JSON kecuali poster multipart. Semua endpoint dilayani Express. FE dapat membuat mock dari kontrak ini sebelum BE selesai. Perubahan field/status direview FE dan BE dalam PR yang sama. Bukan API yang sudah tersedia.
 
 ## Konvensi
