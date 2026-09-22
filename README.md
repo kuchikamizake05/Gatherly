@@ -1,6 +1,66 @@
-# Gatherly
+<h1 align="center">Gatherly</h1>
 
-Gatherly is a community event ticketing platform. It helps organizers publish events and manage ticket quotas, while participants can purchase electronic tickets and check in using a QR code.
+<p align="center">
+  <strong>Discover events. Book your spot. Be there.</strong><br>
+  Community events, digital tickets, and QR check-in in one place.
+</p>
+
+<p align="center">
+  <a href="docs/README.md">Documentation</a> ·
+  <a href="docs/requirements.md">Product Specification</a> ·
+  <a href="https://linear.app/kuchikamizake05/project/gatherly-mvp-be81067026fb/overview">Project Board</a>
+</p>
+
+---
+
+## Overview
+
+**Gatherly** is a web application for discovering and managing community events, from creative workshops to live performances. It connects organizers, participants, and event committees through a shared experience for ticket sales and admission.
+
+Developed by **Team 11** for the **Pengembangan Aplikasi Web** course, with the topic **US3 — Tiket acara komunitas: kuota dan tiket elektronik berkode**.
+
+> Currently in the planning stage. The features below represent the planned MVP.
+
+## Features
+
+| Feature | Description |
+| --- | --- |
+| **Event Discovery** | Explore events by category, location, date, and ticket price. |
+| **Event Management** | Publish event details and posters, with ticket types such as Presale, Regular, and VIP. |
+| **Ticket Quotas** | Manage availability for each ticket type and reserve slots during checkout. |
+| **Online Checkout** | Purchase tickets through Midtrans Snap Sandbox using simulated payments. |
+| **Digital Tickets** | Access personal tickets with unique QR codes in My Tickets. |
+| **Event Check-in** | Validate admission by scanning a QR code or entering a ticket code. |
+
+## User Roles
+
+| Role | Experience |
+| --- | --- |
+| **Participant** | Discover events, purchase tickets, and access digital tickets. |
+| **Organizer** | Manage events, ticket types, quotas, committee assignments, and sales summaries. |
+| **Committee** | Check in attendees and view attendance history for assigned events. |
+
+## Tech Stack
+
+| Layer | Technology |
+| --- | --- |
+| Frontend | Next.js · App Router |
+| Backend | ExpressJS |
+| Database | MongoDB |
+| Payments | Midtrans Snap Sandbox |
+| QR Tickets | qrcode · qr-scanner |
+
+## Project Structure
+
+```text
+Gatherly/
+├── apps/
+│   ├── web/       Next.js frontend
+│   └── api/       ExpressJS backend
+└── docs/          Project documentation
+```
+
+The repository currently contains the documentation and application directory placeholders. Technical plans and development workflows are available in [docs](docs/README.md).
 
 ## Team 11
 
@@ -10,28 +70,3 @@ Gatherly is a community event ticketing platform. It helps organizers publish ev
 | Aulia Nur Fajri Tri Anggoro | 24/535054/TK/59327 |
 | Muhammad Khoirunas | 24/533373/TK/59083 |
 | Faaid Sakhaa | 24/539398/TK/59820 |
-
-## Planned features
-
-- Event and ticket-type management, including price and quota.
-- Electronic tickets with unique QR codes.
-- Secure quota handling during ticket purchases.
-- Role-based access for organizers, committee members, and participants.
-- QR ticket validation at event check-in.
-
-## Technology
-
-- Web: React or Next.js
-- API: ExpressJS
-- Database: MongoDB
-
-## Repository structure
-
-```text
-apps/
-  web/        Frontend application
-  api/        ExpressJS API
-docs/         Project documentation
-```
-
-See [the requirements document](docs/requirements.md) for the initial project scope.
