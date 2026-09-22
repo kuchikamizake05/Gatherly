@@ -1,5 +1,5 @@
 {
-  "name": "@gatherly/web",
+  "name": "@gatherly/frontend",
   "version": "0.1.0",
   "private": true,
   "scripts": {

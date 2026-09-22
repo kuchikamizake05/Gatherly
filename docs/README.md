@@ -5,7 +5,7 @@ Diperbarui 22 September 2026. Paket ini adalah rancangan kerja, bukan laporan ap
 ## Keputusan yang sudah tetap
 
 - Next.js untuk frontend, ExpressJS untuk backend, MongoDB untuk database.
-- Satu monorepo, dengan dua aplikasi pada `apps/web` dan `apps/api`.
+- Satu monorepo, dengan dua aplikasi pada `frontend` dan `backend`.
 - Pembagian final: Ancung — FE 1, Nasta — FE 2, Sako — BE 1 sekaligus leader, Dien — BE 2.
 - GitHub Issues dan GitHub Project untuk pekerjaan tim, kode, dan review.
 - Target biaya Rp0; pembayaran Midtrans sandbox; email otomatis ditunda.
