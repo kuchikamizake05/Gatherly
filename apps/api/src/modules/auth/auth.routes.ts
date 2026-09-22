@@ -8,6 +8,8 @@ import { AppError } from "../../lib/app-error.js";
 import { createToken, hashToken } from "../../lib/crypto.js";
 import { asyncHandler } from "../../lib/async-handler.js";
 import { Session, User } from "./auth.models.js";
+import { CommitteeAssignment } from "../committee/committee-assignment.model.js";
+import { Organizer } from "../organizers/organizer.model.js";
 import {
   requireCsrf,
   requireSession,
@@ -122,12 +124,16 @@ authRouter.get(
       { _id: request.auth!.sessionId },
       { $set: { csrfTokenHash: hashToken(csrfToken) } },
     );
+    const [organizer, committeeAssignment] = await Promise.all([
+      Organizer.findOne({ ownerId: request.auth!.user._id }).lean(),
+      CommitteeAssignment.exists({ userId: request.auth!.user._id }),
+    ]);
 
     response.status(200).json({
       data: {
         user: userResponse(request.auth!.user),
-        organizerId: null,
-        hasCommitteeAssignments: false,
+        organizerId: organizer?._id.toString() ?? null,
+        hasCommitteeAssignments: Boolean(committeeAssignment),
         csrfToken,
       },
     });

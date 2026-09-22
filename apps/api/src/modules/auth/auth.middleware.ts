@@ -12,6 +12,7 @@ export interface AuthenticatedRequest extends Request {
     user: UserDocument & { _id: string };
     sessionId: string;
     csrfToken: string;
+    organizerId?: string;
   };
 }
 
