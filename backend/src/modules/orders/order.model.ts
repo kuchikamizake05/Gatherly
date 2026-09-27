@@ -39,6 +39,9 @@ export interface OrderDocument {
   requestHash: string;
   paymentTimeline: Array<{ status: string; at: Date }>;
   nextReconcileAt: Date;
+  reconcileMisses: number;
+  reconciliationRequired: boolean;
+  reconciliationReason?: string;
   leaseUntil?: Date;
   paidAt?: Date;
   createdAt: Date;
@@ -112,6 +115,9 @@ const orderSchema = new Schema<OrderDocument>(
       default: [],
     },
     nextReconcileAt: { type: Date, required: true },
+    reconcileMisses: { type: Number, default: 0, min: 0, required: true },
+    reconciliationRequired: { type: Boolean, default: false, required: true },
+    reconciliationReason: { type: String },
     leaseUntil: { type: Date },
     paidAt: { type: Date },
   },

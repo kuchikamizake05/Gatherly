@@ -13,6 +13,13 @@ import { Order } from "../src/modules/orders/order.model.js";
 import { createOrder } from "../src/modules/orders/order.service.js";
 import type { SnapTransport } from "../src/modules/payments/midtrans.client.js";
 import { createPaymentSession } from "../src/modules/payments/payment.service.js";
+import { PaymentEvent } from "../src/modules/payments/payment-event.model.js";
+import {
+  applyPaymentStatus,
+  midtransSignature,
+  processMidtransNotification,
+} from "../src/modules/payments/payment-notification.service.js";
+import { reconcileDuePayments } from "../src/modules/payments/payment-reconciliation.service.js";
 
 const testDatabase = "gatherly_test";
 let server: Server;
@@ -31,6 +38,7 @@ before(async () => {
     Event.syncIndexes(),
     TicketType.syncIndexes(),
     Order.syncIndexes(),
+    PaymentEvent.syncIndexes(),
   ]);
   const { app } = await import("../src/app.js");
   server = app.listen(0);
@@ -49,6 +57,7 @@ beforeEach(async () => {
     Event.deleteMany({}),
     TicketType.deleteMany({}),
     Order.deleteMany({}),
+    PaymentEvent.deleteMany({}),
   ]);
 });
 
@@ -65,6 +74,7 @@ after(async () => {
     Event.deleteMany({}),
     TicketType.deleteMany({}),
     Order.deleteMany({}),
+    PaymentEvent.deleteMany({}),
   ]);
   await mongoose.disconnect();
 });
@@ -409,4 +419,124 @@ test("returns a stored Snap session through the authenticated API", async () => 
   assert.equal(response.status, 200);
   const body = (await response.json()) as { data: { snapToken: string } };
   assert.equal(body.data.snapToken, "stored-token");
+});
+
+function notification(
+  order: { providerOrderId: string; totalAmount: number },
+  transactionStatus: string,
+  transactionId: string,
+) {
+  const payload = {
+    order_id: order.providerOrderId,
+    status_code: "200",
+    gross_amount: `${order.totalAmount}.00`,
+    transaction_status: transactionStatus,
+    transaction_id: transactionId,
+    fraud_status: "accept",
+    currency: "IDR",
+    transaction_time: "2026-09-27 10:00:00",
+  };
+  return { ...payload, signature_key: midtransSignature(payload) };
+}
+
+test("processes a verified paid notification exactly once", async () => {
+  const { buyerA, ticketType } = await fixture(2);
+  const { order } = await createOrder(
+    buyerA._id.toString(),
+    "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+    input(ticketType._id.toString(), 2),
+  );
+  const payload = notification(order, "settlement", "paid-transaction-1");
+
+  assert.equal((await processMidtransNotification(payload)).duplicate, false);
+  assert.equal((await processMidtransNotification(payload)).duplicate, true);
+
+  const updatedOrder = await Order.findById(order._id).lean();
+  const inventory = await TicketType.findById(ticketType._id).lean();
+  assert.equal(updatedOrder?.paymentStatus, "paid");
+  assert.equal(updatedOrder?.reservationStatus, "converted");
+  assert.equal(updatedOrder?.issuanceStatus, "processing");
+  assert.equal(updatedOrder?.paymentTimeline.length, 1);
+  assert.equal(inventory?.reserved, 0);
+  assert.equal(inventory?.sold, 2);
+  assert.equal(await PaymentEvent.countDocuments(), 1);
+});
+
+test("rejects invalid notification signatures and amounts", async () => {
+  const { buyerA, ticketType } = await fixture();
+  const { order } = await createOrder(
+    buyerA._id.toString(),
+    "ffffffff-ffff-4fff-8fff-ffffffffffff",
+    input(ticketType._id.toString()),
+  );
+  const invalidSignature = notification(order, "settlement", "invalid-signature");
+  invalidSignature.signature_key = "0".repeat(128);
+  await assert.rejects(
+    processMidtransNotification(invalidSignature),
+    (error: unknown) => error instanceof AppError && error.code === "INVALID_NOTIFICATION",
+  );
+
+  const invalidAmount = notification(order, "settlement", "invalid-amount");
+  invalidAmount.gross_amount = "999.00";
+  invalidAmount.signature_key = midtransSignature(invalidAmount);
+  await assert.rejects(
+    processMidtransNotification(invalidAmount),
+    (error: unknown) => error instanceof AppError && error.code === "INVALID_NOTIFICATION",
+  );
+  assert.equal((await Order.findById(order._id).lean())?.paymentStatus, "pending");
+});
+
+test("does not downgrade a paid order with a stale failure notification", async () => {
+  const { buyerA, ticketType } = await fixture();
+  const { order } = await createOrder(
+    buyerA._id.toString(),
+    "10101010-1010-4010-8010-101010101010",
+    input(ticketType._id.toString()),
+  );
+  await processMidtransNotification(notification(order, "settlement", "status-order-paid"));
+  await processMidtransNotification(notification(order, "expire", "status-order-expired"));
+
+  const updated = await Order.findById(order._id).lean();
+  assert.equal(updated?.paymentStatus, "paid");
+  assert.equal(updated?.reservationStatus, "converted");
+  assert.equal((await TicketType.findById(ticketType._id).lean())?.sold, 1);
+});
+
+test("releases an expired order that never reached Midtrans", async () => {
+  const { buyerA, ticketType } = await fixture();
+  const { order } = await createOrder(
+    buyerA._id.toString(),
+    "20202020-2020-4020-8020-202020202020",
+    input(ticketType._id.toString()),
+  );
+  await Order.updateOne(
+    { _id: order._id },
+    { $set: { expiresAt: new Date(Date.now() - 1), nextReconcileAt: new Date(Date.now() - 1) } },
+  );
+
+  assert.equal(await reconcileDuePayments(async () => ({ kind: "unavailable" })), 1);
+  const updated = await Order.findById(order._id).lean();
+  assert.equal(updated?.paymentStatus, "expired");
+  assert.equal(updated?.reservationStatus, "released");
+  assert.equal((await TicketType.findById(ticketType._id).lean())?.reserved, 0);
+});
+
+test("keeps inventory nonnegative when paid races with expiry", async () => {
+  const { buyerA, ticketType } = await fixture(1);
+  const { order } = await createOrder(
+    buyerA._id.toString(),
+    "30303030-3030-4030-8030-303030303030",
+    input(ticketType._id.toString()),
+  );
+  await Promise.all([
+    applyPaymentStatus(order._id.toString(), "paid", new Date()),
+    applyPaymentStatus(order._id.toString(), "expired", new Date()),
+  ]);
+
+  const updatedOrder = await Order.findById(order._id).lean();
+  const inventory = await TicketType.findById(ticketType._id).lean();
+  assert.equal(updatedOrder?.paymentStatus, "paid");
+  assert.ok((inventory?.reserved ?? -1) >= 0);
+  assert.ok((inventory?.sold ?? -1) >= 0);
+  assert.equal((inventory?.reserved ?? 0) + (inventory?.sold ?? 0), updatedOrder?.reservationStatus === "released" ? 0 : 1);
 });
