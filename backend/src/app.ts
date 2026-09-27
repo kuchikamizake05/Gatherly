@@ -11,6 +11,7 @@ import { organizerRouter } from "./modules/organizers/organizer.routes.js";
 import { eventRouter } from "./modules/events/event.routes.js";
 import { orderRouter } from "./modules/orders/order.routes.js";
 import { paymentRouter } from "./modules/payments/payment.routes.js";
+import { ticketRouter } from "./modules/tickets/ticket.routes.js";
 
 export const app = express();
 
@@ -45,6 +46,7 @@ app.use("/api/v1/organizers", organizerRouter);
 app.use("/api/v1/organizer/events", eventRouter);
 app.use("/api/v1/orders", orderRouter);
 app.use("/api/v1/payments", paymentRouter);
+app.use("/api/v1/tickets", ticketRouter);
 
 app.use((_request, response) => {
   response.status(404).json({

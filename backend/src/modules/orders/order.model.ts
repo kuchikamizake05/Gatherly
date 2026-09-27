@@ -43,6 +43,10 @@ export interface OrderDocument {
   reconciliationRequired: boolean;
   reconciliationReason?: string;
   leaseUntil?: Date;
+  issuanceLeaseUntil?: Date;
+  issuanceNextAttemptAt?: Date;
+  issuanceAttempts: number;
+  issuanceLastError?: string;
   paidAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -119,6 +123,10 @@ const orderSchema = new Schema<OrderDocument>(
     reconciliationRequired: { type: Boolean, default: false, required: true },
     reconciliationReason: { type: String },
     leaseUntil: { type: Date },
+    issuanceLeaseUntil: { type: Date },
+    issuanceNextAttemptAt: { type: Date },
+    issuanceAttempts: { type: Number, default: 0, min: 0, required: true },
+    issuanceLastError: { type: String },
     paidAt: { type: Date },
   },
   { timestamps: true },
@@ -128,5 +136,6 @@ orderSchema.index({ buyerId: 1, idempotencyKey: 1 }, { unique: true });
 orderSchema.index({ buyerId: 1, createdAt: -1, _id: -1 });
 orderSchema.index({ paymentStatus: 1, nextReconcileAt: 1 });
 orderSchema.index({ eventId: 1, paymentStatus: 1, paidAt: 1 });
+orderSchema.index({ paymentStatus: 1, reservationStatus: 1, issuanceStatus: 1, issuanceNextAttemptAt: 1 });
 
 export const Order = model<OrderDocument>("Order", orderSchema);

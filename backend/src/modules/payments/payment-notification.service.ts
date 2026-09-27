@@ -103,6 +103,7 @@ export async function applyPaymentStatus(
             order.paymentStatus = "paid";
             order.reservationStatus = "converted";
             order.issuanceStatus = "processing";
+            order.issuanceNextAttemptAt = occurredAt;
             order.paymentSessionState = "closed";
             order.paidAt ??= occurredAt;
             transition = "paid";

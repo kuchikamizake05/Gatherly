@@ -20,6 +20,8 @@ import {
   processMidtransNotification,
 } from "../src/modules/payments/payment-notification.service.js";
 import { reconcileDuePayments } from "../src/modules/payments/payment-reconciliation.service.js";
+import { Ticket } from "../src/modules/tickets/ticket.model.js";
+import { issueDueTickets } from "../src/modules/tickets/ticket-issuance.service.js";
 
 const testDatabase = "gatherly_test";
 let server: Server;
@@ -39,6 +41,7 @@ before(async () => {
     TicketType.syncIndexes(),
     Order.syncIndexes(),
     PaymentEvent.syncIndexes(),
+    Ticket.syncIndexes(),
   ]);
   const { app } = await import("../src/app.js");
   server = app.listen(0);
@@ -58,6 +61,7 @@ beforeEach(async () => {
     TicketType.deleteMany({}),
     Order.deleteMany({}),
     PaymentEvent.deleteMany({}),
+    Ticket.deleteMany({}),
   ]);
 });
 
@@ -75,6 +79,7 @@ after(async () => {
     TicketType.deleteMany({}),
     Order.deleteMany({}),
     PaymentEvent.deleteMany({}),
+    Ticket.deleteMany({}),
   ]);
   await mongoose.disconnect();
 });
@@ -539,4 +544,125 @@ test("keeps inventory nonnegative when paid races with expiry", async () => {
   assert.ok((inventory?.reserved ?? -1) >= 0);
   assert.ok((inventory?.sold ?? -1) >= 0);
   assert.equal((inventory?.reserved ?? 0) + (inventory?.sold ?? 0), updatedOrder?.reservationStatus === "released" ? 0 : 1);
+});
+
+test("issues exactly one ticket per attendee after payment", async () => {
+  const { buyerA, ticketType } = await fixture(3);
+  const { order } = await createOrder(
+    buyerA._id.toString(),
+    "40404040-4040-4040-8040-404040404040",
+    input(ticketType._id.toString(), 3),
+  );
+  await applyPaymentStatus(order._id.toString(), "paid", new Date());
+
+  assert.equal(await issueDueTickets(), 1);
+  const tickets = await Ticket.find({ orderId: order._id }).select("+qrToken").sort({ sequence: 1 });
+  assert.equal(tickets.length, 3);
+  assert.deepEqual(tickets.map((ticket) => ticket.attendeeName), [
+    "Attendee 1",
+    "Attendee 2",
+    "Attendee 3",
+  ]);
+  assert.equal(new Set(tickets.map((ticket) => ticket.ticketCode)).size, 3);
+  assert.equal(new Set(tickets.map((ticket) => ticket.qrToken)).size, 3);
+  assert.ok(tickets.every((ticket) => /^[A-Za-z0-9_-]{43}$/.test(ticket.qrToken)));
+  assert.equal((await Order.findById(order._id).lean())?.issuanceStatus, "issued");
+});
+
+test("does not issue tickets before payment", async () => {
+  const { buyerA, ticketType } = await fixture();
+  await createOrder(
+    buyerA._id.toString(),
+    "50505050-5050-4050-8050-505050505050",
+    input(ticketType._id.toString()),
+  );
+
+  assert.equal(await issueDueTickets(), 0);
+  assert.equal(await Ticket.countDocuments(), 0);
+});
+
+test("makes retries and concurrent issuance idempotent", async () => {
+  const { buyerA, ticketType } = await fixture(2);
+  const { order } = await createOrder(
+    buyerA._id.toString(),
+    "60606060-6060-4060-8060-606060606060",
+    input(ticketType._id.toString(), 2),
+  );
+  await applyPaymentStatus(order._id.toString(), "paid", new Date());
+  await Ticket.create({
+    orderId: order._id,
+    eventId: order.eventId,
+    buyerId: order.buyerId,
+    ticketTypeId: order.ticketTypeId,
+    sequence: 0,
+    attendeeName: order.attendees[0]!.name,
+    ticketCode: "GTH-T-RECOVERY01",
+    qrToken: "recovery-token",
+    checkInStatus: "unused",
+    eventSnapshot: order.eventSnapshot,
+    ticketTypeSnapshot: { name: order.ticketTypeSnapshot.name },
+  });
+  await Order.updateOne(
+    { _id: order._id },
+    { $set: { issuanceLeaseUntil: new Date(Date.now() - 1) } },
+  );
+
+  const processed = await Promise.all([issueDueTickets(1), issueDueTickets(1)]);
+  assert.equal(processed.reduce((sum, count) => sum + count, 0), 1);
+  assert.equal(await Ticket.countDocuments({ orderId: order._id }), 2);
+  assert.equal(await issueDueTickets(), 0);
+  assert.equal(await Ticket.countDocuments({ orderId: order._id }), 2);
+});
+
+test("lists safe ticket data and reveals QR only to its owner", async () => {
+  const { buyerA, buyerB, ticketType } = await fixture();
+  const { order } = await createOrder(
+    buyerA._id.toString(),
+    "70707070-7070-4070-8070-707070707070",
+    input(ticketType._id.toString()),
+  );
+  await applyPaymentStatus(order._id.toString(), "paid", new Date());
+  await issueDueTickets();
+  const ticket = await Ticket.findOne({ orderId: order._id });
+  assert.ok(ticket);
+
+  const [ownerSession, otherSession] = ["ticket-owner-session", "ticket-other-session"];
+  await Session.create([
+    {
+      tokenHash: hashToken(ownerSession),
+      csrfTokenHash: hashToken("unused-owner-csrf"),
+      userId: buyerA._id,
+      expiresAt: new Date(Date.now() + 60_000),
+    },
+    {
+      tokenHash: hashToken(otherSession),
+      csrfTokenHash: hashToken("unused-other-csrf"),
+      userId: buyerB._id,
+      expiresAt: new Date(Date.now() + 60_000),
+    },
+  ]);
+
+  const listResponse = await fetch(`${baseUrl}/api/v1/tickets`, {
+    headers: { Cookie: `gatherly_session=${ownerSession}` },
+  });
+  assert.equal(listResponse.status, 200);
+  const listBody = (await listResponse.json()) as {
+    data: Array<Record<string, unknown>>;
+    meta: { total: number };
+  };
+  assert.equal(listBody.meta.total, 1);
+  assert.equal(listBody.data[0]?.qrPayload, undefined);
+  assert.equal(listBody.data[0]?.qrToken, undefined);
+
+  const detailResponse = await fetch(`${baseUrl}/api/v1/tickets/${ticket._id}`, {
+    headers: { Cookie: `gatherly_session=${ownerSession}` },
+  });
+  assert.equal(detailResponse.status, 200);
+  const detailBody = (await detailResponse.json()) as { data: { qrPayload: string } };
+  assert.match(detailBody.data.qrPayload, /^gatherly:v1:[A-Za-z0-9_-]{43}$/);
+
+  const hiddenResponse = await fetch(`${baseUrl}/api/v1/tickets/${ticket._id}`, {
+    headers: { Cookie: `gatherly_session=${otherSession}` },
+  });
+  assert.equal(hiddenResponse.status, 404);
 });
