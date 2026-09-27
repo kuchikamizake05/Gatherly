@@ -8,6 +8,7 @@ import { requireCsrf, requireSession, type AuthenticatedRequest } from "../auth/
 import { Order } from "./order.model.js";
 import { createOrder, orderDto } from "./order.service.js";
 import { createOrderSchema, idempotencyKeySchema, paginationSchema } from "./order.schemas.js";
+import { createPaymentSession } from "../payments/payment.service.js";
 
 function validationError(error: z.ZodError) {
   const fields = Object.fromEntries(
@@ -49,6 +50,25 @@ orderRouter.get(
       Order.countDocuments(filter),
     ]);
     response.json({ data: orders.map(orderDto), meta: { page, limit, total } });
+  }),
+);
+
+orderRouter.post(
+  "/:id/payment-session",
+  requireCsrf,
+  asyncHandler(async (request: AuthenticatedRequest, response) => {
+    const result = await createPaymentSession(String(request.params.id), request.auth!.user._id);
+    if (result.status !== "ready") {
+      response.status(202).json({ data: { status: result.status } });
+      return;
+    }
+    response.status(200).json({
+      data: {
+        snapToken: result.snapToken,
+        redirectUrl: result.redirectUrl,
+        expiresAt: result.expiresAt,
+      },
+    });
   }),
 );
 

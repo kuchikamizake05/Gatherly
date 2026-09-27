@@ -11,6 +11,8 @@ import { Session, User } from "../src/modules/auth/auth.models.js";
 import { Event, TicketType } from "../src/modules/events/event.models.js";
 import { Order } from "../src/modules/orders/order.model.js";
 import { createOrder } from "../src/modules/orders/order.service.js";
+import type { SnapTransport } from "../src/modules/payments/midtrans.client.js";
+import { createPaymentSession } from "../src/modules/payments/payment.service.js";
 
 const testDatabase = "gatherly_test";
 let server: Server;
@@ -240,4 +242,171 @@ test("creates and reads an order through the authenticated API", async () => {
   const list = (await listResponse.json()) as { data: unknown[]; meta: { total: number } };
   assert.equal(list.data.length, 1);
   assert.equal(list.meta.total, 1);
+});
+
+test("creates one Snap session from server-owned order data and reuses it", async () => {
+  const { buyerA, ticketType } = await fixture();
+  const { order } = await createOrder(
+    buyerA._id.toString(),
+    "88888888-8888-4888-8888-888888888888",
+    input(ticketType._id.toString(), 2),
+  );
+  let calls = 0;
+  const transport: SnapTransport = async (payload) => {
+    calls += 1;
+    assert.equal(payload.transaction_details.order_id, order.providerOrderId);
+    assert.equal(payload.transaction_details.gross_amount, 200_000);
+    assert.equal(payload.item_details[0].price * payload.item_details[0].quantity, 200_000);
+    assert.equal(payload.expiry.duration, 15);
+    return {
+      kind: "success",
+      token: "sandbox-snap-token",
+      redirectUrl: "https://app.sandbox.midtrans.com/snap/v2/vtweb/test-token",
+    };
+  };
+
+  const first = await createPaymentSession(order._id.toString(), buyerA._id.toString(), transport);
+  const retry = await createPaymentSession(order._id.toString(), buyerA._id.toString(), transport);
+  assert.equal(first.status, "ready");
+  assert.equal(retry.status, "ready");
+  assert.equal(calls, 1);
+  assert.equal((await Order.findById(order._id).lean())?.paymentSessionAttempts, 1);
+});
+
+test("allows only one provider call for concurrent payment-session requests", async () => {
+  const { buyerA, ticketType } = await fixture();
+  const { order } = await createOrder(
+    buyerA._id.toString(),
+    "99999999-9999-4999-8999-999999999999",
+    input(ticketType._id.toString()),
+  );
+  let releaseProvider!: () => void;
+  let providerStarted!: () => void;
+  const started = new Promise<void>((resolve) => { providerStarted = resolve; });
+  const release = new Promise<void>((resolve) => { releaseProvider = resolve; });
+  let calls = 0;
+  const transport: SnapTransport = async () => {
+    calls += 1;
+    providerStarted();
+    await release;
+    return {
+      kind: "success",
+      token: "one-token",
+      redirectUrl: "https://app.sandbox.midtrans.com/snap/v2/vtweb/one-token",
+    };
+  };
+
+  const firstRequest = createPaymentSession(order._id.toString(), buyerA._id.toString(), transport);
+  await started;
+  const second = await createPaymentSession(order._id.toString(), buyerA._id.toString(), transport);
+  assert.equal(second.status, "creating");
+  releaseProvider();
+  assert.equal((await firstRequest).status, "ready");
+  assert.equal(calls, 1);
+});
+
+test("keeps an uncertain provider result from being retried", async () => {
+  const { buyerA, ticketType } = await fixture();
+  const { order } = await createOrder(
+    buyerA._id.toString(),
+    "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    input(ticketType._id.toString()),
+  );
+  let calls = 0;
+  const transport: SnapTransport = async () => {
+    calls += 1;
+    return { kind: "uncertain", reason: "timeout" };
+  };
+
+  assert.equal(
+    (await createPaymentSession(order._id.toString(), buyerA._id.toString(), transport)).status,
+    "uncertain",
+  );
+  assert.equal(
+    (await createPaymentSession(order._id.toString(), buyerA._id.toString(), transport)).status,
+    "uncertain",
+  );
+  assert.equal(calls, 1);
+});
+
+test("resets a definitely rejected session and closes an expired order", async () => {
+  const { buyerA, ticketType } = await fixture();
+  const { order } = await createOrder(
+    buyerA._id.toString(),
+    "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    input(ticketType._id.toString()),
+  );
+  await assert.rejects(
+    createPaymentSession(order._id.toString(), buyerA._id.toString(), async () => ({
+      kind: "rejected",
+      status: 400,
+    })),
+    (error: unknown) => error instanceof AppError && error.code === "PROVIDER_REJECTED",
+  );
+  assert.equal((await Order.findById(order._id).lean())?.paymentSessionState, "not_started");
+
+  await Order.updateOne({ _id: order._id }, { $set: { expiresAt: new Date(Date.now() - 1) } });
+  await assert.rejects(
+    createPaymentSession(order._id.toString(), buyerA._id.toString(), async () => ({
+      kind: "success",
+      token: "unused",
+      redirectUrl: "https://example.test/unused",
+    })),
+    (error: unknown) => error instanceof AppError && error.code === "ORDER_NOT_PAYABLE",
+  );
+  assert.equal((await Order.findById(order._id).lean())?.paymentSessionState, "closed");
+});
+
+test("hides payment sessions from another buyer", async () => {
+  const { buyerA, buyerB, ticketType } = await fixture();
+  const { order } = await createOrder(
+    buyerA._id.toString(),
+    "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    input(ticketType._id.toString()),
+  );
+  await assert.rejects(
+    createPaymentSession(order._id.toString(), buyerB._id.toString(), async () => ({
+      kind: "uncertain",
+      reason: "network",
+    })),
+    (error: unknown) => error instanceof AppError && error.code === "NOT_FOUND",
+  );
+});
+
+test("returns a stored Snap session through the authenticated API", async () => {
+  const { buyerA, ticketType } = await fixture();
+  const { order } = await createOrder(
+    buyerA._id.toString(),
+    "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+    input(ticketType._id.toString()),
+  );
+  await Order.updateOne(
+    { _id: order._id },
+    {
+      $set: {
+        paymentSessionState: "ready",
+        snapToken: "stored-token",
+        redirectUrl: "https://app.sandbox.midtrans.com/snap/v2/vtweb/stored-token",
+      },
+    },
+  );
+  const sessionToken = "payment-api-session-token";
+  const csrfToken = "payment-api-csrf-token";
+  await Session.create({
+    tokenHash: hashToken(sessionToken),
+    csrfTokenHash: hashToken(csrfToken),
+    userId: buyerA._id,
+    expiresAt: new Date(Date.now() + 60_000),
+  });
+
+  const response = await fetch(`${baseUrl}/api/v1/orders/${order._id}/payment-session`, {
+    method: "POST",
+    headers: {
+      Cookie: `gatherly_session=${sessionToken}`,
+      "X-CSRF-Token": csrfToken,
+    },
+  });
+  assert.equal(response.status, 200);
+  const body = (await response.json()) as { data: { snapToken: string } };
+  assert.equal(body.data.snapToken, "stored-token");
 });

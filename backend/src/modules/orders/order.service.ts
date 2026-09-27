@@ -196,7 +196,7 @@ export function orderDto(order: HydratedDocument<OrderDocument> | OrderDocument 
     canResumePayment:
       order.paymentStatus === "pending" &&
       order.reservationStatus === "held" &&
-      order.paymentSessionState !== "closed" &&
+      (order.paymentSessionState === "not_started" || order.paymentSessionState === "ready") &&
       order.expiresAt > now,
     ticketIds: [],
   };
