@@ -30,6 +30,10 @@ export interface OrderDocument {
   reservationStatus: ReservationStatus;
   issuanceStatus: IssuanceStatus;
   paymentSessionState: PaymentSessionState;
+  snapToken?: string;
+  redirectUrl?: string;
+  paymentSessionAttempts: number;
+  paymentSessionLastError?: string;
   expiresAt: Date;
   idempotencyKey: string;
   requestHash: string;
@@ -96,6 +100,10 @@ const orderSchema = new Schema<OrderDocument>(
       default: "not_started",
       required: true,
     },
+    snapToken: { type: String },
+    redirectUrl: { type: String },
+    paymentSessionAttempts: { type: Number, default: 0, min: 0, required: true },
+    paymentSessionLastError: { type: String },
     expiresAt: { type: Date, required: true },
     idempotencyKey: { type: String, required: true },
     requestHash: { type: String, required: true },
