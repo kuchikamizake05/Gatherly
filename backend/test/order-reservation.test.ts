@@ -11,6 +11,7 @@ import { hashToken } from "../src/lib/crypto.js";
 import { Session, User } from "../src/modules/auth/auth.models.js";
 import { CommitteeAssignment } from "../src/modules/committee/committee-assignment.model.js";
 import { Event, TicketType } from "../src/modules/events/event.models.js";
+import { Organizer } from "../src/modules/organizers/organizer.model.js";
 import { Order } from "../src/modules/orders/order.model.js";
 import { createOrder } from "../src/modules/orders/order.service.js";
 import type { SnapTransport } from "../src/modules/payments/midtrans.client.js";
@@ -29,6 +30,14 @@ import {
   findCommitteeTickets,
   getCheckInHistory,
 } from "../src/modules/check-ins/check-in.service.js";
+import {
+  getOrganizerEventSummary,
+  getOrganizerOrderDetail,
+  getOrganizerSummary,
+  listOrganizerAttendees,
+  listOrganizerOrders,
+} from "../src/modules/reports/organizer-report.service.js";
+import { organizerSummaryQuerySchema } from "../src/modules/reports/organizer-report.schemas.js";
 
 const testDatabase = "gatherly_test";
 let server: Server;
@@ -50,6 +59,7 @@ before(async () => {
     PaymentEvent.syncIndexes(),
     Ticket.syncIndexes(),
     CommitteeAssignment.syncIndexes(),
+    Organizer.syncIndexes(),
   ]);
   const { app } = await import("../src/app.js");
   server = app.listen(0);
@@ -71,6 +81,7 @@ beforeEach(async () => {
     PaymentEvent.deleteMany({}),
     Ticket.deleteMany({}),
     CommitteeAssignment.deleteMany({}),
+    Organizer.deleteMany({}),
   ]);
 });
 
@@ -90,6 +101,7 @@ after(async () => {
     PaymentEvent.deleteMany({}),
     Ticket.deleteMany({}),
     CommitteeAssignment.deleteMany({}),
+    Organizer.deleteMany({}),
   ]);
   await mongoose.disconnect();
 });
@@ -158,6 +170,35 @@ async function prepareCheckInFixture(quantity = 1) {
   });
   const tickets = await Ticket.find({ orderId: order._id }).select("+qrToken").sort({ sequence: 1 });
   return { ...context, order, tickets, now };
+}
+
+async function prepareOrganizerReportFixture() {
+  const context = await fixture(6);
+  const organizer = await Organizer.create({
+    ownerId: context.buyerB._id,
+    name: "Test Organizer",
+    description: "Organizer report fixture",
+    contactEmail: "organizer@example.test",
+  });
+  await Event.updateOne({ _id: context.event._id }, { $set: { organizerId: organizer._id } });
+  const paidResult = await createOrder(
+    context.buyerA._id.toString(),
+    randomUUID(),
+    input(context.ticketType._id.toString(), 2),
+  );
+  await applyPaymentStatus(paidResult.order._id.toString(), "paid", new Date());
+  await issueDueTickets();
+  const pendingResult = await createOrder(
+    context.buyerA._id.toString(),
+    randomUUID(),
+    input(context.ticketType._id.toString()),
+  );
+  return {
+    ...context,
+    organizer,
+    paidOrder: paidResult.order,
+    pendingOrder: pendingResult.order,
+  };
 }
 
 test("creates a held reservation using the server price", async () => {
@@ -875,4 +916,154 @@ test("returns safe paginated committee lookup and check-in history", async () =>
   assert.equal(history.data[0]?.checkedInBy?.id, buyerB._id.toString());
   assert.equal("qrToken" in history.data[0]!, false);
   assert.equal("totalAmount" in history.data[0]!, false);
+});
+
+test("calculates organizer summary from paid orders with half-open paidAt periods", async () => {
+  const { buyerB, organizer, event, paidOrder } = await prepareOrganizerReportFixture();
+  const paidAt = new Date("2026-09-27T05:00:00.000Z");
+  await Order.updateOne({ _id: paidOrder._id }, { $set: { paidAt } });
+
+  const included = await getOrganizerSummary(organizer._id.toString(), {
+    from: paidAt,
+    to: new Date(paidAt.getTime() + 1),
+  });
+  assert.equal(included.publishedEvents, 1);
+  assert.equal(included.paidTickets, 2);
+  assert.equal(included.grossPaidSales, 200_000);
+
+  const excluded = await getOrganizerSummary(organizer._id.toString(), { to: paidAt });
+  assert.equal(excluded.publishedEvents, 1);
+  assert.equal(excluded.paidTickets, 0);
+  assert.equal(excluded.grossPaidSales, 0);
+
+  const sessionToken = "organizer-summary-session";
+  await Session.create({
+    tokenHash: hashToken(sessionToken),
+    csrfTokenHash: hashToken("organizer-summary-csrf"),
+    userId: buyerB._id,
+    expiresAt: new Date(Date.now() + 60_000),
+  });
+  const response = await fetch(`${baseUrl}/api/v1/organizer/summary`, {
+    headers: { Cookie: `gatherly_session=${sessionToken}` },
+  });
+  assert.equal(response.status, 200);
+  const body = (await response.json()) as { data: { paidTickets: number } };
+  assert.equal(body.data.paidTickets, 2);
+  assert.ok(event._id);
+});
+
+test("returns zero organizer metrics without owned data", async () => {
+  const owner = await User.create({
+    name: "Empty Organizer",
+    emailNormalized: "empty-organizer@example.test",
+    passwordHash: "test-hash",
+  });
+  const organizer = await Organizer.create({
+    ownerId: owner._id,
+    name: "Empty Organizer",
+    description: "No events",
+    contactEmail: "empty-organizer@example.test",
+  });
+
+  const summary = await getOrganizerSummary(organizer._id.toString(), {});
+  assert.equal(summary.publishedEvents, 0);
+  assert.equal(summary.paidTickets, 0);
+  assert.equal(summary.grossPaidSales, 0);
+});
+
+test("reports event inventory, attendance, and paid sales without double counting", async () => {
+  const { buyerB, organizer, event, paidOrder, ticketType } = await prepareOrganizerReportFixture();
+  const now = new Date();
+  await Event.updateOne(
+    { _id: event._id },
+    { $set: { startsAt: new Date(now.getTime() + 10 * 60_000), endsAt: new Date(now.getTime() + 2 * 60 * 60_000) } },
+  );
+  await CommitteeAssignment.create({
+    eventId: event._id,
+    userId: buyerB._id,
+    assignedBy: buyerB._id,
+  });
+  const ticket = await Ticket.findOne({ orderId: paidOrder._id });
+  assert.ok(ticket);
+  await checkInTicket(event._id.toString(), buyerB._id.toString(), { ticketCode: ticket.ticketCode }, now);
+
+  const summary = await getOrganizerEventSummary(event._id.toString(), organizer._id.toString());
+  assert.equal(summary.capacity, 6);
+  assert.equal(summary.reserved, 1);
+  assert.equal(summary.sold, 2);
+  assert.equal(summary.available, 3);
+  assert.equal(summary.checkedIn, 1);
+  assert.equal(summary.grossPaidSales, 200_000);
+  assert.equal((await TicketType.findById(ticketType._id).lean())?.sold, 2);
+});
+
+test("returns scoped safe order and attendee reports", async () => {
+  const { organizer, event, paidOrder } = await prepareOrganizerReportFixture();
+  const orders = await listOrganizerOrders(event._id.toString(), organizer._id.toString(), {
+    q: paidOrder.buyerSnapshot.name,
+    paymentStatus: "paid",
+    page: 1,
+    limit: 1,
+  });
+  assert.equal(orders.meta.total, 1);
+  assert.equal(orders.data[0]?.id, paidOrder._id.toString());
+  assert.equal("snapToken" in orders.data[0]!, false);
+  assert.equal("providerOrderId" in orders.data[0]!, false);
+
+  const detail = await getOrganizerOrderDetail(
+    event._id.toString(),
+    paidOrder._id.toString(),
+    organizer._id.toString(),
+  );
+  assert.equal(detail.tickets.length, 2);
+  assert.equal("qrToken" in detail, false);
+  assert.equal("redirectUrl" in detail, false);
+  assert.ok(detail.tickets.every((ticket) => !("qrToken" in ticket)));
+
+  const attendees = await listOrganizerAttendees(event._id.toString(), organizer._id.toString(), {
+    q: "Attendee",
+    checkInStatus: "unused",
+    page: 1,
+    limit: 1,
+  });
+  assert.equal(attendees.data.length, 1);
+  assert.equal(attendees.meta.total, 2);
+  assert.equal("qrToken" in attendees.data[0]!, false);
+  assert.equal("email" in attendees.data[0]!, false);
+  assert.equal("totalAmount" in attendees.data[0]!, false);
+});
+
+test("hides events and mismatched orders outside organizer scope", async () => {
+  const first = await prepareOrganizerReportFixture();
+  const otherOwner = await User.create({
+    name: "Other Owner",
+    emailNormalized: "other-owner@example.test",
+    passwordHash: "test-hash",
+  });
+  const otherOrganizer = await Organizer.create({
+    ownerId: otherOwner._id,
+    name: "Other Organizer",
+    description: "Other scope",
+    contactEmail: "other-owner@example.test",
+  });
+
+  await assert.rejects(
+    getOrganizerEventSummary(first.event._id.toString(), otherOrganizer._id.toString()),
+    (error: unknown) => error instanceof AppError && error.code === "NOT_FOUND",
+  );
+  await assert.rejects(
+    getOrganizerOrderDetail(
+      new mongoose.Types.ObjectId().toString(),
+      first.paidOrder._id.toString(),
+      first.organizer._id.toString(),
+    ),
+    (error: unknown) => error instanceof AppError && error.code === "NOT_FOUND",
+  );
+  assert.equal(
+    organizerSummaryQuerySchema.safeParse({
+      from: "2026-09-28T00:00:00.000Z",
+      to: "2026-09-27T00:00:00.000Z",
+    }).success,
+    false,
+  );
 });
