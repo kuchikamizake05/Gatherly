@@ -1,5 +1,10 @@
 import { env } from "../../config/env.js";
-import { snapResponseSchema, type SnapRequest } from "./payment.schemas.js";
+import {
+  snapResponseSchema,
+  transactionStatusSchema,
+  type SnapRequest,
+  type TransactionStatusPayload,
+} from "./payment.schemas.js";
 
 const sandboxSnapUrl = "https://app.sandbox.midtrans.com/snap/v1/transactions";
 
@@ -10,6 +15,11 @@ export type SnapResult =
   | { kind: "uncertain"; reason: "timeout" | "network" | "provider" | "malformed" };
 
 export type SnapTransport = (payload: SnapRequest) => Promise<SnapResult>;
+export type StatusResult =
+  | { kind: "found"; payload: TransactionStatusPayload }
+  | { kind: "not_found" }
+  | { kind: "unavailable" };
+export type StatusTransport = (providerOrderId: string) => Promise<StatusResult>;
 
 export async function createSnapTransaction(
   payload: SnapRequest,
@@ -49,6 +59,41 @@ export async function createSnapTransaction(
       return { kind: "uncertain", reason: "timeout" };
     }
     return { kind: "uncertain", reason: "network" };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+export async function getTransactionStatus(
+  providerOrderId: string,
+  fetchImplementation: typeof fetch = fetch,
+): Promise<StatusResult> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), env.MIDTRANS_REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetchImplementation(
+      `https://api.sandbox.midtrans.com/v2/${encodeURIComponent(providerOrderId)}/status`,
+      {
+        headers: {
+          Accept: "application/json",
+          Authorization: `Basic ${Buffer.from(`${env.MIDTRANS_SERVER_KEY}:`).toString("base64")}`,
+        },
+        signal: controller.signal,
+      },
+    );
+    if (response.status === 404) return { kind: "not_found" };
+    if (!response.ok) return { kind: "unavailable" };
+    const json: unknown = await response.json();
+    if (
+      typeof json === "object" &&
+      json !== null &&
+      "status_code" in json &&
+      String(json.status_code) === "404"
+    ) return { kind: "not_found" };
+    const parsed = transactionStatusSchema.safeParse(json);
+    return parsed.success ? { kind: "found", payload: parsed.data } : { kind: "unavailable" };
+  } catch {
+    return { kind: "unavailable" };
   } finally {
     clearTimeout(timeout);
   }

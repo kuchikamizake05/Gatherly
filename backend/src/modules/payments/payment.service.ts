@@ -117,7 +117,11 @@ export async function createPaymentSession(
       expiresAt: { $gt: new Date(now.getTime() + providerMinimumRemainingMs) },
     },
     {
-      $set: { paymentSessionState: "creating", leaseUntil: new Date(now.getTime() + creationLeaseMs) },
+      $set: {
+        paymentSessionState: "creating",
+        leaseUntil: new Date(now.getTime() + creationLeaseMs),
+        nextReconcileAt: new Date(now.getTime() + creationLeaseMs),
+      },
       $unset: { paymentSessionLastError: 1 },
       $inc: { paymentSessionAttempts: 1 },
     },
@@ -165,7 +169,11 @@ export async function createPaymentSession(
   await Order.updateOne(
     { _id: claimed._id, paymentSessionState: "creating" },
     {
-      $set: { paymentSessionState: "uncertain", paymentSessionLastError: errorCode },
+      $set: {
+        paymentSessionState: "uncertain",
+        paymentSessionLastError: errorCode,
+        nextReconcileAt: new Date(),
+      },
       $unset: { leaseUntil: 1 },
     },
   );
