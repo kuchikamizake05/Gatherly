@@ -9,6 +9,7 @@ import { AppError } from "./lib/app-error.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
 import { organizerRouter } from "./modules/organizers/organizer.routes.js";
 import { eventRouter } from "./modules/events/event.routes.js";
+import { orderRouter } from "./modules/orders/order.routes.js";
 
 export const app = express();
 
@@ -41,6 +42,7 @@ app.get("/api/v1/health", (_request, response) => {
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/organizers", organizerRouter);
 app.use("/api/v1/organizer/events", eventRouter);
+app.use("/api/v1/orders", orderRouter);
 
 app.use((_request, response) => {
   response.status(404).json({

@@ -17,6 +17,7 @@ export interface EventDocument {
   posterAssetId?: string;
   publicationStatus: PublicationStatus;
   salesClosed: boolean;
+  checkoutVersion: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -37,6 +38,7 @@ const eventSchema = new Schema<EventDocument>(
     posterAssetId: { type: String },
     publicationStatus: { type: String, enum: ["draft", "published"], default: "draft", index: true },
     salesClosed: { type: Boolean, default: false },
+    checkoutVersion: { type: Number, default: 0, min: 0, required: true },
   },
   { timestamps: true },
 );
