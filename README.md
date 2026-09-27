@@ -2,82 +2,135 @@
 
 <p align="center">
   <strong>Discover events. Book your spot. Be there.</strong><br>
-  Community events, digital tickets, and QR check-in in one place.
+  Platform acara komunitas dengan reservasi kuota, pembayaran sandbox, tiket QR, dan check-in.
 </p>
 
 <p align="center">
-  <a href="docs/README.md">Documentation</a> ·
-  <a href="docs/requirements.md">Product Specification</a> ·
+  <a href="docs/README.md">Dokumentasi</a> ·
+  <a href="docs/requirements.md">Analisis Kebutuhan</a> ·
+  <a href="docs/api-contract.md">Kontrak API</a> ·
+  <a href="postman/README.md">Postman</a> ·
   <a href="https://github.com/users/kuchikamizake05/projects/3/views/1">Project Board</a>
 </p>
 
----
+## Tentang Gatherly
 
-## Overview
+Gatherly membantu peserta menemukan dan membeli tiket acara komunitas, organizer mengelola acara serta penjualan, dan panitia memvalidasi tiket di lokasi. Proyek ini dikembangkan oleh **Kelompok 11** untuk mata kuliah **Pengembangan Aplikasi Web**, topik **US3 — Tiket acara komunitas: kuota dan tiket elektronik berkode**.
 
-**Gatherly** is a web application for discovering and managing community events, from creative workshops to live performances. It connects organizers, participants, and event committees through a shared experience for ticket sales and admission.
+Backend telah menyediakan autentikasi, manajemen acara, reservasi atomik, integrasi Midtrans Sandbox, penerbitan tiket QR, check-in sekali pakai, dan laporan organizer. Antarmuka Next.js masih dikembangkan dan saat ini menyediakan shell aplikasi.
 
-Developed by **Team 11** for the **Pengembangan Aplikasi Web** course, with the topic **US3 — Tiket acara komunitas: kuota dan tiket elektronik berkode**.
+## Fitur yang tersedia
 
-> Currently in the planning stage. The features below represent the planned MVP.
-
-## Features
-
-| Feature | Description |
+| Area | Kemampuan |
 | --- | --- |
-| **Event Discovery** | Explore events by category, location, date, and ticket price. |
-| **Event Management** | Publish event details and posters, with ticket types such as Presale, Regular, and VIP. |
-| **Ticket Quotas** | Manage availability for each ticket type and reserve slots during checkout. |
-| **Online Checkout** | Purchase tickets through Midtrans Snap Sandbox using simulated payments. |
-| **Digital Tickets** | Access personal tickets with unique QR codes in My Tickets. |
-| **Event Check-in** | Validate admission by scanning a QR code or entering a ticket code. |
+| Akun | Registrasi, login berbasis sesi, logout, CSRF, dan profil organizer |
+| Acara | CRUD event dan ticket type, publikasi, kuota, serta assignment panitia |
+| Order | Reservasi inventori atomik, idempotency key, dan pembatasan akses buyer |
+| Pembayaran | Midtrans Snap Sandbox, webhook terverifikasi, serta rekonsiliasi status |
+| Tiket | Satu tiket per peserta, credential QR acak, dan penerbitan idempoten |
+| Check-in | Scan QR/kode manual, validasi assignment dan waktu, serta single-use atomic |
+| Laporan | Ringkasan penjualan, inventori, order, peserta, dan riwayat kehadiran |
 
-## User Roles
+## Teknologi
 
-| Role | Experience |
+| Lapisan | Teknologi |
 | --- | --- |
-| **Participant** | Discover events, purchase tickets, and access digital tickets. |
-| **Organizer** | Manage events, ticket types, quotas, committee assignments, and sales summaries. |
-| **Committee** | Check in attendees and view attendance history for assigned events. |
+| Web | Next.js 16, React 19, TypeScript |
+| API | Express 5, TypeScript, Zod |
+| Database | MongoDB dan Mongoose |
+| Pembayaran | Midtrans Snap Sandbox |
+| Keamanan | bcrypt, cookie HttpOnly, CSRF token, Helmet, rate limiting |
+| Tooling | npm workspaces, Node test runner, Postman |
 
-## Tech Stack
-
-| Layer | Technology |
-| --- | --- |
-| Frontend | Next.js · App Router |
-| Backend | ExpressJS |
-| Database | MongoDB |
-| Payments | Midtrans Snap Sandbox |
-| QR Tickets | qrcode · qr-scanner |
-
-## Project Structure
+## Struktur repository
 
 ```text
 Gatherly/
 ├── apps/
-│   ├── web/       Next.js frontend
-│   └── api/       ExpressJS backend
-└── docs/          Project documentation
+│   ├── server/       Express API, worker, model, dan integration test
+│   └── web/          Next.js App Router
+├── docs/             Analisis kebutuhan, arsitektur, model, dan kontrak API
+├── postman/          Collection, environment lokal, dan panduan penggunaan
+├── package.json      Script dan konfigurasi npm workspaces
+└── package-lock.json Dependency lockfile bersama
 ```
 
-The repository currently contains the documentation and application directory placeholders. Technical plans and development workflows are available in [docs](docs/README.md).
+Nama workspace:
 
-## Local Development
+- `@gatherly/server`
+- `@gatherly/web`
 
-Install dependencies from the repository root, copy `backend/.env.example` to `backend/.env`, then start both applications:
+## Menjalankan secara lokal
+
+Persyaratan:
+
+- Node.js 22 atau versi LTS yang kompatibel;
+- npm;
+- MongoDB replica set atau MongoDB Atlas untuk transaksi;
+- Midtrans Server Key dalam mode Sandbox.
+
+Instal dependency dari root repository:
 
 ```bash
 npm install
+```
+
+Salin konfigurasi server dan isi nilainya dengan credential milikmu sendiri:
+
+```bash
+cp apps/server/.env.example apps/server/.env
+```
+
+Jalankan web dan server bersamaan:
+
+```bash
 npm run dev
 ```
 
-The web app runs at `http://localhost:3000`; the API health check is available at `http://localhost:4000/api/v1/health`. A running MongoDB instance is required for the API.
+- Web: `http://localhost:3000`
+- API: `http://localhost:4000/api/v1`
+- Health check: `http://localhost:4000/api/v1/health`
 
-## Team 11
+Jangan commit `.env`, MongoDB URI, Midtrans Server Key, cookie sesi, atau QR credential.
 
-| Name | Student ID |
-| --- | --- |
-| Dien Muhammad Scientivan Kurniapramono | 24/533571/TK/59114 |
-| Aulia Nur Fajri Tri Anggoro | 24/535054/TK/59327 |
-| Muhammad Khoirunas | 24/533373/TK/59083 |
-| Faaid Sakhaa | 24/539398/TK/59820 |
+## Pemeriksaan kualitas
+
+```bash
+npm run typecheck
+npm run build
+npm run test:integration
+```
+
+Integration test menggunakan database `gatherly_test` dan menolak pembersihan database dengan nama lain. Pastikan `MONGODB_URI` mengarah ke cluster test yang aman sebelum menjalankannya.
+
+Smoke test Midtrans Sandbox dapat dijalankan terpisah:
+
+```bash
+npm run test:smoke:midtrans --workspace @gatherly/server
+```
+
+## Dokumentasi API dengan Postman
+
+Import kedua file berikut:
+
+- [`Gatherly API.postman_collection.json`](postman/Gatherly%20API.postman_collection.json)
+- [`Gatherly Local.postman_environment.json`](postman/Gatherly%20Local.postman_environment.json)
+
+Panduan urutan request, pergantian role, penyimpanan example response, dan aturan credential tersedia di [postman/README.md](postman/README.md).
+
+## Laporan Milestone 1
+
+Analisis kebutuhan dan fitur tersedia dalam folder [`docs`](docs/README.md). Tautan Google Drive untuk laporan PDF belum ditambahkan; tim harus menambahkan URL dengan izin **siapa saja yang memiliki link dapat melihat** sebelum pengumpulan.
+
+## Anggota Kelompok 11
+
+| Nama | NIM | Peran |
+| --- | --- | --- |
+| Dien Muhammad Scientivan Kurniapramono | 24/533571/TK/59114 | Backend 2 |
+| Aulia Nur Fajri Tri Anggoro | 24/535054/TK/59327 | Frontend 1 |
+| Muhammad Khoirunas | 24/533373/TK/59083 | Backend 1 / Ketua |
+| Faaid Sakhaa | 24/539398/TK/59820 | Frontend 2 |
+
+## Status dan scope
+
+Target MVP serta acceptance criteria dijelaskan dalam [docs/requirements.md](docs/requirements.md). Fitur di luar scope awal mencakup refund otomatis, payout organizer, transfer tiket, social login, dan offline check-in.

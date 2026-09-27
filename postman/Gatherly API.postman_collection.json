@@ -1,0 +1,244 @@
+{
+  "info": {
+    "_postman_id": "2594b131-32fa-49b3-af9f-ff8fb9a3e89a",
+    "name": "Gatherly API",
+    "description": "Collection API Gatherly untuk dokumentasi dan bukti Milestone 1. Gunakan hanya akun serta data demo.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": { "type": "noauth" },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test('Response has a request ID', function () {",
+          "  pm.expect(pm.response.headers.get('X-Request-Id')).to.be.a('string');",
+          "});"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000/api/v1" },
+    { "key": "origin", "value": "http://localhost:3000" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET Health",
+          "request": { "method": "GET", "url": "{{baseUrl}}/health", "description": "Memeriksa kesiapan proses API." },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('200 OK', () => pm.response.to.have.status(200));"] } }]
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "POST Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Origin", "value": "{{origin}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"{{buyerName}}\",\n  \"email\": \"{{buyerEmail}}\",\n  \"password\": \"{{buyerPassword}}\"\n}" },
+            "url": "{{baseUrl}}/auth/register",
+            "description": "Daftarkan akun demo. Ganti email/name variable untuk organizer dan committee. Registrasi tidak menerima role."
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('201 Created', () => pm.response.to.have.status(201));"] } }]
+        },
+        {
+          "name": "POST Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Origin", "value": "{{origin}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{buyerEmail}}\",\n  \"password\": \"{{buyerPassword}}\"\n}" },
+            "url": "{{baseUrl}}/auth/login",
+            "description": "Login membuat cookie sesi HttpOnly. Ganti variable email/password sesuai role yang akan digunakan."
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('200 OK', () => pm.response.to.have.status(200));", "const body = pm.response.json();", "if (body.data?.csrfToken) pm.environment.set('csrfToken', body.data.csrfToken);"] } }]
+        },
+        {
+          "name": "GET Current Session",
+          "request": { "method": "GET", "url": "{{baseUrl}}/auth/me", "description": "Membaca akun aktif dan merotasi CSRF token." },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('200 OK', () => pm.response.to.have.status(200));", "const body = pm.response.json();", "if (body.data?.csrfToken) pm.environment.set('csrfToken', body.data.csrfToken);"] } }]
+        },
+        {
+          "name": "POST Logout",
+          "request": { "method": "POST", "header": [{ "key": "X-CSRF-Token", "value": "{{csrfToken}}" }], "url": "{{baseUrl}}/auth/logout", "description": "Menghapus sesi aktif." },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('204 No Content', () => pm.response.to.have.status(204));", "pm.environment.unset('csrfToken');"] } }]
+        }
+      ]
+    },
+    {
+      "name": "Organizer Profile",
+      "item": [
+        {
+          "name": "POST Create Organizer Profile",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "X-CSRF-Token", "value": "{{csrfToken}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Gatherly Demo Organizer\",\n  \"description\": \"Organizer untuk pengujian Milestone 1\",\n  \"contactEmail\": \"{{organizerEmail}}\"\n}" },
+            "url": "{{baseUrl}}/organizers",
+            "description": "Membuat satu profil organizer untuk akun aktif. Login sebagai organizer lebih dahulu."
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('201 Created', () => pm.expect(pm.response.code).to.be.oneOf([201, 409]));", "if (pm.response.code === 201) pm.environment.set('organizerId', pm.response.json().data.id);"] } }]
+        },
+        {
+          "name": "GET My Organizer Profile",
+          "request": { "method": "GET", "url": "{{baseUrl}}/organizers/me" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('200 OK', () => pm.response.to.have.status(200));", "pm.environment.set('organizerId', pm.response.json().data.id);"] } }]
+        }
+      ]
+    },
+    {
+      "name": "Organizer Events",
+      "item": [
+        {
+          "name": "GET Organizer Events",
+          "request": { "method": "GET", "url": "{{baseUrl}}/organizer/events" }
+        },
+        {
+          "name": "POST Create Event",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "X-CSRF-Token", "value": "{{csrfToken}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Gatherly Demo Event\",\n  \"description\": \"Event demo untuk bukti API\",\n  \"category\": \"Workshop\",\n  \"startsAt\": \"2026-12-20T09:00:00.000Z\",\n  \"endsAt\": \"2026-12-20T12:00:00.000Z\",\n  \"timezone\": \"Asia/Jakarta\",\n  \"venueName\": \"Ruang Demo\",\n  \"address\": \"Jalan Demo 1\",\n  \"city\": \"Yogyakarta\"\n}" },
+            "url": "{{baseUrl}}/organizer/events"
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('201 Created', () => pm.response.to.have.status(201));", "pm.environment.set('eventId', pm.response.json().data.id);"] } }]
+        },
+        { "name": "GET Event Editor Detail", "request": { "method": "GET", "url": "{{baseUrl}}/organizer/events/{{eventId}}" } },
+        {
+          "name": "PATCH Event",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "X-CSRF-Token", "value": "{{csrfToken}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"venueName\": \"Ruang Demo Utama\"\n}" },
+            "url": "{{baseUrl}}/organizer/events/{{eventId}}"
+          }
+        },
+        {
+          "name": "POST Create Ticket Type",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "X-CSRF-Token", "value": "{{csrfToken}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Regular\",\n  \"description\": \"Tiket regular demo\",\n  \"price\": 100000,\n  \"capacity\": 20,\n  \"salesStartsAt\": \"2026-09-01T00:00:00.000Z\",\n  \"salesEndsAt\": \"2026-12-19T00:00:00.000Z\"\n}" },
+            "url": "{{baseUrl}}/organizer/events/{{eventId}}/ticket-types"
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('201 Created', () => pm.response.to.have.status(201));", "pm.environment.set('ticketTypeId', pm.response.json().data.id);"] } }]
+        },
+        {
+          "name": "PATCH Ticket Type",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "X-CSRF-Token", "value": "{{csrfToken}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"description\": \"Tiket regular untuk demo Postman\"\n}" },
+            "url": "{{baseUrl}}/organizer/events/{{eventId}}/ticket-types/{{ticketTypeId}}"
+          }
+        },
+        {
+          "name": "POST Publish Event",
+          "request": { "method": "POST", "header": [{ "key": "X-CSRF-Token", "value": "{{csrfToken}}" }], "url": "{{baseUrl}}/organizer/events/{{eventId}}/publish", "description": "Memerlukan posterAssetId dan minimal satu ticket type." }
+        },
+        {
+          "name": "GET Committee Assignments",
+          "request": { "method": "GET", "url": "{{baseUrl}}/organizer/events/{{eventId}}/committee" }
+        },
+        {
+          "name": "POST Assign Committee",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "X-CSRF-Token", "value": "{{csrfToken}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{committeeEmail}}\"\n}" },
+            "url": "{{baseUrl}}/organizer/events/{{eventId}}/committee"
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('201 Created', () => pm.response.to.have.status(201));", "pm.environment.set('committeeUserId', pm.response.json().data.userId);"] } }]
+        },
+        { "name": "DELETE Committee Assignment", "request": { "method": "DELETE", "header": [{ "key": "X-CSRF-Token", "value": "{{csrfToken}}" }], "url": "{{baseUrl}}/organizer/events/{{eventId}}/committee/{{committeeUserId}}" } },
+        { "name": "DELETE Ticket Type", "request": { "method": "DELETE", "header": [{ "key": "X-CSRF-Token", "value": "{{csrfToken}}" }], "url": "{{baseUrl}}/organizer/events/{{eventId}}/ticket-types/{{ticketTypeId}}", "description": "Hanya berhasil bila ticket type belum direferensikan order." } },
+        { "name": "DELETE Draft Event", "request": { "method": "DELETE", "header": [{ "key": "X-CSRF-Token", "value": "{{csrfToken}}" }], "url": "{{baseUrl}}/organizer/events/{{eventId}}", "description": "Hanya untuk draft yang dapat dihapus." } }
+      ]
+    },
+    {
+      "name": "Orders and Payments",
+      "item": [
+        {
+          "name": "POST Create Order",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "X-CSRF-Token", "value": "{{csrfToken}}" }, { "key": "Idempotency-Key", "value": "{{$guid}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"ticketTypeId\": \"{{ticketTypeId}}\",\n  \"quantity\": 1,\n  \"attendees\": [{\"name\": \"Peserta Demo\"}]\n}" },
+            "url": "{{baseUrl}}/orders",
+            "description": "Login sebagai buyer. Pertahankan Idempotency-Key yang sama ketika mengulang percobaan logis yang sama."
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('Created or idempotent replay', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));", "pm.environment.set('orderId', pm.response.json().data.id);"] } }]
+        },
+        { "name": "GET My Orders", "request": { "method": "GET", "url": "{{baseUrl}}/orders?page=1&limit=20" } },
+        { "name": "GET My Order Detail", "request": { "method": "GET", "url": "{{baseUrl}}/orders/{{orderId}}" } },
+        { "name": "POST Create Payment Session", "request": { "method": "POST", "header": [{ "key": "X-CSRF-Token", "value": "{{csrfToken}}" }], "url": "{{baseUrl}}/orders/{{orderId}}/payment-session", "description": "Membuat atau menggunakan kembali sesi Midtrans Snap Sandbox." } },
+        {
+          "name": "POST Midtrans Notification",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"order_id\": \"{{midtransOrderId}}\",\n  \"status_code\": \"200\",\n  \"gross_amount\": \"{{midtransGrossAmount}}\",\n  \"signature_key\": \"{{midtransSignature}}\",\n  \"transaction_status\": \"settlement\",\n  \"transaction_id\": \"postman-demo-transaction\",\n  \"fraud_status\": \"accept\",\n  \"currency\": \"IDR\"\n}" },
+            "url": "{{baseUrl}}/payments/midtrans/notifications",
+            "description": "Endpoint publik untuk webhook provider. Signature harus dihitung secara lokal dengan Server Key Sandbox."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Buyer Tickets",
+      "item": [
+        {
+          "name": "GET My Tickets",
+          "request": { "method": "GET", "url": "{{baseUrl}}/tickets?page=1&limit=20" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('200 OK', () => pm.response.to.have.status(200));", "const first = pm.response.json().data?.[0];", "if (first) { pm.environment.set('ticketId', first.id); pm.environment.set('ticketCode', first.ticketCode); }"] } }]
+        },
+        {
+          "name": "GET My Ticket Detail",
+          "request": { "method": "GET", "url": "{{baseUrl}}/tickets/{{ticketId}}" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('200 OK', () => pm.response.to.have.status(200));", "const data = pm.response.json().data;", "if (data?.qrPayload) pm.environment.set('qrPayload', data.qrPayload);"] } }]
+        }
+      ]
+    },
+    {
+      "name": "Committee Check-in",
+      "item": [
+        { "name": "GET Ticket Lookup", "request": { "method": "GET", "url": "{{baseUrl}}/committee/events/{{eventId}}/tickets?q=Peserta&page=1&limit=20", "description": "Login sebagai committee yang ditugaskan ke event." } },
+        { "name": "GET Check-in History", "request": { "method": "GET", "url": "{{baseUrl}}/committee/events/{{eventId}}/check-ins?page=1&limit=20" } },
+        {
+          "name": "POST Check-in by QR",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "X-CSRF-Token", "value": "{{csrfToken}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"qrPayload\": \"{{qrPayload}}\"\n}" },
+            "url": "{{baseUrl}}/committee/events/{{eventId}}/check-ins"
+          }
+        },
+        {
+          "name": "POST Check-in by Ticket Code",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "X-CSRF-Token", "value": "{{csrfToken}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"ticketCode\": \"{{ticketCode}}\"\n}" },
+            "url": "{{baseUrl}}/committee/events/{{eventId}}/check-ins"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Organizer Reports",
+      "item": [
+        { "name": "GET Organizer Summary", "request": { "method": "GET", "url": "{{baseUrl}}/organizer/summary" } },
+        { "name": "GET Event Summary", "request": { "method": "GET", "url": "{{baseUrl}}/organizer/events/{{eventId}}/summary" } },
+        { "name": "GET Event Orders", "request": { "method": "GET", "url": "{{baseUrl}}/organizer/events/{{eventId}}/orders?page=1&limit=20" } },
+        { "name": "GET Event Order Detail", "request": { "method": "GET", "url": "{{baseUrl}}/organizer/events/{{eventId}}/orders/{{orderId}}" } },
+        { "name": "GET Event Attendees", "request": { "method": "GET", "url": "{{baseUrl}}/organizer/events/{{eventId}}/attendees?page=1&limit=20" } }
+      ]
+    }
+  ]
+}

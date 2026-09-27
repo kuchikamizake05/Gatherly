@@ -3,13 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "workspaces": [
-    "frontend",
-    "backend"
+    "apps/web",
+    "apps/server"
   ],
   "scripts": {
-    "dev": "concurrently -n frontend,backend -c green,blue \"npm run dev --workspace @gatherly/frontend\" \"npm run dev --workspace @gatherly/backend\"",
-    "build": "npm run build --workspace @gatherly/frontend && npm run build --workspace @gatherly/backend",
-    "typecheck": "npm run typecheck --workspace @gatherly/frontend && npm run typecheck --workspace @gatherly/backend"
+    "dev": "concurrently -n web,server -c green,blue \"npm run dev --workspace @gatherly/web\" \"npm run dev --workspace @gatherly/server\"",
+    "build": "npm run build --workspace @gatherly/web && npm run build --workspace @gatherly/server",
+    "typecheck": "npm run typecheck --workspace @gatherly/web && npm run typecheck --workspace @gatherly/server",
+    "test:integration": "npm run test:integration --workspace @gatherly/server"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
