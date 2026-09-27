@@ -12,6 +12,7 @@ import { eventRouter } from "./modules/events/event.routes.js";
 import { orderRouter } from "./modules/orders/order.routes.js";
 import { paymentRouter } from "./modules/payments/payment.routes.js";
 import { ticketRouter } from "./modules/tickets/ticket.routes.js";
+import { checkInRouter } from "./modules/check-ins/check-in.routes.js";
 
 export const app = express();
 
@@ -47,6 +48,7 @@ app.use("/api/v1/organizer/events", eventRouter);
 app.use("/api/v1/orders", orderRouter);
 app.use("/api/v1/payments", paymentRouter);
 app.use("/api/v1/tickets", ticketRouter);
+app.use("/api/v1/committee/events", checkInRouter);
 
 app.use((_request, response) => {
   response.status(404).json({
@@ -65,6 +67,7 @@ app.use((error: unknown, _request: Request, response: Response, _next: NextFunct
         code: error.code,
         message: error.message,
         fields: error.fields,
+        details: error.details,
       },
       requestId: response.locals.requestId,
     });

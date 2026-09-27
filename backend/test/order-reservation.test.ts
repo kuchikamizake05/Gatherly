@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import type { AddressInfo } from "node:net";
 import type { Server } from "node:http";
 import { after, before, beforeEach, test } from "node:test";
@@ -8,6 +9,7 @@ import mongoose from "mongoose";
 import { AppError } from "../src/lib/app-error.js";
 import { hashToken } from "../src/lib/crypto.js";
 import { Session, User } from "../src/modules/auth/auth.models.js";
+import { CommitteeAssignment } from "../src/modules/committee/committee-assignment.model.js";
 import { Event, TicketType } from "../src/modules/events/event.models.js";
 import { Order } from "../src/modules/orders/order.model.js";
 import { createOrder } from "../src/modules/orders/order.service.js";
@@ -22,6 +24,11 @@ import {
 import { reconcileDuePayments } from "../src/modules/payments/payment-reconciliation.service.js";
 import { Ticket } from "../src/modules/tickets/ticket.model.js";
 import { issueDueTickets } from "../src/modules/tickets/ticket-issuance.service.js";
+import {
+  checkInTicket,
+  findCommitteeTickets,
+  getCheckInHistory,
+} from "../src/modules/check-ins/check-in.service.js";
 
 const testDatabase = "gatherly_test";
 let server: Server;
@@ -42,6 +49,7 @@ before(async () => {
     Order.syncIndexes(),
     PaymentEvent.syncIndexes(),
     Ticket.syncIndexes(),
+    CommitteeAssignment.syncIndexes(),
   ]);
   const { app } = await import("../src/app.js");
   server = app.listen(0);
@@ -62,6 +70,7 @@ beforeEach(async () => {
     Order.deleteMany({}),
     PaymentEvent.deleteMany({}),
     Ticket.deleteMany({}),
+    CommitteeAssignment.deleteMany({}),
   ]);
 });
 
@@ -80,6 +89,7 @@ after(async () => {
     Order.deleteMany({}),
     PaymentEvent.deleteMany({}),
     Ticket.deleteMany({}),
+    CommitteeAssignment.deleteMany({}),
   ]);
   await mongoose.disconnect();
 });
@@ -125,6 +135,29 @@ function input(ticketTypeId: string, quantity = 1) {
     quantity,
     attendees: Array.from({ length: quantity }, (_, index) => ({ name: `Attendee ${index + 1}` })),
   };
+}
+
+async function prepareCheckInFixture(quantity = 1) {
+  const context = await fixture(Math.max(quantity, 4));
+  const { order } = await createOrder(
+    context.buyerA._id.toString(),
+    randomUUID(),
+    input(context.ticketType._id.toString(), quantity),
+  );
+  await applyPaymentStatus(order._id.toString(), "paid", new Date());
+  await issueDueTickets();
+  const now = new Date();
+  await Event.updateOne(
+    { _id: context.event._id },
+    { $set: { startsAt: new Date(now.getTime() + 10 * 60_000), endsAt: new Date(now.getTime() + 2 * 60 * 60_000) } },
+  );
+  await CommitteeAssignment.create({
+    eventId: context.event._id,
+    userId: context.buyerB._id,
+    assignedBy: new mongoose.Types.ObjectId(),
+  });
+  const tickets = await Ticket.find({ orderId: order._id }).select("+qrToken").sort({ sequence: 1 });
+  return { ...context, order, tickets, now };
 }
 
 test("creates a held reservation using the server price", async () => {
@@ -665,4 +698,181 @@ test("lists safe ticket data and reveals QR only to its owner", async () => {
     headers: { Cookie: `gatherly_session=${otherSession}` },
   });
   assert.equal(hiddenResponse.status, 404);
+});
+
+test("checks in issued tickets by QR payload and manual code", async () => {
+  const { buyerB, event, tickets, now } = await prepareCheckInFixture(2);
+  const first = await checkInTicket(
+    event._id.toString(),
+    buyerB._id.toString(),
+    { qrPayload: `gatherly:v1:${tickets[0]!.qrToken}` },
+    now,
+  );
+  const second = await checkInTicket(
+    event._id.toString(),
+    buyerB._id.toString(),
+    { ticketCode: tickets[1]!.ticketCode },
+    new Date(now.getTime() + 1),
+  );
+
+  assert.equal(first.checkInStatus, "used");
+  assert.equal(second.checkInStatus, "used");
+  const stored = await Ticket.find({ eventId: event._id }).sort({ checkedInAt: 1 });
+  assert.equal(stored.length, 2);
+  assert.ok(stored.every((ticket) => ticket.checkedInBy?.equals(buyerB._id)));
+});
+
+test("enforces both check-in time boundaries", async () => {
+  const { buyerB, event, tickets } = await prepareCheckInFixture(2);
+  const currentEvent = await Event.findById(event._id).lean();
+  assert.ok(currentEvent);
+  const opensAt = new Date(currentEvent.startsAt.getTime() - 30 * 60_000);
+
+  await assert.rejects(
+    checkInTicket(
+      event._id.toString(),
+      buyerB._id.toString(),
+      { ticketCode: tickets[0]!.ticketCode },
+      new Date(opensAt.getTime() - 1),
+    ),
+    (error: unknown) => error instanceof AppError && error.code === "CHECKIN_CLOSED",
+  );
+  assert.equal(
+    (await checkInTicket(
+      event._id.toString(),
+      buyerB._id.toString(),
+      { ticketCode: tickets[0]!.ticketCode },
+      opensAt,
+    )).checkInStatus,
+    "used",
+  );
+  assert.equal(
+    (await checkInTicket(
+      event._id.toString(),
+      buyerB._id.toString(),
+      { ticketCode: tickets[1]!.ticketCode },
+      currentEvent.endsAt,
+    )).checkInStatus,
+    "used",
+  );
+});
+
+test("accepts exactly one of two concurrent scans", async () => {
+  const { buyerB, event, tickets, now } = await prepareCheckInFixture();
+  const scans = await Promise.allSettled([
+    checkInTicket(event._id.toString(), buyerB._id.toString(), { ticketCode: tickets[0]!.ticketCode }, now),
+    checkInTicket(event._id.toString(), buyerB._id.toString(), { ticketCode: tickets[0]!.ticketCode }, now),
+  ]);
+
+  assert.equal(scans.filter((scan) => scan.status === "fulfilled").length, 1);
+  const rejected = scans.find((scan) => scan.status === "rejected");
+  assert.ok(rejected && rejected.status === "rejected");
+  assert.ok(rejected.reason instanceof AppError);
+  assert.equal(rejected.reason.code, "TICKET_ALREADY_USED");
+  assert.deepEqual(rejected.reason.details, { checkedInAt: now });
+  assert.equal(await Ticket.countDocuments({ eventId: event._id, checkInStatus: "used" }), 1);
+});
+
+test("distinguishes wrong-event and invalid credentials without attendee data", async () => {
+  const first = await prepareCheckInFixture();
+  const secondEvent = await Event.create({
+    organizerId: new mongoose.Types.ObjectId(),
+    slug: `second-event-${new mongoose.Types.ObjectId()}`,
+    title: "Second Event",
+    description: "Wrong-event test",
+    category: "Workshop",
+    startsAt: new Date(Date.now() + 10 * 60_000),
+    endsAt: new Date(Date.now() + 2 * 60 * 60_000),
+    timezone: "Asia/Jakarta",
+    venueName: "Second Venue",
+    address: "Second Address",
+    city: "Yogyakarta",
+    publicationStatus: "published",
+    salesClosed: false,
+  });
+  await CommitteeAssignment.create({
+    eventId: secondEvent._id,
+    userId: first.buyerB._id,
+    assignedBy: new mongoose.Types.ObjectId(),
+  });
+
+  await assert.rejects(
+    checkInTicket(
+      secondEvent._id.toString(),
+      first.buyerB._id.toString(),
+      { ticketCode: first.tickets[0]!.ticketCode },
+    ),
+    (error: unknown) =>
+      error instanceof AppError &&
+      error.code === "WRONG_EVENT" &&
+      !error.message.includes(first.tickets[0]!.attendeeName),
+  );
+  await assert.rejects(
+    checkInTicket(
+      secondEvent._id.toString(),
+      first.buyerB._id.toString(),
+      { ticketCode: "GTH-T-DOES-NOT-EXIST" },
+    ),
+    (error: unknown) => error instanceof AppError && error.code === "INVALID_TICKET",
+  );
+  await Order.updateOne({ _id: first.order._id }, { $set: { paymentStatus: "pending" } });
+  await assert.rejects(
+    checkInTicket(
+      first.event._id.toString(),
+      first.buyerB._id.toString(),
+      { ticketCode: first.tickets[0]!.ticketCode },
+      first.now,
+    ),
+    (error: unknown) => error instanceof AppError && error.code === "INVALID_TICKET",
+  );
+});
+
+test("revokes committee access for check-in, lookup, and history", async () => {
+  const { buyerB, event, tickets, now } = await prepareCheckInFixture();
+  await CommitteeAssignment.deleteOne({ eventId: event._id, userId: buyerB._id });
+
+  await assert.rejects(
+    checkInTicket(event._id.toString(), buyerB._id.toString(), { ticketCode: tickets[0]!.ticketCode }, now),
+    (error: unknown) => error instanceof AppError && error.code === "FORBIDDEN",
+  );
+  await assert.rejects(
+    findCommitteeTickets(event._id.toString(), buyerB._id.toString(), { page: 1, limit: 20 }),
+    (error: unknown) => error instanceof AppError && error.code === "FORBIDDEN",
+  );
+  await assert.rejects(
+    getCheckInHistory(event._id.toString(), buyerB._id.toString(), { page: 1, limit: 20 }),
+    (error: unknown) => error instanceof AppError && error.code === "FORBIDDEN",
+  );
+  assert.equal((await Ticket.findById(tickets[0]!._id).lean())?.checkInStatus, "unused");
+});
+
+test("returns safe paginated committee lookup and check-in history", async () => {
+  const { buyerB, event, tickets, now } = await prepareCheckInFixture(2);
+  await checkInTicket(
+    event._id.toString(),
+    buyerB._id.toString(),
+    { ticketCode: tickets[0]!.ticketCode },
+    now,
+  );
+
+  const lookup = await findCommitteeTickets(event._id.toString(), buyerB._id.toString(), {
+    q: "Attendee",
+    page: 1,
+    limit: 1,
+  });
+  assert.equal(lookup.data.length, 1);
+  assert.equal(lookup.meta.total, 2);
+  assert.equal("qrToken" in lookup.data[0]!, false);
+  assert.equal("qrPayload" in lookup.data[0]!, false);
+
+  const history = await getCheckInHistory(event._id.toString(), buyerB._id.toString(), {
+    page: 1,
+    limit: 1,
+  });
+  assert.equal(history.data.length, 1);
+  assert.equal(history.meta.total, 1);
+  assert.equal(history.meta.paidTickets, 2);
+  assert.equal(history.data[0]?.checkedInBy?.id, buyerB._id.toString());
+  assert.equal("qrToken" in history.data[0]!, false);
+  assert.equal("totalAmount" in history.data[0]!, false);
 });

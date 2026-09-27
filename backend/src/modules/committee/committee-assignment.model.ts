@@ -4,6 +4,7 @@ export interface CommitteeAssignmentDocument {
   eventId: Types.ObjectId;
   userId: Types.ObjectId;
   assignedBy: Types.ObjectId;
+  checkInVersion: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -13,6 +14,7 @@ const committeeAssignmentSchema = new Schema<CommitteeAssignmentDocument>(
     eventId: { type: Schema.Types.ObjectId, required: true, index: true },
     userId: { type: Schema.Types.ObjectId, required: true, index: true, ref: "User" },
     assignedBy: { type: Schema.Types.ObjectId, required: true, ref: "User" },
+    checkInVersion: { type: Number, required: true, default: 0, min: 0 },
   },
   { timestamps: true },
 );
