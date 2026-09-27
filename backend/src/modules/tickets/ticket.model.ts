@@ -13,6 +13,7 @@ export interface TicketDocument {
   qrToken: string;
   checkInStatus: CheckInStatus;
   checkedInAt?: Date;
+  checkedInBy?: Types.ObjectId;
   eventSnapshot: {
     title: string;
     startsAt: Date;
@@ -43,6 +44,7 @@ const ticketSchema = new Schema<TicketDocument>(
       required: true,
     },
     checkedInAt: { type: Date },
+    checkedInBy: { type: Schema.Types.ObjectId, ref: "User" },
     eventSnapshot: {
       title: { type: String, required: true },
       startsAt: { type: Date, required: true },
@@ -60,6 +62,6 @@ const ticketSchema = new Schema<TicketDocument>(
 
 ticketSchema.index({ orderId: 1, sequence: 1 }, { unique: true });
 ticketSchema.index({ buyerId: 1, createdAt: -1, _id: -1 });
-ticketSchema.index({ eventId: 1, checkInStatus: 1 });
+ticketSchema.index({ eventId: 1, checkInStatus: 1, checkedInAt: -1, _id: -1 });
 
 export const Ticket = model<TicketDocument>("Ticket", ticketSchema);
