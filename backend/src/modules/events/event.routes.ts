@@ -18,6 +18,7 @@ const eventSchema = z.object({
   address: z.string().trim().min(2).max(300), city: z.string().trim().min(2).max(100),
   posterAssetId: z.string().trim().min(1).optional(),
 }).refine((data) => data.endsAt > data.startsAt, { message: "endsAt must be after startsAt", path: ["endsAt"] });
+const eventUpdateSchema = eventSchema.innerType().partial().extend({ salesClosed: z.boolean().optional() });
 const ticketSchema = z.object({
   name: z.string().trim().min(2).max(80), description: z.string().trim().min(1).max(500),
   price: z.number().int().positive(), capacity: z.number().int().positive(), salesStartsAt: date, salesEndsAt: date,
@@ -48,9 +49,10 @@ eventRouter.post("/", requireCsrf, asyncHandler(async (request: AuthenticatedReq
 }));
 eventRouter.get("/:id", asyncHandler(async (request: AuthenticatedRequest, response) => { response.json({ data: dto(await owned(request)) }); }));
 eventRouter.patch("/:id", requireCsrf, asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const parsed = eventSchema.innerType().partial().safeParse(request.body); if (!parsed.success) invalid(parsed);
+  const parsed = eventUpdateSchema.safeParse(request.body); if (!parsed.success) invalid(parsed);
   const event = await owned(request); Object.assign(event, parsed.data!);
   if (event.endsAt <= event.startsAt) throw new AppError(400, "VALIDATION_ERROR", "endsAt must be after startsAt");
+  event.checkoutVersion += 1;
   await event.save(); response.json({ data: dto(event) });
 }));
 eventRouter.delete("/:id", requireCsrf, asyncHandler(async (request: AuthenticatedRequest, response) => {
@@ -60,7 +62,7 @@ eventRouter.delete("/:id", requireCsrf, asyncHandler(async (request: Authenticat
 eventRouter.post("/:id/publish", requireCsrf, asyncHandler(async (request: AuthenticatedRequest, response) => {
   const event = await owned(request); const types = await TicketType.find({ eventId: event._id });
   if (!event.posterAssetId || types.length === 0) throw new AppError(409, "CONFLICT", "A poster and at least one ticket type are required.");
-  event.publicationStatus = "published"; await event.save(); response.json({ data: dto(event) });
+  event.publicationStatus = "published"; event.checkoutVersion += 1; await event.save(); response.json({ data: dto(event) });
 }));
 eventRouter.post("/:id/ticket-types", requireCsrf, asyncHandler(async (request: AuthenticatedRequest, response) => {
   const event = await owned(request); const parsed = ticketSchema.safeParse(request.body); if (!parsed.success) invalid(parsed);

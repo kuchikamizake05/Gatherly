@@ -45,7 +45,7 @@ Order menyimpan field berikut:
 
 - Referensi: `buyerId`, `eventId`, dan `ticketTypeId`.
 - Pembelian: `quantity`, `attendees`, `unitPrice`, `totalAmount`, dan `currency`.
-- Snapshot: judul, waktu, zona waktu, venue acara, nama jenis tiket, dan harga.
+- Snapshot: identitas pembeli; judul, waktu, zona waktu, dan lokasi acara; serta nama jenis tiket dan harga.
 - Status: `paymentStatus`, `reservationStatus`, `issuanceStatus`, dan `paymentSessionState`.
 - Masa berlaku: `expiresAt` dan timestamp dokumen.
 - Idempotency: `idempotencyKey` dan `requestHash`.
@@ -69,7 +69,8 @@ Indeks yang diperlukan:
 - Unique `providerOrderId`.
 - Unique `orderCode`.
 - `(buyerId, createdAt)` untuk daftar order.
-- `(paymentStatus, expiresAt)` untuk rekonsiliasi berikutnya.
+- `(paymentStatus, nextReconcileAt)` untuk rekonsiliasi berikutnya.
+- `(eventId, paymentStatus, paidAt)` untuk laporan organizer berikutnya.
 
 Event memperoleh `checkoutVersion`. Transaksi checkout menaikkan versi ini sebelum membuat order. Mutasi yang mengubah kelayakan checkout—publish, penutupan penjualan, dan penghapusan event—menulis dokumen event yang sama agar operasi serentak memicu konflik transaksi dan validasi ulang. Perubahan kapasitas atau periode penjualan menulis dokumen ticket type yang sama dengan transaksi checkout sehingga MongoDB juga mendeteksi konflik tulis. Perubahan terarah pada route event diperlukan untuk menjaga protokol bersama ini; aturan bisnis selain gate checkout tetap berada di modul event.
 
