@@ -5,9 +5,9 @@ Gatherly uses one repository for both applications. The frontend and API remain 
 ```text
 Browser
   ↓
-frontend (Next.js App Router)
+apps/web (Next.js App Router)
   ↓ HTTP API
-backend (ExpressJS)
+apps/server (ExpressJS)
   ↓
 MongoDB
 ```
@@ -18,20 +18,17 @@ The API owns authentication, authorization, ticket sales, quota updates, QR-code
 
 Modular monolith: satu aplikasi Express dengan modul akun, acara, order/pembayaran, dan tiket/check-in. Bukan microservices. Next.js dan Express dapat dideploy terpisah, tetapi seluruh aturan bisnis tetap di Express.
 
-Usulan struktur ketika scaffold dibuat:
+Struktur aplikasi:
 
 ```text
-frontend/
-  app/                  routes dan layouts
-  features/             auth, events, checkout, tickets, organizer, committee
-  components/           komponen UI bersama
-  lib/                  API client, format uang/tanggal
-backend/src/
+apps/web/
+  app/                  routes dan layouts Next.js
+apps/server/src/
   modules/              auth, organizers, events, orders, payments, tickets
-  middleware/           session, permission, validation, error handling
   jobs/                 rekonsiliasi payment/reservasi
   config/               validasi environment
 docs/
+postman/
 ```
 
 TypeScript dan npm workspaces diusulkan agar satu bahasa serta satu lockfile. Jangan membuat layanan terpisah atau package bersama sebelum ada kebutuhan konkret.

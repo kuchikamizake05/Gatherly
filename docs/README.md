@@ -1,11 +1,11 @@
 # Panduan dokumen Gatherly
 
-Diperbarui 22 September 2026. Paket ini adalah rancangan kerja, bukan laporan aplikasi yang sudah selesai.
+Diperbarui 27 September 2026. Dokumen ini memuat acuan produk dan teknis Gatherly.
 
 ## Keputusan yang sudah tetap
 
 - Next.js untuk frontend, ExpressJS untuk backend, MongoDB untuk database.
-- Satu monorepo, dengan dua aplikasi pada `frontend` dan `backend`.
+- Satu monorepo, dengan aplikasi web pada `apps/web` dan API pada `apps/server`.
 - Pembagian final: Ancung — FE 1, Nasta — FE 2, Sako — BE 1 sekaligus leader, Dien — BE 2.
 - GitHub Issues dan GitHub Project untuk pekerjaan tim, kode, dan review.
 - Target biaya Rp0; pembayaran Midtrans sandbox; email otomatis ditunda.
@@ -27,7 +27,7 @@ Diperbarui 22 September 2026. Paket ini adalah rancangan kerja, bukan laporan ap
 
 PRD menjadi acuan perilaku produk. Kontrak API menjadi acuan payload dan mock FE. Bila berubah, ubah dokumennya dalam PR yang sama dan beri tahu pemakai endpoint sebelum merge. Istilah status dalam API/model tidak boleh diganti sepihak.
 
-Rancangan teknis awal menggunakan TypeScript, npm workspaces, sesi berbasis cookie, dan struktur modul. Ini usulan implementasi yang dapat direview tim; belum ada instalasi dependency atau scaffold aplikasi. Versi runtime/dependency dipilih dan dikunci saat setup.
+Implementasi menggunakan TypeScript, npm workspaces, sesi berbasis cookie, dan struktur modular. Versi dependency dikunci dalam `package-lock.json`.
 
 ## Pertemuan pertama
 
@@ -37,4 +37,4 @@ Rancangan teknis awal menggunakan TypeScript, npm workspaces, sesi berbasis cook
 4. Gunakan [GitHub Project Gatherly MVP](https://github.com/users/kuchikamizake05/projects/3/views/1) untuk memperbarui status pekerjaan, lalu pilih issue yang siap dikerjakan.
 5. Demonstrasi integrasi pertama: login organizer → buat dan publikasikan acara → tampil di katalog peserta.
 
-Project [Gatherly MVP](https://github.com/users/kuchikamizake05/projects/3/views/1) dan 25 issue sudah dibuat di GitHub. Semua issue masih berada di Backlog tanpa assignee akun GitHub dan tanpa deadline. Tenggat belum ditetapkan.
+Status pekerjaan tim tersedia pada [Gatherly MVP](https://github.com/users/kuchikamizake05/projects/3/views/1) dan GitHub Issues repository.
