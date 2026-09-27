@@ -13,6 +13,7 @@ import { orderRouter } from "./modules/orders/order.routes.js";
 import { paymentRouter } from "./modules/payments/payment.routes.js";
 import { ticketRouter } from "./modules/tickets/ticket.routes.js";
 import { checkInRouter } from "./modules/check-ins/check-in.routes.js";
+import { organizerReportRouter } from "./modules/reports/organizer-report.routes.js";
 
 export const app = express();
 
@@ -44,6 +45,7 @@ app.get("/api/v1/health", (_request, response) => {
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/organizers", organizerRouter);
+app.use("/api/v1/organizer", organizerReportRouter);
 app.use("/api/v1/organizer/events", eventRouter);
 app.use("/api/v1/orders", orderRouter);
 app.use("/api/v1/payments", paymentRouter);
