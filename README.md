@@ -78,6 +78,7 @@ pnpm dev
 ```
 
 - API: `http://localhost:4000/api/v1`
+- Swagger UI: `http://localhost:4000/api/v1/docs`
 - Health check: `http://localhost:4000/api/v1/health`
 
 ### 2. Menjalankan Frontend (`apps/frontend`)
