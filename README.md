@@ -47,49 +47,48 @@ Backend telah menyediakan autentikasi, manajemen acara, reservasi atomik, integr
 ```text
 Gatherly/
 ├── apps/
-│   ├── server/       Express API, worker, model, dan integration test
-│   └── web/          Next.js App Router
-├── docs/             Analisis kebutuhan, arsitektur, model, dan kontrak API
-├── postman/          Collection, environment lokal, dan panduan penggunaan
-├── package.json      Script dan konfigurasi npm workspaces
-└── package-lock.json Dependency lockfile bersama
+│   ├── backend/        Express API, worker, model, dan integration test
+│   └── frontend/       Next.js App Router
+├── docs/               Analisis kebutuhan, arsitektur, model, dan kontrak API
+├── postman/            Collection, environment lokal, dan panduan penggunaan
+└── package.json        Root package file
 ```
 
-Nama workspace:
+Aplikasi:
 
-- `@gatherly/server`
-- `@gatherly/web`
+- `@gatherly/backend` (dalam `apps/backend`)
+- `@gatherly/frontend` (dalam `apps/frontend`)
 
 ## Menjalankan secara lokal
 
 Persyaratan:
 
 - Node.js 22 atau versi LTS yang kompatibel;
-- npm;
+- pnpm (v12 atau terbaru);
 - MongoDB replica set atau MongoDB Atlas untuk transaksi;
 - Midtrans Server Key dalam mode Sandbox.
 
-Instal dependency dari root repository:
+### 1. Menjalankan Backend (`apps/backend`)
 
 ```bash
-npm install
+cd apps/backend
+cp .env.example .env
+pnpm install
+pnpm dev
 ```
 
-Salin konfigurasi server dan isi nilainya dengan credential milikmu sendiri:
-
-```bash
-cp apps/server/.env.example apps/server/.env
-```
-
-Jalankan web dan server bersamaan:
-
-```bash
-npm run dev
-```
-
-- Web: `http://localhost:3000`
 - API: `http://localhost:4000/api/v1`
 - Health check: `http://localhost:4000/api/v1/health`
+
+### 2. Menjalankan Frontend (`apps/frontend`)
+
+```bash
+cd apps/frontend
+pnpm install
+pnpm dev
+```
+
+- Frontend: `http://localhost:3000`
 
 Jangan commit `.env`, MongoDB URI, Midtrans Server Key, cookie sesi, atau QR credential.
 
