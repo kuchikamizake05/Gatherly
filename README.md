@@ -100,7 +100,7 @@ Aplikasi:
 
 ## URL GDrive laporan Milestone 1
 
-Analisis kebutuhan dan fitur tersedia dalam folder [`docs`](docs/README.md). [Draf laporan Milestone 1 di Google Docs](https://docs.google.com/document/d/1pAWWQC0EvfNWmPuO4qkffKVYq5oPK96gY54XHbioQJ0/edit) memuat user story, hasil pengujian lokal, dan bukti Postman.
+Dokumentasi proyek tersedia dalam folder [`docs`](docs/README.md).
 
 **Laporan PDF final:** [PAW2026_M1_Kelompok 11.pdf](https://drive.google.com/file/d/1jbkOKAdMCIKqKcThbcAU_jo6EtpathBQ/view?usp=sharing). Izin akses: siapa saja yang memiliki tautan dapat melihat.
 
