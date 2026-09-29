@@ -1,13 +1,11 @@
-import bcrypt from "bcryptjs";
 import { Router } from "express";
 import { rateLimit } from "express-rate-limit";
-import { Types } from "mongoose";
 import { z } from "zod";
 
+import { env } from "../../config/env.js";
 import { AppError } from "../../lib/app-error.js";
-import { createToken, hashToken } from "../../lib/crypto.js";
 import { asyncHandler } from "../../lib/async-handler.js";
-import { Session, User } from "./auth.models.js";
+import { createToken, hashToken } from "../../lib/crypto.js";
 import { CommitteeAssignment } from "../committee/committee-assignment.model.js";
 import { Organizer } from "../organizers/organizer.model.js";
 import {
@@ -17,101 +15,155 @@ import {
   type AuthenticatedRequest,
   validateAllowedOrigin,
 } from "./auth.middleware.js";
-import { env } from "../../config/env.js";
+import { Session, type UserDocument } from "./auth.models.js";
+import {
+  beginLogin,
+  beginRegistration,
+  consumeOAuthState,
+  createOAuthState,
+  createSession,
+  resendOtp,
+  userResponse,
+  verifyLogin,
+  verifyRegistration,
+} from "./auth.service.js";
+import { googleAuthConfigured, passport } from "./google-auth.js";
 
 const credentialsSchema = z.object({
   name: z.string().trim().min(2).max(100),
   email: z.string().trim().email().max(254),
   password: z.string().min(12).max(128),
 });
-
 const loginSchema = credentialsSchema.pick({ email: true, password: true });
+const verifySchema = z.object({
+  challengeId: z.string().regex(/^[a-f\d]{24}$/i),
+  code: z.string().regex(/^\d{6}$/),
+});
+const resendSchema = verifySchema.pick({ challengeId: true });
 
-const loginLimiter = rateLimit({
+const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 10,
   standardHeaders: "draft-8",
   legacyHeaders: false,
-  message: {
-    error: {
-      code: "RATE_LIMITED",
-      message: "Too many login attempts. Please try again later.",
-    },
-  },
+  message: { error: { code: "RATE_LIMITED", message: "Too many attempts. Please try again later." } },
 });
 
 function parseBody<T>(schema: z.ZodType<T>, body: unknown): T {
   const result = schema.safeParse(body);
-  if (result.success) {
-    return result.data;
-  }
-
+  if (result.success) return result.data;
   const fields = Object.fromEntries(
     result.error.issues.map((issue) => [issue.path.join(".") || "body", issue.message]),
   );
   throw new AppError(400, "VALIDATION_ERROR", "Please check the submitted fields.", fields);
 }
 
-function userResponse(user: { _id: { toString(): string }; name: string; emailNormalized: string }) {
-  return {
-    id: user._id.toString(),
-    name: user.name,
-    email: user.emailNormalized,
-  };
+function oauthRedirect(error: string) {
+  return `${env.WEB_ORIGIN}/auth/callback?error=${encodeURIComponent(error)}`;
 }
 
-async function createSession(userId: string) {
-  const sessionToken = createToken();
-  const csrfToken = createToken();
-  const expiresAt = new Date(Date.now() + env.SESSION_TTL_DAYS * 24 * 60 * 60 * 1000);
-
-  await Session.create({
-    tokenHash: hashToken(sessionToken),
-    csrfTokenHash: hashToken(csrfToken),
-    userId: new Types.ObjectId(userId),
-    expiresAt,
-  });
-
-  return { sessionToken, csrfToken };
-}
+const oauthStateCookie = {
+  name: "gatherly_oauth_state",
+  options: {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure: env.NODE_ENV === "production",
+    path: "/api/v1/auth/google/callback",
+    maxAge: 10 * 60_000,
+  },
+};
 
 export const authRouter = Router();
 
 authRouter.post(
   "/register",
   validateAllowedOrigin,
+  authLimiter,
   asyncHandler(async (request, response) => {
-    const { name, email, password } = parseBody(credentialsSchema, request.body);
-    const emailNormalized = email.toLowerCase();
-    const existingUser = await User.exists({ emailNormalized });
-    if (existingUser) {
-      throw new AppError(409, "EMAIL_ALREADY_EXISTS", "An account with this email already exists.");
-    }
+    const input = parseBody(credentialsSchema, request.body);
+    response.status(202).json({ data: await beginRegistration(input) });
+  }),
+);
 
-    const user = await User.create({
-      name,
-      emailNormalized,
-      passwordHash: await bcrypt.hash(password, 12),
-    });
-
-    response.status(201).json({ data: userResponse(user) });
+authRouter.post(
+  "/register/verify",
+  validateAllowedOrigin,
+  authLimiter,
+  asyncHandler(async (request, response) => {
+    const input = parseBody(verifySchema, request.body);
+    const result = await verifyRegistration(input.challengeId, input.code);
+    response.cookie(sessionCookie.name, result.sessionToken, sessionCookie.options);
+    response.status(201).json({ data: { user: result.user, csrfToken: result.csrfToken } });
   }),
 );
 
 authRouter.post(
   "/login",
   validateAllowedOrigin,
-  loginLimiter,
+  authLimiter,
   asyncHandler(async (request, response) => {
-    const { email, password } = parseBody(loginSchema, request.body);
-    const user = await User.findOne({ emailNormalized: email.toLowerCase() });
-    if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-      throw new AppError(401, "UNAUTHENTICATED", "Email or password is incorrect.");
-    }
+    const input = parseBody(loginSchema, request.body);
+    response.status(202).json({ data: await beginLogin(input) });
+  }),
+);
 
-    const { sessionToken, csrfToken } = await createSession(user._id.toString());
-    response.cookie(sessionCookie.name, sessionToken, sessionCookie.options);
-    response.status(200).json({ data: { user: userResponse(user), csrfToken } });
+authRouter.post(
+  "/login/verify",
+  validateAllowedOrigin,
+  authLimiter,
+  asyncHandler(async (request, response) => {
+    const input = parseBody(verifySchema, request.body);
+    const result = await verifyLogin(input.challengeId, input.code);
+    response.cookie(sessionCookie.name, result.sessionToken, sessionCookie.options);
+    response.status(200).json({ data: { user: result.user, csrfToken: result.csrfToken } });
+  }),
+);
+
+authRouter.post(
+  "/otp/resend",
+  validateAllowedOrigin,
+  authLimiter,
+  asyncHandler(async (request, response) => {
+    const input = parseBody(resendSchema, request.body);
+    response.status(200).json({ data: await resendOtp(input.challengeId) });
+  }),
+);
+
+authRouter.get(
+  "/google",
+  authLimiter,
+  asyncHandler(async (_request, response, next) => {
+    if (!googleAuthConfigured) throw new AppError(503, "SERVICE_UNAVAILABLE", "Google login is unavailable.");
+    const state = await createOAuthState();
+    response.cookie(oauthStateCookie.name, state, oauthStateCookie.options);
+    passport.authenticate("google", { scope: ["profile", "email"], session: false, state })(_request, response, next);
+  }),
+);
+
+authRouter.get(
+  "/google/callback",
+  asyncHandler(async (request, response, next) => {
+    const state = typeof request.query.state === "string" ? request.query.state : "";
+    const cookieState = request.cookies[oauthStateCookie.name];
+    if (typeof cookieState !== "string" || !(await consumeOAuthState(state, cookieState))) {
+      response.clearCookie(oauthStateCookie.name, oauthStateCookie.options);
+      response.redirect(oauthRedirect("oauth_state_invalid"));
+      return;
+    }
+    passport.authenticate("google", { session: false }, (error: unknown, user: UserDocument & { _id: string }) => {
+      if (error || !user) {
+        response.clearCookie(oauthStateCookie.name, oauthStateCookie.options);
+        response.redirect(oauthRedirect("oauth_failed"));
+        return;
+      }
+      createSession(user._id.toString())
+        .then((result) => {
+          response.cookie(sessionCookie.name, result.sessionToken, sessionCookie.options);
+          response.clearCookie(oauthStateCookie.name, oauthStateCookie.options);
+          response.redirect(`${env.WEB_ORIGIN}/auth/callback?status=success`);
+        })
+        .catch(next);
+    })(request, response, next);
   }),
 );
 
@@ -128,7 +180,6 @@ authRouter.get(
       Organizer.findOne({ ownerId: request.auth!.user._id }).lean(),
       CommitteeAssignment.exists({ userId: request.auth!.user._id }),
     ]);
-
     response.status(200).json({
       data: {
         user: userResponse(request.auth!.user),
@@ -146,12 +197,7 @@ authRouter.post(
   requireCsrf,
   asyncHandler(async (request: AuthenticatedRequest, response) => {
     await Session.deleteOne({ _id: request.auth!.sessionId });
-    response.clearCookie(sessionCookie.name, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: env.NODE_ENV === "production",
-      path: "/",
-    });
+    response.clearCookie(sessionCookie.name, sessionCookie.options);
     response.status(204).send();
   }),
 );

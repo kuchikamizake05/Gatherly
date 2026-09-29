@@ -4,11 +4,22 @@ import type { AddressInfo } from "node:net";
 import type { Server } from "node:http";
 import { after, before, beforeEach, test } from "node:test";
 import "dotenv/config";
+import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 
 import { AppError } from "../src/lib/app-error.js";
 import { hashToken } from "../src/lib/crypto.js";
-import { Session, User } from "../src/modules/auth/auth.models.js";
+import { AuthChallenge, OAuthState, Session, User } from "../src/modules/auth/auth.models.js";
+import {
+  beginLogin,
+  beginRegistration,
+  consumeOAuthState,
+  createOAuthState,
+  resendOtp,
+  resolveGoogleUser,
+  verifyLogin,
+  verifyRegistration,
+} from "../src/modules/auth/auth.service.js";
 import { CommitteeAssignment } from "../src/modules/committee/committee-assignment.model.js";
 import { Event, TicketType } from "../src/modules/events/event.models.js";
 import { Organizer } from "../src/modules/organizers/organizer.model.js";
@@ -60,6 +71,8 @@ before(async () => {
     Ticket.syncIndexes(),
     CommitteeAssignment.syncIndexes(),
     Organizer.syncIndexes(),
+    AuthChallenge.syncIndexes(),
+    OAuthState.syncIndexes(),
   ]);
   const { app } = await import("../src/app.js");
   server = app.listen(0);
@@ -82,6 +95,8 @@ beforeEach(async () => {
     Ticket.deleteMany({}),
     CommitteeAssignment.deleteMany({}),
     Organizer.deleteMany({}),
+    AuthChallenge.deleteMany({}),
+    OAuthState.deleteMany({}),
   ]);
 });
 
@@ -102,6 +117,8 @@ after(async () => {
     Ticket.deleteMany({}),
     CommitteeAssignment.deleteMany({}),
     Organizer.deleteMany({}),
+    AuthChallenge.deleteMany({}),
+    OAuthState.deleteMany({}),
   ]);
   await mongoose.disconnect();
 });
@@ -1066,4 +1083,185 @@ test("hides events and mismatched orders outside organizer scope", async () => {
     }).success,
     false,
   );
+});
+
+const authTestSecret = "integration-test-otp-secret-at-least-32-characters";
+
+test("creates a user and session only after a valid registration OTP", async () => {
+  let deliveredCode = "";
+  const mailer = async ({ code }: { code: string }) => { deliveredCode = code; };
+  const challenge = await beginRegistration(
+    { name: "OTP User", email: "otp-user@example.test", password: "StrongPassword123!" },
+    { mailer, secret: authTestSecret },
+  );
+  assert.equal(await User.countDocuments({ emailNormalized: "otp-user@example.test" }), 0);
+  assert.match(deliveredCode, /^\d{6}$/);
+
+  const result = await verifyRegistration(challenge.challengeId, deliveredCode, { secret: authTestSecret });
+  assert.equal(result.user.email, "otp-user@example.test");
+  assert.equal(await User.countDocuments({ emailNormalized: "otp-user@example.test" }), 1);
+  assert.equal(await Session.countDocuments({ userId: result.user.id }), 1);
+});
+
+test("creates a login session only after password and OTP", async () => {
+  const user = await User.create({
+    name: "Login User",
+    emailNormalized: "login-user@example.test",
+    passwordHash: await bcrypt.hash("StrongPassword123!", 12),
+  });
+  let deliveredCode = "";
+  const challenge = await beginLogin(
+    { email: user.emailNormalized, password: "StrongPassword123!" },
+    { mailer: async ({ code }) => { deliveredCode = code; }, secret: authTestSecret },
+  );
+  assert.equal(await Session.countDocuments({ userId: user._id }), 0);
+
+  const result = await verifyLogin(challenge.challengeId, deliveredCode, { secret: authTestSecret });
+  assert.equal(result.user.id, user._id.toString());
+  assert.equal(await Session.countDocuments({ userId: user._id }), 1);
+  assert.ok((await User.findById(user._id).lean())?.emailVerifiedAt);
+});
+
+test("invalidates the old OTP on resend and locks repeated wrong codes", async () => {
+  const codes: string[] = [];
+  const start = new Date("2026-09-29T00:00:00.000Z");
+  const challenge = await beginRegistration(
+    { name: "Resend User", email: "resend@example.test", password: "StrongPassword123!" },
+    { mailer: async ({ code }) => { codes.push(code); }, now: start, secret: authTestSecret },
+  );
+  await resendOtp(challenge.challengeId, {
+    mailer: async ({ code }) => { codes.push(code); },
+    now: new Date(start.getTime() + 61_000),
+    secret: authTestSecret,
+  });
+  assert.equal(codes.length, 2);
+  await assert.rejects(
+    verifyRegistration(challenge.challengeId, codes[0]!, { now: new Date(start.getTime() + 62_000), secret: authTestSecret }),
+    (error: unknown) => error instanceof AppError && error.code === "OTP_INVALID",
+  );
+  await verifyRegistration(challenge.challengeId, codes[1]!, {
+    now: new Date(start.getTime() + 62_000),
+    secret: authTestSecret,
+  });
+
+  let lockCode = "";
+  const locked = await beginRegistration(
+    { name: "Locked User", email: "locked@example.test", password: "StrongPassword123!" },
+    { mailer: async ({ code }) => { lockCode = code; }, secret: authTestSecret },
+  );
+  assert.ok(lockCode);
+  const wrongCode = lockCode === "000000" ? "000001" : "000000";
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    await assert.rejects(
+      verifyRegistration(locked.challengeId, wrongCode, { secret: authTestSecret }),
+      (error: unknown) => error instanceof AppError && error.code === "OTP_INVALID",
+    );
+  }
+  await assert.rejects(
+    verifyRegistration(locked.challengeId, wrongCode, { secret: authTestSecret }),
+    (error: unknown) => error instanceof AppError && error.code === "OTP_LOCKED",
+  );
+});
+
+test("allows only one concurrent registration verification", async () => {
+  let code = "";
+  const challenge = await beginRegistration(
+    { name: "Race User", email: "race@example.test", password: "StrongPassword123!" },
+    { mailer: async (mail) => { code = mail.code; }, secret: authTestSecret },
+  );
+  const results = await Promise.allSettled([
+    verifyRegistration(challenge.challengeId, code, { secret: authTestSecret }),
+    verifyRegistration(challenge.challengeId, code, { secret: authTestSecret }),
+  ]);
+  assert.equal(results.filter((result) => result.status === "fulfilled").length, 1);
+  assert.equal(await User.countDocuments({ emailNormalized: "race@example.test" }), 1);
+  assert.equal(await Session.countDocuments(), 1);
+});
+
+test("removes a challenge when email delivery fails", async () => {
+  await assert.rejects(
+    beginRegistration(
+      { name: "Mail Failure", email: "mail-failure@example.test", password: "StrongPassword123!" },
+      { mailer: async () => { throw new Error("SMTP unavailable"); }, secret: authTestSecret },
+    ),
+    (error: unknown) => error instanceof AppError && error.code === "EMAIL_UNAVAILABLE",
+  );
+  assert.equal(await AuthChallenge.countDocuments({ emailNormalized: "mail-failure@example.test" }), 0);
+});
+
+test("allows one concurrent resend and restores the previous OTP when delivery fails", async () => {
+  let originalCode = "";
+  const start = new Date("2026-09-29T00:00:00.000Z");
+  const challenge = await beginRegistration(
+    { name: "Resend Race", email: "resend-race@example.test", password: "StrongPassword123!" },
+    { mailer: async ({ code }) => { originalCode = code; }, now: start, secret: authTestSecret },
+  );
+  let deliveries = 0;
+  const attempts = await Promise.allSettled([
+    resendOtp(challenge.challengeId, {
+      mailer: async () => { deliveries += 1; },
+      now: new Date(start.getTime() + 61_000),
+      secret: authTestSecret,
+    }),
+    resendOtp(challenge.challengeId, {
+      mailer: async () => { deliveries += 1; },
+      now: new Date(start.getTime() + 61_000),
+      secret: authTestSecret,
+    }),
+  ]);
+  assert.equal(attempts.filter((result) => result.status === "fulfilled").length, 1);
+  assert.equal(deliveries, 1);
+
+  let fallbackCode = "";
+  const fallback = await beginRegistration(
+    { name: "Resend Fallback", email: "resend-fallback@example.test", password: "StrongPassword123!" },
+    { mailer: async ({ code }) => { fallbackCode = code; }, now: start, secret: authTestSecret },
+  );
+  await assert.rejects(
+    resendOtp(fallback.challengeId, {
+      mailer: async () => { throw new Error("SMTP unavailable"); },
+      now: new Date(start.getTime() + 61_000),
+      secret: authTestSecret,
+    }),
+    (error: unknown) => error instanceof AppError && error.code === "EMAIL_UNAVAILABLE",
+  );
+  await verifyRegistration(fallback.challengeId, fallbackCode, {
+    now: new Date(start.getTime() + 62_000),
+    secret: authTestSecret,
+  });
+  assert.equal(originalCode.length, 6);
+});
+
+test("links verified Google email and consumes OAuth state once", async () => {
+  const existing = await User.create({
+    name: "Existing User",
+    emailNormalized: "google-link@example.test",
+    passwordHash: await bcrypt.hash("StrongPassword123!", 12),
+  });
+  const linked = await resolveGoogleUser({
+    id: "google-subject-1",
+    displayName: "Google User",
+    email: "google-link@example.test",
+    emailVerified: true,
+  });
+  assert.equal(linked._id.toString(), existing._id.toString());
+  assert.equal(linked.googleId, "google-subject-1");
+  assert.ok(linked.emailVerifiedAt);
+
+  const googleOnly = await resolveGoogleUser({
+    id: "google-subject-2",
+    displayName: "Google Only",
+    email: "google-only@example.test",
+    emailVerified: true,
+  });
+  assert.equal(googleOnly.passwordHash, undefined);
+  await assert.rejects(
+    resolveGoogleUser({ id: "unverified", displayName: "No", email: "no@example.test", emailVerified: false }),
+    (error: unknown) => error instanceof AppError && error.code === "UNAUTHENTICATED",
+  );
+
+  const state = await createOAuthState();
+  assert.equal(await consumeOAuthState(state, state), true);
+  assert.equal(await consumeOAuthState(state, state), false);
+  assert.equal(await consumeOAuthState(state, "wrong-state"), false);
 });

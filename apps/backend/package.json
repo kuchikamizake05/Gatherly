@@ -20,6 +20,9 @@
     "express-rate-limit": "^8.7.0",
     "helmet": "^8.1.0",
     "mongoose": "^9.10.1",
+    "nodemailer": "^10.0.12",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
@@ -27,6 +30,9 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.1",
     "@types/node": "^22.15.3",
+    "@types/nodemailer": "^8.0.2",
+    "@types/passport": "^1.0.17",
+    "@types/passport-google-oauth20": "^2.0.17",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3"
   }
