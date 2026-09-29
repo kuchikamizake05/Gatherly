@@ -14,11 +14,23 @@ import { paymentRouter } from "./modules/payments/payment.routes.js";
 import { ticketRouter } from "./modules/tickets/ticket.routes.js";
 import { checkInRouter } from "./modules/check-ins/check-in.routes.js";
 import { organizerReportRouter } from "./modules/reports/organizer-report.routes.js";
+import { swaggerRouter } from "./docs/swagger.router.js";
 
 export const app = express();
 
 app.disable("x-powered-by");
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "validator.swagger.io"],
+      },
+    },
+  }),
+);
 app.use(
   cors({
     origin: env.WEB_ORIGIN,
@@ -43,6 +55,11 @@ app.get("/api/v1/health", (_request, response) => {
   });
 });
 
+app.get("/docs", (_request, response) => {
+  response.redirect("/api/v1/docs");
+});
+
+app.use("/api/v1/docs", swaggerRouter);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/organizers", organizerRouter);
 app.use("/api/v1/organizer", organizerReportRouter);

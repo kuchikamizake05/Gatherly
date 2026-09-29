@@ -1,12 +1,12 @@
 # Gatherly — Pembagian FE–BE dan kerja tim
 
-Pembagian disepakati: Ancung sebagai FE 1, Nasta sebagai FE 2, Sako sebagai BE 1 sekaligus leader, dan Dien sebagai BE 2. Nama panggilan mengikuti kesepakatan tim; urutan nama pada README bukan urutan posisi.
+Pembagian disepakati: Aulia Nur Fajri Tri Anggoro (Ancung) sebagai FE 1, Muhammad Khoirunas (Nasta) sebagai FE 2, Faaid Sakhaa (Sako) sebagai BE 1 sekaligus ketua, dan Dien Muhammad Scientivan Kurniapramono sebagai BE 2.
 
 | Anggota | Posisi | Kepemilikan | Kolaborasi |
 | --- | --- | --- | --- |
 | Ancung | FE 1 | Public discovery/detail, auth/account, checkout/order status, My Tickets/QR; API client dan auth state web | Review FE 2; konsumsi BE 1 dan BE 2 |
-| Nasta | FE 2 | Organizer setup/dashboard/editor, inventory/order/attendee screens, assignment UI, committee scanner; shell dashboard dan tabel | Review FE 1; konsumsi BE 1 dan BE 2 |
-| Sako | BE 1 | Auth/session/CSRF, organizer profiles, event/ticket-type CRUD, poster upload, committee assignments | Review BE 2; bantu test transaksi dan deployment |
+| Muhammad Khoirunas (Nasta) | FE 2 | Organizer setup/dashboard/editor, inventory/order/attendee screens, assignment UI, committee scanner; shell dashboard dan tabel | Review FE 1; konsumsi BE 1 dan BE 2 |
+| Faaid Sakhaa (Sako) | BE 1 / Ketua | Auth/session/CSRF, organizer profiles, event/ticket-type CRUD, poster upload, committee assignments | Review BE 2; bantu test transaksi dan deployment |
 | Dien | BE 2 | Reservations/orders, payment sessions/webhooks/reconciliation, issuance, check-in, summary/order/attendee APIs | Review BE 1; kontrak inventori bersama BE 1 |
 
 Sako menangani BE 1 sekaligus koordinasi tim. Beban transaksi BE 2 paling berisiko; Sako membantu pengujian concurrency/recovery setelah fondasi auth/event siap. Review, pengujian integrasi, dan deployment dibagi bersama; tentukan owner per pekerjaan agar koordinasi tidak menambah seluruh beban implementasi ke Dien.

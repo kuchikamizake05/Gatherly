@@ -6,7 +6,7 @@ Diperbarui 27 September 2026. Dokumen ini memuat acuan produk dan teknis Gatherl
 
 - Next.js untuk frontend, ExpressJS untuk backend, MongoDB untuk database.
 - Satu monorepo, dengan aplikasi web pada `apps/web` dan API pada `apps/server`.
-- Pembagian final: Ancung — FE 1, Nasta — FE 2, Sako — BE 1 sekaligus leader, Dien — BE 2.
+- Pembagian final: Aulia Nur Fajri Tri Anggoro (Ancung) — FE 1, Muhammad Khoirunas (Nasta) — FE 2, Faaid Sakhaa (Sako) — BE 1 sekaligus ketua, Dien Muhammad Scientivan Kurniapramono — BE 2.
 - GitHub Issues dan GitHub Project untuk pekerjaan tim, kode, dan review.
 - Target biaya Rp0; pembayaran Midtrans sandbox; email otomatis ditunda.
 
