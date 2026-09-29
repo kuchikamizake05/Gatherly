@@ -1,6 +1,6 @@
 # Gatherly — Pengujian dan bukti penilaian
 
-Pembagian role: **FE 1 — Ancung**, **FE 2 — Nasta**, **BE 1 — Sako**, **BE 2 — Dien**. Lihat [tanggung jawab tim](team-workflow.md).
+Pembagian role: **FE 1 — Aulia Nur Fajri Tri Anggoro (Ancung)**, **FE 2 — Muhammad Khoirunas (Nasta)**, **BE 1 / Ketua — Faaid Sakhaa (Sako)**, **BE 2 — Dien Muhammad Scientivan Kurniapramono**. Lihat [tanggung jawab tim](team-workflow.md).
 
 Rencana, belum hasil uji. Setiap issue memiliki acceptance criteria. Simpan hasil relevan pada PR atau GitHub Issue: kondisi, input, hasil yang diharapkan, hasil aktual, dan bukti. Jangan menulis passed sebelum dijalankan.
 
