@@ -44,9 +44,20 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Origin", "value": "{{origin}}" }],
             "body": { "mode": "raw", "raw": "{\n  \"name\": \"{{buyerName}}\",\n  \"email\": \"{{buyerEmail}}\",\n  \"password\": \"{{buyerPassword}}\"\n}" },
             "url": "{{baseUrl}}/auth/register",
-            "description": "Daftarkan akun demo. Ganti email/name variable untuk organizer dan committee. Registrasi tidak menerima role."
+            "description": "Mengirim OTP registrasi. Ganti email/name variable untuk organizer dan committee. Registrasi tidak menerima role."
           },
-          "event": [{ "listen": "test", "script": { "exec": ["pm.test('201 Created', () => pm.response.to.have.status(201));"] } }]
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('202 Accepted', () => pm.response.to.have.status(202));", "pm.environment.set('authChallengeId', pm.response.json().data.challengeId);"] } }]
+        },
+        {
+          "name": "POST Verify Registration OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Origin", "value": "{{origin}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"challengeId\": \"{{authChallengeId}}\",\n  \"code\": \"{{otpCode}}\"\n}" },
+            "url": "{{baseUrl}}/auth/register/verify",
+            "description": "Membuat user dan session setelah OTP email benar."
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('201 Created', () => pm.response.to.have.status(201));", "pm.environment.set('csrfToken', pm.response.json().data.csrfToken);"] } }]
         },
         {
           "name": "POST Login",
@@ -55,9 +66,33 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Origin", "value": "{{origin}}" }],
             "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{buyerEmail}}\",\n  \"password\": \"{{buyerPassword}}\"\n}" },
             "url": "{{baseUrl}}/auth/login",
-            "description": "Login membuat cookie sesi HttpOnly. Ganti variable email/password sesuai role yang akan digunakan."
+            "description": "Memvalidasi password dan mengirim OTP login. Session belum dibuat pada tahap ini."
           },
-          "event": [{ "listen": "test", "script": { "exec": ["pm.test('200 OK', () => pm.response.to.have.status(200));", "const body = pm.response.json();", "if (body.data?.csrfToken) pm.environment.set('csrfToken', body.data.csrfToken);"] } }]
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('202 Accepted', () => pm.response.to.have.status(202));", "pm.environment.set('authChallengeId', pm.response.json().data.challengeId);"] } }]
+        },
+        {
+          "name": "POST Verify Login OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Origin", "value": "{{origin}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"challengeId\": \"{{authChallengeId}}\",\n  \"code\": \"{{otpCode}}\"\n}" },
+            "url": "{{baseUrl}}/auth/login/verify",
+            "description": "Membuat session cookie setelah OTP login benar."
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('200 OK', () => pm.response.to.have.status(200));", "pm.environment.set('csrfToken', pm.response.json().data.csrfToken);"] } }]
+        },
+        {
+          "name": "POST Resend OTP",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }, { "key": "Origin", "value": "{{origin}}" }],
+            "body": { "mode": "raw", "raw": "{\n  \"challengeId\": \"{{authChallengeId}}\"\n}" },
+            "url": "{{baseUrl}}/auth/otp/resend"
+          }
+        },
+        {
+          "name": "GET Google Login",
+          "request": { "method": "GET", "url": "{{baseUrl}}/auth/google", "description": "Buka melalui browser/Postman redirect untuk memulai Google OAuth. Callback dikelola otomatis oleh Google dan backend." }
         },
         {
           "name": "GET Current Session",

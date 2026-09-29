@@ -249,13 +249,22 @@ export const swaggerSpec = {
           },
         },
         responses: {
-          201: {
-            description: "Registrasi berhasil",
+          202: {
+            description: "OTP registrasi telah dikirim",
             content: {
               "application/json": {
                 schema: {
                   type: "object",
-                  properties: { data: { $ref: "#/components/schemas/User" } },
+                  properties: {
+                    data: {
+                      type: "object",
+                      properties: {
+                        challengeId: { type: "string", example: "64f1a2b3c4d5e6f7a8b9c0d1" },
+                        expiresAt: { type: "string", format: "date-time" },
+                        resendAt: { type: "string", format: "date-time" },
+                      },
+                    },
+                  },
                 },
               },
             },
@@ -271,7 +280,7 @@ export const swaggerSpec = {
       post: {
         tags: ["Auth"],
         summary: "Login dengan email dan password",
-        description: "Menghasilkan session cookie HttpOnly (`gatherly_session`) dan CSRF token.",
+        description: "Memvalidasi password dan mengirim OTP. Sesi baru dibuat setelah OTP diverifikasi.",
         requestBody: {
           required: true,
           content: {
@@ -288,13 +297,8 @@ export const swaggerSpec = {
           },
         },
         responses: {
-          200: {
-            description: "Login berhasil",
-            headers: {
-              "Set-Cookie": {
-                schema: { type: "string", example: "gatherly_session=abc123token; Path=/; HttpOnly; SameSite=Lax" },
-              },
-            },
+          202: {
+            description: "Password valid dan OTP login telah dikirim",
             content: {
               "application/json": {
                 schema: {
@@ -303,8 +307,9 @@ export const swaggerSpec = {
                     data: {
                       type: "object",
                       properties: {
-                        user: { $ref: "#/components/schemas/User" },
-                        csrfToken: { type: "string", example: "csrf-token-string" },
+                        challengeId: { type: "string", example: "64f1a2b3c4d5e6f7a8b9c0d1" },
+                        expiresAt: { type: "string", format: "date-time" },
+                        resendAt: { type: "string", format: "date-time" },
                       },
                     },
                   },
@@ -317,6 +322,99 @@ export const swaggerSpec = {
             content: { "application/json": { schema: { $ref: "#/components/schemas/ErrorResponse" } } },
           },
         },
+      },
+    },
+    "/auth/register/verify": {
+      post: {
+        tags: ["Auth"],
+        summary: "Verifikasi OTP registrasi",
+        description: "Membuat akun dan session cookie setelah OTP valid.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["challengeId", "code"],
+                properties: {
+                  challengeId: { type: "string", example: "64f1a2b3c4d5e6f7a8b9c0d1" },
+                  code: { type: "string", pattern: "^[0-9]{6}$", example: "123456" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          201: { description: "Registrasi dan login berhasil" },
+          409: { description: "OTP salah, kedaluwarsa, terkunci, atau sudah digunakan" },
+        },
+      },
+    },
+    "/auth/login/verify": {
+      post: {
+        tags: ["Auth"],
+        summary: "Verifikasi OTP login",
+        description: "Membuat session cookie dan mengembalikan CSRF token setelah OTP valid.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["challengeId", "code"],
+                properties: {
+                  challengeId: { type: "string", example: "64f1a2b3c4d5e6f7a8b9c0d1" },
+                  code: { type: "string", pattern: "^[0-9]{6}$", example: "123456" },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: "Login berhasil" },
+          409: { description: "OTP salah, kedaluwarsa, terkunci, atau sudah digunakan" },
+        },
+      },
+    },
+    "/auth/otp/resend": {
+      post: {
+        tags: ["Auth"],
+        summary: "Kirim ulang OTP",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["challengeId"],
+                properties: { challengeId: { type: "string", example: "64f1a2b3c4d5e6f7a8b9c0d1" } },
+              },
+            },
+          },
+        },
+        responses: {
+          200: { description: "OTP baru telah dikirim" },
+          429: { description: "Masih dalam masa cooldown" },
+        },
+      },
+    },
+    "/auth/google": {
+      get: {
+        tags: ["Auth"],
+        summary: "Mulai login dengan Google",
+        description: "Mengalihkan browser ke halaman autentikasi Google.",
+        responses: {
+          302: { description: "Redirect ke Google" },
+          503: { description: "Google OAuth belum dikonfigurasi" },
+        },
+      },
+    },
+    "/auth/google/callback": {
+      get: {
+        tags: ["Auth"],
+        summary: "Callback Google OAuth",
+        description: "Memvalidasi state, membuat session cookie, dan mengalihkan browser ke frontend.",
+        responses: { 302: { description: "Redirect ke frontend dengan status autentikasi" } },
       },
     },
     "/auth/me": {

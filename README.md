@@ -23,7 +23,7 @@ Backend telah menyediakan autentikasi, manajemen acara, reservasi atomik, integr
 
 | Area | Kemampuan |
 | --- | --- |
-| Akun | Registrasi, login berbasis sesi, logout, CSRF, dan profil organizer |
+| Akun | Register/login dengan email OTP, Google OAuth, sesi HttpOnly, logout, CSRF, dan profil organizer |
 | Acara | CRUD event dan ticket type, publikasi, kuota, serta assignment panitia |
 | Order | Reservasi inventori atomik, idempotency key, dan pembatasan akses buyer |
 | Pembayaran | Midtrans Snap Sandbox, webhook terverifikasi, serta rekonsiliasi status |
@@ -39,7 +39,7 @@ Backend telah menyediakan autentikasi, manajemen acara, reservasi atomik, integr
 | API | Express 5, TypeScript, Zod |
 | Database | MongoDB dan Mongoose |
 | Pembayaran | Midtrans Snap Sandbox |
-| Keamanan | bcrypt, cookie HttpOnly, CSRF token, Helmet, rate limiting |
+| Keamanan | bcrypt, email OTP, Google OAuth state, cookie HttpOnly, CSRF, Helmet, rate limiting |
 | Tooling | npm workspaces, Node test runner, Postman |
 
 ## Struktur repository
@@ -67,6 +67,8 @@ Persyaratan:
 - pnpm (v12 atau terbaru);
 - MongoDB replica set atau MongoDB Atlas untuk transaksi;
 - Midtrans Server Key dalam mode Sandbox.
+- SMTP account (Gmail App Password dapat dipakai untuk demo);
+- Google OAuth Client ID dan Client Secret.
 
 ### 1. Menjalankan Backend (`apps/backend`)
 
@@ -96,9 +98,10 @@ Jangan commit `.env`, MongoDB URI, Midtrans Server Key, cookie sesi, atau QR cre
 ## Pemeriksaan kualitas
 
 ```bash
-npm run typecheck
-npm run build
-npm run test:integration
+cd apps/backend
+pnpm typecheck
+pnpm build
+pnpm test:integration
 ```
 
 Integration test menggunakan database `gatherly_test` dan menolak pembersihan database dengan nama lain. Pastikan `MONGODB_URI` mengarah ke cluster test yang aman sebelum menjalankannya.
@@ -106,7 +109,8 @@ Integration test menggunakan database `gatherly_test` dan menolak pembersihan da
 Smoke test Midtrans Sandbox dapat dijalankan terpisah:
 
 ```bash
-npm run test:smoke:midtrans --workspace @gatherly/server
+cd apps/backend
+pnpm test:smoke:midtrans
 ```
 
 ## Dokumentasi API dengan Postman
@@ -133,4 +137,4 @@ Analisis kebutuhan dan fitur tersedia dalam folder [`docs`](docs/README.md). Tau
 
 ## Status dan scope
 
-Target MVP serta acceptance criteria dijelaskan dalam [docs/requirements.md](docs/requirements.md). Fitur di luar scope awal mencakup refund otomatis, payout organizer, transfer tiket, social login, dan offline check-in.
+Target MVP serta acceptance criteria dijelaskan dalam [docs/requirements.md](docs/requirements.md). Fitur di luar scope awal mencakup refund otomatis, payout organizer, transfer tiket, dan offline check-in.

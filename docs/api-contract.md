@@ -18,12 +18,19 @@ Basis `/api/v1`, JSON kecuali poster multipart. Semua endpoint dilayani Express.
 
 | Method/path | Input | Hasil/akses |
 | --- | --- | --- |
-| POST /auth/register | name, email, password | 201 user; login dilakukan terpisah. Nama 2–100 karakter, email valid/normalisasi, password 12–128 karakter. Tidak menerima role |
-| POST /auth/login | email, password | 200 user + csrfToken dan cookie; kredensial salah → 401 generik |
+| POST /auth/register | name, email, password | 202 challenge OTP email; user belum dibuat. Nama 2–100 karakter, email valid/normalisasi, password 12–128 karakter. Tidak menerima role |
+| POST /auth/register/verify | challengeId, code | 201 user + csrfToken dan cookie; membuat user setelah OTP benar |
+| POST /auth/login | email, password | 202 challenge OTP setelah password benar; kredensial salah → 401 generik |
+| POST /auth/login/verify | challengeId, code | 200 user + csrfToken dan cookie setelah OTP benar |
+| POST /auth/otp/resend | challengeId | 200 expiry/cooldown baru; OTP lama tidak berlaku |
+| GET /auth/google | — | Redirect ke Google dengan OAuth state sekali pakai |
+| GET /auth/google/callback | code, state | Membuat/menautkan user, membuat cookie, redirect ke frontend |
 | GET /auth/me | — | user, organizerId nullable, hasCommitteeAssignments, csrfToken; 401 tanpa sesi |
 | POST /auth/logout | — | 204; invalidasi sesi dan cookie |
 | POST /organizers | name, description, contactEmail | 201 profil sendiri; duplikat → 409 |
 | GET /organizers/me | — | Profil sendiri; 404 bila belum dibuat |
+
+OTP terdiri dari enam digit, berlaku 10 menit, maksimal lima percobaan, dan dapat dikirim ulang setelah 60 detik. Register membuat akun hanya setelah verifikasi; login membuat sesi hanya setelah verifikasi. Google OAuth hanya menerima email Google yang terverifikasi dan tidak mengirim token provider ke frontend.
 
 ## Acara dan upload — BE 1
 
