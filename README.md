@@ -102,7 +102,7 @@ Aplikasi:
 
 Dokumentasi proyek tersedia dalam folder [`docs`](docs/README.md).
 
-**Laporan PDF final:** [PAW2026_M1_Kelompok 11.pdf](https://drive.google.com/file/d/1jbkOKAdMCIKqKcThbcAU_jo6EtpathBQ/view?usp=sharing). Izin akses: siapa saja yang memiliki tautan dapat melihat.
+**Laporan PDF final:** [PAW2026_M1_Kelompok 11.pdf](https://drive.google.com/file/d/1jbkOKAdMCIKqKcThbcAU_jo6EtpathBQ/view?usp=sharing).
 
 Preview backend di Vercel sudah berstatus Ready dan Swagger UI tampil. Alur database, OTP/SMTP, Google OAuth, webhook Midtrans, dan job terjadwal belum diverifikasi pada deployment. Lihat [panduan deployment](docs/deployment-vercel.md).
 
