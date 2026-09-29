@@ -102,7 +102,7 @@ Aplikasi:
 
 Analisis kebutuhan dan fitur tersedia dalam folder [`docs`](docs/README.md). [Draf laporan Milestone 1 di Google Docs](https://docs.google.com/document/d/1pAWWQC0EvfNWmPuO4qkffKVYq5oPK96gY54XHbioQJ0/edit) memuat user story, hasil pengujian lokal, dan bukti Postman.
 
-**URL GDrive laporan PDF final:** menyusul setelah PDF diperiksa, diunggah, dan izin akses lihat melalui tautan dipastikan. Tautan Google Docs di atas belum menggantikan URL PDF untuk pengumpulan.
+**Laporan PDF final:** [PAW2026_M1_Kelompok 11.pdf](https://drive.google.com/file/d/1jbkOKAdMCIKqKcThbcAU_jo6EtpathBQ/view?usp=sharing). Izin akses: siapa saja yang memiliki tautan dapat melihat.
 
 Preview backend di Vercel sudah berstatus Ready dan Swagger UI tampil. Alur database, OTP/SMTP, Google OAuth, webhook Midtrans, dan job terjadwal belum diverifikasi pada deployment. Lihat [panduan deployment](docs/deployment-vercel.md).
 
