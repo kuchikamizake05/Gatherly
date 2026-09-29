@@ -128,8 +128,8 @@ Analisis kebutuhan dan fitur tersedia dalam folder [`docs`](docs/README.md). Tau
 | --- | --- | --- |
 | Dien Muhammad Scientivan Kurniapramono | 24/533571/TK/59114 | Backend 2 |
 | Aulia Nur Fajri Tri Anggoro | 24/535054/TK/59327 | Frontend 1 |
-| Muhammad Khoirunas | 24/533373/TK/59083 | Backend 1 / Ketua |
-| Faaid Sakhaa | 24/539398/TK/59820 | Frontend 2 |
+| Muhammad Khoirunas | 24/533373/TK/59083 | Frontend 2 |
+| Faaid Sakhaa | 24/539398/TK/59820 | Backend 1 / Ketua |
 
 ## Status dan scope
 
