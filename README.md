@@ -104,7 +104,9 @@ Dokumentasi proyek tersedia dalam folder [`docs`](docs/README.md).
 
 **Laporan PDF final:** [PAW2026_M1_Kelompok 11.pdf](https://drive.google.com/file/d/1jbkOKAdMCIKqKcThbcAU_jo6EtpathBQ/view?usp=sharing).
 
-Preview backend di Vercel sudah berstatus Ready dan Swagger UI tampil. Alur database, OTP/SMTP, Google OAuth, webhook Midtrans, dan job terjadwal belum diverifikasi pada deployment. Lihat [panduan deployment](docs/deployment-vercel.md).
+## Deployment
+
+Preview backend di Vercel: [Swagger UI Gatherly](https://gatherly-api-demo.vercel.app/api/v1/docs/). Deployment berstatus Ready dan halaman Swagger sudah tampil. Alur database, OTP/SMTP, Google OAuth, webhook Midtrans, dan job terjadwal belum diverifikasi pada deployment. Lihat [panduan deployment](docs/deployment-vercel.md).
 
 ## Menjalankan secara lokal
 
@@ -129,7 +131,6 @@ pnpm dev
 - API: `http://localhost:4000/api/v1`
 - Swagger UI: `http://localhost:4000/api/v1/docs`
 - Health check: `http://localhost:4000/api/v1/health`
-- Preview dokumentasi publik: [gatherly-api-demo.vercel.app/api/v1/docs](https://gatherly-api-demo.vercel.app/api/v1/docs/)
 
 ### 2. Menjalankan Frontend (`apps/frontend`)
 
