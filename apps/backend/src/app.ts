@@ -1,10 +1,13 @@
 import { randomUUID } from "node:crypto";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import express, { type NextFunction, type Request, type Response } from "express";
-import helmet from "helmet";
+import express, { type NextFunction, type Request, type Response, type RequestHandler } from "express";
+import helmetModule, { type HelmetOptions } from "helmet";
 
 import { env } from "./config/env.js";
+import { connectDatabase } from "./config/database.js";
+import { reconcileDuePayments } from "./modules/payments/payment-reconciliation.service.js";
+import { issueDueTickets } from "./modules/tickets/ticket-issuance.service.js";
 import { AppError } from "./lib/app-error.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
 import { organizerRouter } from "./modules/organizers/organizer.routes.js";
@@ -17,6 +20,10 @@ import { organizerReportRouter } from "./modules/reports/organizer-report.routes
 import { swaggerRouter } from "./docs/swagger.router.js";
 
 export const app = express();
+
+// Helmet's CJS declaration is interpreted as a namespace by Vercel's compiler.
+// Its ESM default export is the middleware factory at runtime.
+const helmet = helmetModule as unknown as (options?: HelmetOptions) => RequestHandler;
 
 app.disable("x-powered-by");
 app.use(
@@ -60,6 +67,25 @@ app.get("/docs", (_request, response) => {
 });
 
 app.use("/api/v1/docs", swaggerRouter);
+
+app.get("/api/v1/internal/maintenance", async (request, response) => {
+  if (!env.CRON_SECRET || request.get("Authorization") !== `Bearer ${env.CRON_SECRET}`) {
+    response.status(401).json({ error: { code: "UNAUTHORIZED", message: "Unauthorized." } });
+    return;
+  }
+  await connectDatabase();
+  // Keep each invocation bounded; the scheduler can repeat while work remains.
+  const payments = await reconcileDuePayments(undefined, 2);
+  const tickets = await issueDueTickets(2);
+  response.status(200).json({ data: { payments, tickets } });
+});
+
+if (process.env.VERCEL === "1") {
+  app.use(async (_request, _response, next) => {
+    await connectDatabase();
+    next();
+  });
+}
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/organizers", organizerRouter);
 app.use("/api/v1/organizer", organizerReportRouter);
@@ -78,6 +104,8 @@ app.use((_request, response) => {
     requestId: response.locals.requestId,
   });
 });
+
+export default app;
 
 app.use((error: unknown, _request: Request, response: Response, _next: NextFunction) => {
   if (error instanceof AppError) {

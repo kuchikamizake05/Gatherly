@@ -13,7 +13,7 @@ Rancangan 22 September 2026. Tidak ada akun, pembelian, atau layanan yang diakti
 | Unduh tiket | Tampilan cetak browser | Save as PDF; tidak butuh generator PDF eksternal |
 | Lokasi | Alamat + tautan lokasi | Tidak butuh API peta berbayar |
 | Email tiket/reset password | Ditunda | Bukan dependensi MVP; halaman Tiket Saya tetap berfungsi |
-| Hosting | Dipilih saat spike deployment | Harus mendukung Next, Express, HTTPS, webhook, dan job reconciliation; tidak menjanjikan selalu aktif gratis |
+| Hosting | Backend preview di Vercel | Swagger dapat dibuka publik; webhook, database, OTP/OAuth, dan job terjadwal masih perlu diuji pada deployment |
 
 ## Payment spike
 
@@ -28,7 +28,10 @@ Kegagalan provider tidak boleh menghilangkan data order. Job pemulihan harus ber
 | Variable | Aplikasi | Rahasia/fungsi |
 | --- | --- | --- |
 | MONGODB_URI | API | Rahasia koneksi dan user database dengan hak minimum |
-| SESSION_SECRET | API | Rahasia untuk sesi; berbeda dev/test |
+| OTP_SECRET | API | Rahasia HMAC untuk kode OTP email; minimal 32 karakter |
+| CRON_SECRET | API | Bearer secret untuk endpoint pemeliharaan; berbeda dari OTP_SECRET |
+| SMTP_HOST / SMTP_PORT / SMTP_SECURE / SMTP_USER / SMTP_PASS / SMTP_FROM | API | Pengiriman OTP email |
+| GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GOOGLE_CALLBACK_URL | API | Google OAuth dan callback deployment |
 | WEB_ORIGIN | API | Origin tepercaya untuk request browser/CSRF |
 | MIDTRANS_SERVER_KEY | API | Rahasia sandbox; tidak masuk NEXT_PUBLIC |
 | MIDTRANS_IS_PRODUCTION | API | false; deployment demo harus menolak true tanpa perubahan scope |

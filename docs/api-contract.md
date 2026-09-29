@@ -179,4 +179,4 @@ Panitia tidak menerima email buyer, nominal, payment timeline, atau QR credentia
 | INVALID_TICKET | 404 | Scan/lookup ulang |
 | PROVIDER_UNAVAILABLE | 503 | Retry status dengan backoff, jangan bayar lagi |
 
-Untuk duplicate scan, error dapat memiliki `details: {checkedInAt}` selain fields. Penolakan format/token tidak menampilkan raw token pada pesan/log. Swagger/OpenAPI dapat diturunkan dari dokumen ini saat implementasi, lalu diuji bersama FE; belum ada klaim schema machine-readable lengkap.
+Untuk duplicate scan, error dapat memiliki `details: {checkedInAt}` selain fields. Penolakan format/token tidak menampilkan raw token pada pesan/log. Implementasi Swagger/OpenAPI tersedia di `apps/backend/src/docs/swagger-spec.ts` dan dapat dilihat pada [preview dokumentasi API](https://gatherly-api-demo.vercel.app/api/v1/docs/). Dokumen kontrak ini tetap menjadi acuan kerja; cocokkan perubahan endpoint dengan source dan OpenAPI sebelum integrasi frontend.

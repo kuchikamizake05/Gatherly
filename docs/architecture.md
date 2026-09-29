@@ -5,9 +5,9 @@ Gatherly uses one repository for both applications. The frontend and API remain 
 ```text
 Browser
   ↓
-apps/web (Next.js App Router)
+apps/frontend (Next.js App Router)
   ↓ HTTP API
-apps/server (ExpressJS)
+apps/backend (ExpressJS)
   ↓
 MongoDB
 ```
@@ -21,9 +21,9 @@ Modular monolith: satu aplikasi Express dengan modul akun, acara, order/pembayar
 Struktur aplikasi:
 
 ```text
-apps/web/
+apps/frontend/
   app/                  routes dan layouts Next.js
-apps/server/src/
+apps/backend/src/
   modules/              auth, organizers, events, orders, payments, tickets
   jobs/                 rekonsiliasi payment/reservasi
   config/               validasi environment
@@ -31,7 +31,7 @@ docs/
 postman/
 ```
 
-TypeScript dan npm workspaces diusulkan agar satu bahasa serta satu lockfile. Jangan membuat layanan terpisah atau package bersama sebelum ada kebutuhan konkret.
+Kedua aplikasi menggunakan TypeScript dan lockfile pnpm masing-masing. Backend memiliki preview Vercel; frontend belum dideploy sebagai alur lengkap. Jangan membuat layanan terpisah atau package bersama sebelum ada kebutuhan konkret.
 
 ## Next.js dan komunikasi API
 
@@ -53,7 +53,7 @@ Hash password dengan library password hashing yang sesuai; jangan menyimpan pass
 
 MongoDB harus berupa replica set yang mendukung transaksi untuk konsistensi inventori/order/tiket. Panggilan Midtrans berada di luar transaksi database. Simpan intent/status sebelum panggilan eksternal, gunakan identitas provider stabil, dan rekonsiliasi bila respons hilang; tidak ada transaksi atomik tunggal melintasi MongoDB dan Midtrans.
 
-Job rekonsiliasi memeriksa order tertunda/expired dan issuance yang belum selesai. State dan lease job disimpan secara durable di MongoDB agar dapat dipulihkan setelah restart. Jangan mengandalkan timer browser atau TTL yang menghapus order. Deployment harus mendukung proses job; jika hosting tidur, jalankan catch-up saat aktif dan jangan menjanjikan pelepasan tepat detik.
+Job rekonsiliasi memeriksa order tertunda/expired dan issuance yang belum selesai. State dan lease job disimpan di MongoDB agar dapat dipulihkan setelah restart. Server lokal memakai interval; preview Vercel menyediakan endpoint pemeliharaan berotorisasi tetapi belum memiliki penjadwal eksternal. Karena itu, pemulihan otomatis pada deployment belum terverifikasi. Lihat [panduan deployment](deployment-vercel.md).
 
 ## Referensi teknis
 

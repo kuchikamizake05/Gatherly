@@ -13,11 +13,22 @@
   <a href="https://github.com/users/kuchikamizake05/projects/3/views/1">Project Board</a>
 </p>
 
-## Tentang Gatherly
+## Deskripsi aplikasi
 
 Gatherly membantu peserta menemukan dan membeli tiket acara komunitas, organizer mengelola acara serta penjualan, dan panitia memvalidasi tiket di lokasi. Proyek ini dikembangkan oleh **Kelompok 11** untuk mata kuliah **Pengembangan Aplikasi Web**, topik **US3 — Tiket acara komunitas: kuota dan tiket elektronik berkode**.
 
 Backend telah menyediakan autentikasi, manajemen acara, reservasi atomik, integrasi Midtrans Sandbox, penerbitan tiket QR, check-in sekali pakai, dan laporan organizer. Antarmuka Next.js masih dikembangkan dan saat ini menyediakan shell aplikasi.
+
+## Nama kelompok dan daftar anggota
+
+**Kelompok 11 — Pengembangan Aplikasi Web**
+
+| Nama | NIM | Peran |
+| --- | --- | --- |
+| Dien Muhammad Scientivan Kurniapramono | 24/533571/TK/59114 | Backend 2 |
+| Aulia Nur Fajri Tri Anggoro | 24/535054/TK/59327 | Frontend 1 |
+| Muhammad Khoirunas | 24/533373/TK/59083 | Frontend 2 |
+| Faaid Sakhaa | 24/539398/TK/59820 | Backend 1 / Ketua |
 
 ## Fitur yang tersedia
 
@@ -31,6 +42,51 @@ Backend telah menyediakan autentikasi, manajemen acara, reservasi atomik, integr
 | Check-in | Scan QR/kode manual, validasi assignment dan waktu, serta single-use atomic |
 | Laporan | Ringkasan penjualan, inventori, order, peserta, dan riwayat kehadiran |
 
+## Struktur folder dan file proyek
+
+```text
+Gatherly/
+├── apps/
+│   ├── backend/
+│   │   ├── src/
+│   │   │   ├── config/       Validasi environment dan koneksi MongoDB
+│   │   │   ├── docs/         Spesifikasi OpenAPI dan halaman Swagger
+│   │   │   ├── jobs/         Rekonsiliasi pembayaran dan penerbitan tiket lokal
+│   │   │   ├── lib/          Utilitas dan penanganan error
+│   │   │   ├── modules/      Auth, acara, order, pembayaran, tiket, check-in, laporan
+│   │   │   ├── app.ts        Rute dan middleware Express
+│   │   │   └── server.ts     Menjalankan server lokal
+│   │   ├── test/            Pengujian integrasi dan smoke test Midtrans
+│   │   ├── scripts/         Penyalinan aset Swagger saat build
+│   │   ├── .env.example     Contoh variabel environment tanpa secret nyata
+│   │   ├── app.js           Entry point deployment Vercel
+│   │   ├── vercel.json      Konfigurasi Vercel
+│   │   ├── package.json     Script dan dependency backend
+│   │   └── pnpm-lock.yaml   Kunci dependency backend
+│   └── frontend/
+│       ├── app/             Halaman, layout, dan CSS Next.js
+│       ├── src/components/  Komponen antarmuka
+│       ├── src/lib/         Utilitas frontend
+│       ├── package.json     Script dan dependency frontend
+│       └── pnpm-lock.yaml   Kunci dependency frontend
+├── docs/
+│   ├── requirements.md, user-flows.md, architecture.md, data-model.md
+│   ├── api-contract.md, testing.md, integrations.md, team-workflow.md
+│   ├── deployment-vercel.md
+│   └── superpowers/        Arsip spesifikasi dan rencana implementasi
+├── postman/
+│   ├── Gatherly API.postman_collection.json
+│   ├── Gatherly Local.postman_environment.json
+│   └── README.md           Panduan menjalankan request
+├── README.md               Panduan proyek ini
+└── package.json            Metadata repository; bukan npm workspace
+```
+
+Aplikasi:
+
+- `@gatherly/backend` (dalam `apps/backend`)
+- `@gatherly/frontend` (dalam `apps/frontend`)
+
 ## Teknologi
 
 | Lapisan | Teknologi |
@@ -40,31 +96,22 @@ Backend telah menyediakan autentikasi, manajemen acara, reservasi atomik, integr
 | Database | MongoDB dan Mongoose |
 | Pembayaran | Midtrans Snap Sandbox |
 | Keamanan | bcrypt, email OTP, Google OAuth state, cookie HttpOnly, CSRF, Helmet, rate limiting |
-| Tooling | npm workspaces, Node test runner, Postman |
+| Tooling | pnpm per aplikasi, Node test runner, Postman |
 
-## Struktur repository
+## URL GDrive laporan Milestone 1
 
-```text
-Gatherly/
-├── apps/
-│   ├── backend/        Express API, worker, model, dan integration test
-│   └── frontend/       Next.js App Router
-├── docs/               Analisis kebutuhan, arsitektur, model, dan kontrak API
-├── postman/            Collection, environment lokal, dan panduan penggunaan
-└── package.json        Root package file
-```
+Analisis kebutuhan dan fitur tersedia dalam folder [`docs`](docs/README.md). [Draf laporan Milestone 1 di Google Docs](https://docs.google.com/document/d/1pAWWQC0EvfNWmPuO4qkffKVYq5oPK96gY54XHbioQJ0/edit) memuat user story, hasil pengujian lokal, dan bukti Postman.
 
-Aplikasi:
+**URL GDrive laporan PDF final:** menyusul setelah PDF diperiksa, diunggah, dan izin akses lihat melalui tautan dipastikan. Tautan Google Docs di atas belum menggantikan URL PDF untuk pengumpulan.
 
-- `@gatherly/backend` (dalam `apps/backend`)
-- `@gatherly/frontend` (dalam `apps/frontend`)
+Preview backend di Vercel sudah berstatus Ready dan Swagger UI tampil. Alur database, OTP/SMTP, Google OAuth, webhook Midtrans, dan job terjadwal belum diverifikasi pada deployment. Lihat [panduan deployment](docs/deployment-vercel.md).
 
 ## Menjalankan secara lokal
 
 Persyaratan:
 
 - Node.js 22 atau versi LTS yang kompatibel;
-- pnpm (v12 atau terbaru);
+- pnpm (versi yang kompatibel dengan lockfile tiap aplikasi; pengujian lokal memakai v11.8.0);
 - MongoDB replica set atau MongoDB Atlas untuk transaksi;
 - Midtrans Server Key dalam mode Sandbox.
 - SMTP account (Gmail App Password dapat dipakai untuk demo);
@@ -82,6 +129,7 @@ pnpm dev
 - API: `http://localhost:4000/api/v1`
 - Swagger UI: `http://localhost:4000/api/v1/docs`
 - Health check: `http://localhost:4000/api/v1/health`
+- Preview dokumentasi publik: [gatherly-api-demo.vercel.app/api/v1/docs](https://gatherly-api-demo.vercel.app/api/v1/docs/)
 
 ### 2. Menjalankan Frontend (`apps/frontend`)
 
@@ -121,19 +169,6 @@ Import kedua file berikut:
 - [`Gatherly Local.postman_environment.json`](postman/Gatherly%20Local.postman_environment.json)
 
 Panduan urutan request, pergantian role, penyimpanan example response, dan aturan credential tersedia di [postman/README.md](postman/README.md).
-
-## Laporan Milestone 1
-
-Analisis kebutuhan dan fitur tersedia dalam folder [`docs`](docs/README.md). Tautan Google Drive untuk laporan PDF belum ditambahkan; tim harus menambahkan URL dengan izin **siapa saja yang memiliki link dapat melihat** sebelum pengumpulan.
-
-## Anggota Kelompok 11
-
-| Nama | NIM | Peran |
-| --- | --- | --- |
-| Dien Muhammad Scientivan Kurniapramono | 24/533571/TK/59114 | Backend 2 |
-| Aulia Nur Fajri Tri Anggoro | 24/535054/TK/59327 | Frontend 1 |
-| Muhammad Khoirunas | 24/533373/TK/59083 | Frontend 2 |
-| Faaid Sakhaa | 24/539398/TK/59820 | Backend 1 / Ketua |
 
 ## Status dan scope
 

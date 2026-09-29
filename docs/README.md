@@ -1,14 +1,14 @@
 # Panduan dokumen Gatherly
 
-Diperbarui 27 September 2026. Dokumen ini memuat acuan produk dan teknis Gatherly.
+Diperbarui 30 September 2026. Dokumen ini memuat acuan produk dan teknis Gatherly.
 
 ## Keputusan yang sudah tetap
 
 - Next.js untuk frontend, ExpressJS untuk backend, MongoDB untuk database.
-- Satu monorepo, dengan aplikasi web pada `apps/web` dan API pada `apps/server`.
+- Satu repository, dengan aplikasi web pada `apps/frontend` dan API pada `apps/backend`.
 - Pembagian final: Aulia Nur Fajri Tri Anggoro (Ancung) — FE 1, Muhammad Khoirunas (Nasta) — FE 2, Faaid Sakhaa (Sako) — BE 1 sekaligus ketua, Dien Muhammad Scientivan Kurniapramono — BE 2.
 - GitHub Issues dan GitHub Project untuk pekerjaan tim, kode, dan review.
-- Target biaya Rp0; pembayaran Midtrans sandbox; email otomatis ditunda.
+- Target biaya Rp0; pembayaran Midtrans sandbox; email OTP dipakai untuk autentikasi, sedangkan pengiriman tiket otomatis ditunda.
 
 ## Urutan baca
 
@@ -22,12 +22,13 @@ Diperbarui 27 September 2026. Dokumen ini memuat acuan produk dan teknis Gatherl
 | [team-workflow.md](team-workflow.md) | Kepemilikan, review, kerja paralel, aturan AI | Semua anggota |
 | [integrations.md](integrations.md) | Kebutuhan eksternal, biaya, konfigurasi | BE dan penanggung jawab deployment |
 | [testing.md](testing.md) | Pengujian risiko dan bukti rubrik | Semua anggota |
+| [deployment-vercel.md](deployment-vercel.md) | Status preview backend dan konfigurasi yang masih diperlukan | BE dan penanggung jawab deployment |
 
 ## Cara memakai
 
 PRD menjadi acuan perilaku produk. Kontrak API menjadi acuan payload dan mock FE. Bila berubah, ubah dokumennya dalam PR yang sama dan beri tahu pemakai endpoint sebelum merge. Istilah status dalam API/model tidak boleh diganti sepihak.
 
-Implementasi menggunakan TypeScript, npm workspaces, sesi berbasis cookie, dan struktur modular. Versi dependency dikunci dalam `package-lock.json`.
+Implementasi menggunakan TypeScript, pnpm dengan lockfile per aplikasi, sesi berbasis cookie, dan struktur modular. Root `package.json` tidak mengatur npm workspaces.
 
 ## Pertemuan pertama
 

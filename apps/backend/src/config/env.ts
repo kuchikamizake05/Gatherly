@@ -11,6 +11,7 @@ const envSchema = z.object({
   MIDTRANS_IS_PRODUCTION: z.literal("false").default("false").transform(() => false),
   MIDTRANS_REQUEST_TIMEOUT_MS: z.coerce.number().int().min(1_000).max(30_000).default(8_000),
   OTP_SECRET: z.string().min(32).optional(),
+  CRON_SECRET: z.string().min(32).optional(),
   SMTP_HOST: z.string().min(1).optional(),
   SMTP_PORT: z.coerce.number().int().positive().default(587),
   SMTP_SECURE: z.enum(["true", "false"]).default("false").transform((value) => value === "true"),
