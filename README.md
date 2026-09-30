@@ -13,13 +13,13 @@
   <a href="https://github.com/users/kuchikamizake05/projects/3/views/1">Project Board</a>
 </p>
 
-## Deskripsi aplikasi
+## Deskripsi
 
 Gatherly membantu peserta menemukan dan membeli tiket acara komunitas, organizer mengelola acara serta penjualan, dan panitia memvalidasi tiket di lokasi. Proyek ini dikembangkan oleh **Kelompok 11** untuk mata kuliah **Pengembangan Aplikasi Web**, topik **US3 — Tiket acara komunitas: kuota dan tiket elektronik berkode**.
 
 Backend telah menyediakan autentikasi, manajemen acara, reservasi atomik, integrasi Midtrans Sandbox, penerbitan tiket QR, check-in sekali pakai, dan laporan organizer. Antarmuka Next.js masih dikembangkan dan saat ini menyediakan shell aplikasi.
 
-## Nama kelompok dan daftar anggota
+## Nama dan Daftar Anggota
 
 **Kelompok 11 — Pengembangan Aplikasi Web**
 
@@ -30,7 +30,7 @@ Backend telah menyediakan autentikasi, manajemen acara, reservasi atomik, integr
 | Muhammad Khoirunas | 24/533373/TK/59083 | Frontend 2 |
 | Faaid Sakhaa | 24/539398/TK/59820 | Backend 1 / Ketua |
 
-## Fitur yang tersedia
+## Fitur
 
 | Area | Kemampuan |
 | --- | --- |
@@ -42,7 +42,7 @@ Backend telah menyediakan autentikasi, manajemen acara, reservasi atomik, integr
 | Check-in | Scan QR/kode manual, validasi assignment dan waktu, serta single-use atomic |
 | Laporan | Ringkasan penjualan, inventori, order, peserta, dan riwayat kehadiran |
 
-## Struktur folder dan file proyek
+## Struktur Folder dan File Proyek
 
 ```text
 Gatherly/
@@ -98,7 +98,7 @@ Aplikasi:
 | Keamanan | bcrypt, email OTP, Google OAuth state, cookie HttpOnly, CSRF, Helmet, rate limiting |
 | Tooling | pnpm per aplikasi, Node test runner, Postman |
 
-## URL GDrive laporan Milestone 1
+## URL Laporan Milestone 1
 
 Dokumentasi proyek tersedia dalam folder [`docs`](docs/README.md).
 
@@ -108,7 +108,7 @@ Dokumentasi proyek tersedia dalam folder [`docs`](docs/README.md).
 
 Preview backend di Vercel: [Swagger UI Gatherly](https://gatherly-api-demo.vercel.app/api/v1/docs/). Deployment berstatus Ready dan halaman Swagger sudah tampil. Alur database, OTP/SMTP, Google OAuth, webhook Midtrans, dan job terjadwal belum diverifikasi pada deployment. Lihat [panduan deployment](docs/deployment-vercel.md).
 
-## Menjalankan secara lokal
+## Menjalankan Secara Lokal
 
 Persyaratan:
 
@@ -144,7 +144,7 @@ pnpm dev
 
 Jangan commit `.env`, MongoDB URI, Midtrans Server Key, cookie sesi, atau QR credential.
 
-## Pemeriksaan kualitas
+## Pemeriksaan Kualitas
 
 ```bash
 cd apps/backend
@@ -171,6 +171,6 @@ Import kedua file berikut:
 
 Panduan urutan request, pergantian role, penyimpanan example response, dan aturan credential tersedia di [postman/README.md](postman/README.md).
 
-## Status dan scope
+## Status dan Scope
 
 Target MVP serta acceptance criteria dijelaskan dalam [docs/requirements.md](docs/requirements.md). Fitur di luar scope awal mencakup refund otomatis, payout organizer, transfer tiket, dan offline check-in.
