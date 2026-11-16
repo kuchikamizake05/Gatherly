@@ -1,0 +1,37 @@
+{
+  "brand": "Gatherly",
+  "tagline": "Titik kumpulmu",
+  "brief": "Platform tiket acara komunitas di Indonesia: peserta menemukan acara dan membeli tiket, organizer mengelola kuota, panitia check-in dengan QR. Harus terasa ramah dan terpercaya, rapi, dan tidak generik di antara Loket, Artatix, Eventbrite, dan Luma.",
+  "adjectives": ["ramah", "terpercaya", "rapi", "komunal"],
+  "criteria": "Sukses: tidak mirip G Google, terbaca di 16 px, berfungsi satu warna, nyambung dengan UI kuning + hitam.",
+  "industry": "event",
+  "nav": ["Jelajahi", "Untuk Organizer", "Masuk"],
+  "brand_color": "#FFDD33",
+  "greyscale": false,
+  "final": true,
+  "designer": "Gatherly · Kelompok 11",
+  "deck_title": "identitas final",
+  "concepts": [
+    {
+      "name": "G + titik",
+      "symbol": "../logo/gatherly-symbol-ink.svg",
+      "lockup": "../logo/gatherly-horizontal-ink.svg",
+      "stacked": "../logo/gatherly-stacked-ink.svg",
+      "symbol_on_tile": "../logo/gatherly-symbol-ink.svg",
+      "lockup_on_tile": "../logo/gatherly-horizontal-ink.svg",
+      "stacked_on_tile": "../logo/gatherly-stacked-ink.svg",
+      "symbol_on_dark": "../logo/gatherly-symbol-on-dark.svg",
+      "lockup_on_dark": "../logo/gatherly-horizontal-on-dark.svg",
+      "stacked_on_dark": "../logo/gatherly-stacked-on-dark.svg",
+      "idea": "Huruf G dari bentuk ubin app; sudut yang kosong diisi satu titik — orang yang baru bergabung ke titik kumpul.",
+      "rationale": [
+        "Titik = satu orang; 'titik kumpul' adalah arti Gatherly dalam bahasa sehari-hari",
+        "Squircle menjauh dari G Google yang bulat dan senada dengan ubin app & radius UI",
+        "Titik kuning jadi aset brand tersendiri: badge, indikator, motion",
+        "Versi kecil khusus dengan celah lebih lebar — terbaca di favicon 16 px"
+      ]
+    }
+  ],
+  "recommendation": "Pakai lockup horizontal sebagai logo utama, simbol di ubin hitam sebagai ikon app, dan titik kuning sebagai aksen brand.",
+  "next_steps": ["Pasang favicon & logo di apps/frontend", "Cek merek dagang (PDKI/DJKI) sebelum publikasi", "Animasi titik bergabung untuk splash/loading"]
+}

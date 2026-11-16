@@ -16,3 +16,9 @@ coverage/
 # Editor and OS files
 .DS_Store
 Thumbs.db
+
+# Design source files (shared via Google Drive)
+*.pen
+
+# Local tool caches
+.impeccable/
