@@ -1,9 +1,6 @@
-"use client";
+import { BecomeOrganizerView } from "@/modules/applications/components/ApplicationViews";
 
-import { RouteStub } from "@/components/elements/RouteStub";
-import { useSubmitApplication } from "@/modules/applications/hooks";
-
-export default function Page() {
-  const submit = useSubmitApplication();
-  return <RouteStub title="Pengajuan organizer" band="13" scenario="A dan B. Daftar baru" pendingIssue="B29" queries={{ submit: { status: submit.status, data: submit.data } }} />;
+/** Pengajuan organizer, daftar baru. Pita 13 A, B. */
+export default function BecomeOrganizerPage() {
+  return <BecomeOrganizerView />;
 }

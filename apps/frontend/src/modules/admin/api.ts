@@ -70,6 +70,8 @@ const reviewMock: ApplicationReview = {
   links: FIX.organizer.links as Application["links"],
   pic: FIX.organizer.pic,
   username: FIX.organizer.username,
+  ktp: { id: "doc_ktp", name: "ktp-rafi-pratama.jpg", size: 839_680, type: "image/jpeg" },
+  legalDocument: null,
   flags: [],
   documents: [{ kind: "ktp", fileName: "ktp-rafi-pratama.jpg", size: 839_680, uploadedAt: "2026-09-14T03:10:00Z", url: "#" }],
   checks: { emailVerified: true, usernameAvailable: true, similarOrganizers: 1 },
