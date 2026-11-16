@@ -1,6 +1,6 @@
 "use client";
 
-import { RouteStub } from "@/components/elements/route-stub";
+import { RouteStub } from "@/components/elements/RouteStub";
 import { useCreateEvent } from "@/modules/organizer-events/hooks";
 
 export default function Page() {

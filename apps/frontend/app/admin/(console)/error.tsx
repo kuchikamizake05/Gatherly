@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { StateView } from "@/components/elements/state-view";
+import { StateView } from "@/components/elements/StateView";
 
 /** Keadaan "Gagal memuat" untuk halaman di grup ini. */
 export default function Error({ reset }: { error: Error; reset: () => void }) {

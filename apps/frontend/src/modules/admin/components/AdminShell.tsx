@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { Building2, CircleHelp, Flag, Inbox, LogOut, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import { WorkspaceShell, type NavItem } from "@/components/layout/workspace-shell";
+import { WorkspaceShell, type NavItem } from "@/components/layout/WorkspaceShell";
 import { useAdminLogout, useAdminMe } from "@/modules/admin/hooks";
 
 export function AdminShell({ children }: { children: ReactNode }) {

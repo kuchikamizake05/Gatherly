@@ -1,6 +1,6 @@
 "use client";
 
-import { RouteStub } from "@/components/elements/route-stub";
+import { RouteStub } from "@/components/elements/RouteStub";
 import { useChangeTemporaryPassword } from "@/modules/organizer-auth/hooks";
 
 export default function Page() {

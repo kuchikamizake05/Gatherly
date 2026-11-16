@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-import { RequireAdmin } from "@/components/layout/guards";
-import { AdminShell } from "./shell";
+import { RequireAdmin } from "@/components/layout/Guards";
+import { AdminShell } from "@/modules/admin/components/AdminShell";
 
 export default function ConsoleLayout({ children }: { children: ReactNode }) {
   return (

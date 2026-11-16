@@ -1,6 +1,6 @@
 "use client";
 
-import { RouteStub } from "@/components/elements/route-stub";
+import { RouteStub } from "@/components/elements/RouteStub";
 import { useWorkspaceMe } from "@/modules/organizer-auth/hooks";
 import { useOrgSummary, useOrgEvents } from "@/modules/organizer-events/hooks";
 import { useAssignedEvents } from "@/modules/check-in/hooks";

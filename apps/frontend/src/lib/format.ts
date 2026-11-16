@@ -40,9 +40,9 @@ export function formatTime(value: string | Date) {
   return `${format(toDate(value), "HH.mm")} ${TZ_LABEL}`;
 }
 
-/** 15.00 sampai 22.00 WIB */
+/** 15.00 – 22.00 WIB (en dash dengan spasi, sesuai desain pita 04) */
 export function formatTimeRange(start: string | Date, end: string | Date) {
-  return `${format(toDate(start), "HH.mm")} sampai ${format(toDate(end), "HH.mm")} ${TZ_LABEL}`;
+  return `${format(toDate(start), "HH.mm")} – ${format(toDate(end), "HH.mm")} ${TZ_LABEL}`;
 }
 
 /** 14 Nov, 10.12 */

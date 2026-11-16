@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import { StateView } from "@/components/elements/state-view";
+import { StateView } from "@/components/elements/StateView";
 
 export default function NotFound() {
   return (

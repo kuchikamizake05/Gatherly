@@ -1,6 +1,6 @@
 "use client";
 
-import { Minus, Plus } from "lucide-react";
+import { Info, Minus, Plus } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { formatDateShort, formatRupiah, formatTime } from "@/lib/format";
@@ -66,7 +66,8 @@ function statusNote(t: TicketType) {
     case "closed":
       return "Penjualan ditutup";
     default:
-      return t.remaining !== undefined ? `Sisa ${t.remaining} tiket` : null;
+      if (t.remaining === undefined) return null;
+      return t.remaining <= 5 ? `Tinggal ${t.remaining} tiket` : `Sisa ${t.remaining} tiket`;
   }
 }
 
@@ -77,6 +78,10 @@ type TicketPickerProps = {
   maxPerOrder?: number;
   /** Kunci semua kontrol, misalnya saat pesanan sedang diproses atau luring. */
   disabled?: boolean;
+  /** Satu jenis tiket per pesanan (sesuai backend). Memilih jenis lain mengosongkan pilihan sebelumnya. */
+  single?: boolean;
+  /** Teks di bawah daftar saat belum mencapai batas, misalnya "Maksimal 4 tiket per pesanan". */
+  hint?: React.ReactNode;
   className?: string;
 };
 
@@ -86,7 +91,7 @@ export function selectionTotal(ticketTypes: TicketType[], value: TicketSelection
   return { quantity, amount };
 }
 
-export function TicketPicker({ ticketTypes, value, onChange, maxPerOrder = 4, disabled, className }: TicketPickerProps) {
+export function TicketPicker({ ticketTypes, value, onChange, maxPerOrder = 4, disabled, single, hint, className }: TicketPickerProps) {
   const { quantity } = selectionTotal(ticketTypes, value);
   const atLimit = quantity >= maxPerOrder;
 
@@ -118,17 +123,25 @@ export function TicketPicker({ ticketTypes, value, onChange, maxPerOrder = 4, di
                 label={t.name}
                 value={qty}
                 disabled={disabled}
-                canIncrease={!atLimit && qty < remaining}
-                onChange={(next) => onChange({ ...value, [t.id]: Math.max(0, next) })}
+                canIncrease={(single ? qty < maxPerOrder : !atLimit) && qty < remaining}
+                onChange={(next) => onChange(single ? { [t.id]: Math.max(0, next) } : { ...value, [t.id]: Math.max(0, next) })}
               />
             )}
           </div>
         );
       })}
-      {atLimit && (
-        <p className="text-[13px] font-semibold text-warning-ink" role="status">
+      {atLimit ? (
+        <p className="flex items-center gap-2 text-[13px] font-semibold text-warning-ink" role="status">
+          <Info className="size-4" aria-hidden />
           Sudah {maxPerOrder} tiket, batas per pesanan
         </p>
+      ) : (
+        hint && (
+          <p className="flex items-center gap-2 text-[13px] text-text-tertiary">
+            <Info className="size-4" aria-hidden />
+            {hint}
+          </p>
+        )
       )}
     </div>
   );

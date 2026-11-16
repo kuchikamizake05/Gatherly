@@ -106,7 +106,7 @@ Berlaku untuk semua teks yang dilihat pengguna: judul, tombol, label, pesan erro
 
 | Aturan | Benar | Salah |
 | --- | --- | --- |
-| Tanpa em dash (—) dan en dash (–). Rentang pakai "sampai", jeda pakai koma atau kalimat baru. | 15.00 sampai 22.00 WIB | 15.00–22.00 WIB |
+| Tanpa em dash (—). En dash (–) hanya untuk rentang singkat yang memang tertulis begitu di desain: jam dan chip harga. Selain itu pakai "sampai", jeda pakai koma atau kalimat baru. | 15.00 – 22.00 WIB, Rp50–150rb, Buka sampai Jumat | Acara seru — jangan lewatkan |
 | Minim "·", ":", dan ";". Pecah jadi kalimat pendek atau baris terpisah. | Sab, 21 Nov 2026, Desa Wisata Brayut | Sab · 21 Nov · Brayut |
 | Huruf kapital hanya di awal kalimat dan nama diri. Tanpa teks kapital semua dengan tracking lebar. | Simpan perubahan | SIMPAN PERUBAHAN, Simpan Perubahan |
 | Tanpa eyebrow (label kecil di atas judul). | Judul langsung | "FITUR UNGGULAN" di atas judul |
@@ -140,7 +140,7 @@ Tampilan:
 - Light mode saja.
 - Warna, radius, bayangan, dan durasi hanya dari token di `globals.css`. Tidak ada kode hex langsung di komponen, kecuali di ilustrasi.
 - Ikon hanya dari lucide, ukuran 16, 18, 20, atau 24.
-- Logo aplikasi atau merek lain (Instagram, TikTok, X, Google, bank, e-wallet, dan sejenisnya) diambil dari [thesvg.org](https://thesvg.org) (`/icons/<nama>/mono.svg` atau `default.svg`), lalu ditaruh di `src/components/elements/brand-icons.tsx`. Jangan menggambar ulang sendiri.
+- Logo aplikasi atau merek lain (Instagram, TikTok, X, Google, bank, e-wallet, dan sejenisnya) diambil dari [thesvg.org](https://thesvg.org) (`/icons/<nama>/mono.svg` atau `default.svg`), lalu ditaruh di `src/components/elements/BrandIcons.tsx`. Jangan menggambar ulang sendiri.
 
 ## Gambar
 

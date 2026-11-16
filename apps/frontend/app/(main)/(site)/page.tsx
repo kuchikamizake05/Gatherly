@@ -1,11 +1,16 @@
-import { RouteStub } from "@/components/elements/route-stub";
+import { cookies } from "next/headers";
+
 import { eventsApi } from "@/modules/events/api";
+import { HomeView } from "@/modules/events/components/HomeView";
 
-/** Data katalog diperbarui tiap 60 detik. */
-export const revalidate = 60;
-
-/** Beranda dan jelajahi. Server Component supaya cepat dan terindeks. */
+/** Beranda dan Jelajahi. Pita 03. Dirender di server supaya cepat dan terindeks. */
 export default async function HomePage() {
-  const events = await eventsApi.list({ sort: "date_asc", limit: 12 });
-  return <RouteStub title="Jelajahi acara" band="03" scenario="A. Layar utama" pendingIssue="#3 B10" data={{ events }} />;
+  // Cookie diteruskan supaya status "disimpan" di kartu sesuai akun yang sedang masuk.
+  const cookie = (await cookies()).toString() || undefined;
+  const [featured, thisWeek, affordable] = await Promise.all([
+    eventsApi.list({ sort: "date_asc", limit: 7 }, cookie),
+    eventsApi.list({ date: "week", sort: "date_asc", limit: 4 }, cookie),
+    eventsApi.list({ maxPrice: 50000, sort: "price_asc", limit: 4 }, cookie),
+  ]);
+  return <HomeView featured={featured.data} thisWeek={thisWeek.data} affordable={affordable.data} />;
 }

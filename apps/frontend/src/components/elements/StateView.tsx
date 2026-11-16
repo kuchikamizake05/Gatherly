@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
-import { Illustration, type IllustrationName } from "@/components/elements/illustration";
+import { Illustration, type IllustrationName } from "@/components/elements/Illustration";
 
 /**
  * Satu komponen untuk semua keadaan selain konten normal: kosong, tidak ditemukan,

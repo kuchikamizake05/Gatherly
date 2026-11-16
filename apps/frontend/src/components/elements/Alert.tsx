@@ -16,7 +16,7 @@ const TONE: Record<Tone, { box: string; icon: LucideIcon }> = {
   warning: { box: "bg-warning-tint text-warning-ink", icon: TriangleAlert },
   success: { box: "bg-success-tint text-success-ink", icon: CircleCheck },
   info: { box: "bg-info-tint text-info-ink", icon: Info },
-  offline: { box: "bg-warning-tint text-warning-ink", icon: WifiOff },
+  offline: { box: "bg-info-tint text-info-ink", icon: WifiOff },
 };
 
 type AlertProps = {

@@ -9,9 +9,9 @@ import { Compass, Heart, Ticket, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMe } from "@/modules/auth/hooks";
 import { Button } from "@/components/ui/button";
-import { OfflineBanner } from "@/components/elements/offline-banner";
-import { AccountMenu } from "@/components/elements/account-menu";
-import { InstagramIcon, TikTokIcon, XIcon } from "@/components/elements/brand-icons";
+import { OfflineBanner } from "@/components/elements/OfflineBanner";
+import { AccountMenu } from "@/components/elements/AccountMenu";
+import { InstagramIcon, TikTokIcon, XIcon } from "@/components/elements/BrandIcons";
 
 /**
  * Kerangka gatherly.xyz. Sesuai layar di pita 03 A1 (desktop, tablet, mobile).
@@ -35,6 +35,8 @@ const TABS = [
 
 /** Halaman yang punya tombol aksi menempel di bawah layar di mobile, jadi tab bar disembunyikan. */
 const HIDE_TAB_BAR = [/^\/events\/[^/]+$/, /^\/checkout/, /^\/orders\//, /^\/tickets\/[^/]+/];
+/** Halaman yang punya judul atau tombol sendiri di mobile, tanpa header logo (pita 03 hasil, 04, 08, 09). */
+const HIDE_MOBILE_HEADER = [/^\/saved$/, /^\/organizers\/[^/]+$/, /^\/events$/, /^\/events\/[^/]+$/];
 
 function Logo({ size = 28 }: { size?: number }) {
   return (
@@ -245,7 +247,7 @@ export function SiteShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-dvh flex-col">
       <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md">
         <DesktopNav pathname={pathname} guest={guest} />
-        <MobileHeader pathname={pathname} guest={guest} />
+        {!HIDE_MOBILE_HEADER.some((re) => re.test(pathname)) && <MobileHeader pathname={pathname} guest={guest} />}
         <OfflineBanner />
       </header>
       {/* flex kolom supaya StateView dan halaman bisa mengisi tinggi penuh. */}

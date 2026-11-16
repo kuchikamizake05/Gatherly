@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import { StateView } from "@/components/elements/state-view";
+import { StateView } from "@/components/elements/StateView";
 
 /** 404 global, dipakai juga saat domain utama membuka /organizer atau /admin. Layar penuh tanpa shell. */
 export default function NotFound() {

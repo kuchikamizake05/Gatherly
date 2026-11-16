@@ -12,6 +12,11 @@ export type EventCard = {
   startingPrice: number | null;
   saved?: boolean;
   status?: EventStatus;
+  /**
+   * Sorotan penjualan untuk badge kartu. Dihitung backend:
+   * almost_sold_out sisa kuota di bawah 10%, ending_soon penjualan tutup dalam 3 hari, new terbit dalam 7 hari.
+   */
+  highlight?: "almost_sold_out" | "ending_soon" | "new";
 };
 
 export type TicketType = {
@@ -49,17 +54,29 @@ export type EventDetail = {
   status: EventStatus;
   cancelReason?: string;
   saved: boolean;
-  organizer: { username: string; name: string; eventCount: number; since: number };
+  highlight?: EventCard["highlight"];
+  organizer: { username: string; name: string; eventCount: number; since: number; description?: string };
 };
 
 export type EventQuery = {
   q?: string;
+  /** Slug kategori, lihat categories.ts. */
   category?: string;
   minPrice?: number;
   maxPrice?: number;
+  date?: "today" | "tomorrow" | "weekend" | "week";
+  /** Chip "Dekat kampus" di beranda. */
+  area?: "campus";
   sort?: "date_asc" | "price_asc";
   page?: number;
   limit?: number;
+};
+
+/** Saran saat mengetik di kolom cari (pita 03 B3). */
+export type EventSuggestions = {
+  keywords: string[];
+  events: Pick<EventCard, "slug" | "title" | "startsAt" | "venueName" | "poster">[];
+  categories: { slug: string; name: string; count: number }[];
 };
 
 export type OrganizerProfile = {
