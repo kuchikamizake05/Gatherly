@@ -51,6 +51,8 @@ export type EventDetail = {
   terms: string[];
   ticketTypes: TicketType[];
   maxPerOrder: number;
+  /** Batas usia peserta, misalnya 17. Tanggal lahir wajib diisi di checkout bila ada. */
+  minAge?: number;
   status: EventStatus;
   cancelReason?: string;
   saved: boolean;

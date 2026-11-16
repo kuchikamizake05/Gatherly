@@ -32,6 +32,8 @@ const mockOrder = (overrides: Partial<Order> = {}): Order => ({
   isVerifying: false,
   canResumePayment: true,
   ticketIds: [],
+  createdAt: new Date(Date.now() - 2 * 60_000).toISOString(),
+  paymentMethod: null,
   ...overrides,
 });
 
@@ -44,8 +46,9 @@ export const ordersApi = {
     }),
   get: (id: string) => api.get<{ data: Order }>(`/orders/${id}`, { mock: () => wrap(mockOrder({ id })) }),
   list: () => api.get<Paginated<Order>>("/orders", { mock: () => page([mockOrder()]) }),
-  paymentSession: (id: string) =>
-    api.post<{ data: PaymentSession }>(`/orders/${id}/payment-session`, undefined, {
+  /** method: kode dari payment-methods.ts. Backend meneruskannya sebagai enabled_payments Snap. */
+  paymentSession: (id: string, method: string) =>
+    api.post<{ data: PaymentSession }>(`/orders/${id}/payment-session`, { method }, {
       mock: () =>
         wrap({
           snapToken: "mock-snap-token",

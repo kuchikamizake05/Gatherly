@@ -47,6 +47,7 @@ const festival: EventDetail = {
     status: t.status,
   })),
   maxPerOrder: FIX.festival.maxPerOrder,
+  minAge: 17,
   status: "on_sale",
   saved: true,
   highlight: "almost_sold_out",

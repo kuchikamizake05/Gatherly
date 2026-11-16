@@ -2,7 +2,8 @@ export type PaymentStatus = "pending" | "paid" | "failed" | "expired";
 export type ReservationStatus = "held" | "converted" | "released";
 export type IssuanceStatus = "not_ready" | "processing" | "issued";
 
-export type Attendee = { name: string; email?: string };
+/** birthDate YYYY-MM-DD, wajib bila acara punya batas usia (EventDetail.minAge). */
+export type Attendee = { name: string; email?: string; birthDate?: string };
 
 /** OrderDTO dari backend (docs/api-contract.md). */
 export type Order = {
@@ -22,6 +23,9 @@ export type Order = {
   isVerifying: boolean;
   canResumePayment: boolean;
   ticketIds: string[];
+  createdAt?: string;
+  /** Kode metode yang dipilih terakhir, misalnya "bca_va". */
+  paymentMethod?: string | null;
   /** Pending B34: pembatalan oleh pembeli. */
   cancelledAt?: string | null;
 };
@@ -30,6 +34,8 @@ export type CreateOrderInput = {
   ticketTypeId: string;
   quantity: number;
   attendees: Attendee[];
+  /** Nomor WhatsApp pemesan untuk info penting pesanan. */
+  contactPhone: string;
 };
 
 export type PaymentSession = { snapToken: string; redirectUrl: string; expiresAt: string };

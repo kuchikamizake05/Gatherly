@@ -1,14 +1,9 @@
-"use client";
+import { CheckoutPayment } from "@/modules/orders/components/CheckoutPayment";
 
-import { useParams } from "next/navigation";
-import { RouteStub } from "@/components/elements/RouteStub";
-import { useOrder, usePaymentSession, useCancelOrder } from "@/modules/orders/hooks";
+type Props = { params: Promise<{ orderId: string }> };
 
-export default function Page() {
-  const { orderId } = useParams<{ orderId: string }>();
-  const order = useOrder(orderId, { poll: true });
-  const session = usePaymentSession();
-  const cancel = useCancelOrder();
-  void session; void cancel; // Buka Snap Midtrans dengan session.data.snapToken.
-  return <RouteStub title="Bayar pesanan" band="05" scenario="A2 sampai C. Bayar, ganti metode" queries={{ order: order }} />;
+/** Bayar pesanan. Pita 05 A2, C, E3, E4. */
+export default async function CheckoutPaymentPage({ params }: Props) {
+  const { orderId } = await params;
+  return <CheckoutPayment orderId={orderId} />;
 }

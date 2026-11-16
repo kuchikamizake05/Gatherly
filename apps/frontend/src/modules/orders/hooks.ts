@@ -35,7 +35,9 @@ export function useCreateOrder() {
 }
 
 export function usePaymentSession() {
-  return useMutation({ mutationFn: (orderId: string) => ordersApi.paymentSession(orderId) });
+  return useMutation({
+    mutationFn: ({ orderId, method }: { orderId: string; method: string }) => ordersApi.paymentSession(orderId, method),
+  });
 }
 
 export function useCancelOrder() {

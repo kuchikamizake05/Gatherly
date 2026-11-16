@@ -1,25 +1,12 @@
-"use client";
-
 import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import { RouteStub } from "@/components/elements/RouteStub";
-import { useEvent } from "@/modules/events/hooks";
-import { useCreateOrder } from "@/modules/orders/hooks";
 
-function PageContent() {
-  const search = useSearchParams();
-  // Dibuka dari tombol Beli tiket: /checkout?event=<slug>&ticket=<ticketTypeId>&qty=<n>
-  const event = useEvent(search.get("event") ?? "");
-  const createOrder = useCreateOrder();
-  void createOrder; // Panggil saat Lanjut ke pembayaran. Pakai crypto.randomUUID() sebagai Idempotency-Key.
-  return <RouteStub title="Data peserta" band="05" scenario="A1. Data peserta" queries={{ event: event }} />;
-}
+import { CheckoutAttendees } from "@/modules/orders/components/CheckoutAttendees";
 
-/** useSearchParams wajib dibungkus Suspense. */
-export default function Page() {
+/** Data peserta. Pita 05 A1. /checkout?event=<slug>&ticket=<id>&qty=<n> */
+export default function CheckoutPage() {
   return (
     <Suspense>
-      <PageContent />
+      <CheckoutAttendees />
     </Suspense>
   );
 }
