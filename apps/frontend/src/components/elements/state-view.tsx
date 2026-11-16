@@ -78,7 +78,7 @@ export function StateView({
         {action && <div className="mt-2 hidden md:flex">{action}</div>}
       </div>
       {action && (
-        <div className="sticky bottom-0 w-full bg-background pt-3 pb-[max(16px,env(safe-area-inset-bottom))] md:hidden [&>*]:w-full">
+        <div className="sticky bottom-[var(--bottom-bar,0px)] w-full bg-background pt-3 pb-[max(16px,env(safe-area-inset-bottom))] md:hidden [&>*]:w-full">
           {action}
         </div>
       )}
