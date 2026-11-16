@@ -26,7 +26,7 @@ const schema = (needCurrent: boolean) =>
     .object({
       current: needCurrent ? z.string().min(1, "Isi password saat ini") : z.string(),
       next: z.string().min(PASSWORD_MIN, `Password minimal ${PASSWORD_MIN} karakter`).max(128),
-      confirm: z.string(),
+      confirm: z.string().min(1, "Ketik ulang password baru"),
     })
     .refine((v) => v.next === v.confirm, { path: ["confirm"], message: "Password belum sama dengan isian sebelumnya" })
     .refine((v) => !needCurrent || v.next !== v.current, { path: ["next"], message: "Gunakan password yang berbeda dari password saat ini" });
