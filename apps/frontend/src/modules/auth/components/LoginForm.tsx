@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,10 +28,20 @@ type Values = z.infer<typeof schema>;
 
 type FormError = "credentials" | "rate_limited" | "google" | "generic" | null;
 
-export function LoginForm() {
+type LoginFormProps = {
+  /** Ganti judul bawaan, misalnya judul dialog "Masuk untuk melanjutkan" (pita 04 C2). */
+  heading?: ReactNode;
+  /** Tujuan setelah verifikasi. Bawaan dari ?returnTo di URL. */
+  returnTo?: string;
+  /** Dipakai di dalam dialog atau drawer: tombol tidak menempel di bawah layar. */
+  embedded?: boolean;
+};
+
+export function LoginForm({ heading, returnTo: returnToProp, embedded = false }: LoginFormProps = {}) {
   const router = useRouter();
   const search = useSearchParams();
-  const returnTo = useReturnTo();
+  const urlReturnTo = useReturnTo();
+  const returnTo = returnToProp ?? urlReturnTo;
   const online = useOnline();
   const login = useLogin();
   const [formError, setFormError] = useState<FormError>(search.get("error") === "google" ? "google" : null);
@@ -67,7 +77,9 @@ export function LoginForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-1 flex-col gap-5">
-      <AuthHeading title="Masuk ke Gatherly">Selamat datang kembali. Masuk untuk melihat tiket dan melanjutkan pembelian.</AuthHeading>
+      {heading ?? (
+        <AuthHeading title="Masuk ke Gatherly">Selamat datang kembali. Masuk untuk melihat tiket dan melanjutkan pembelian.</AuthHeading>
+      )}
 
       {!online && (
         <Alert tone="offline" title="Anda sedang luring">
@@ -116,11 +128,11 @@ export function LoginForm() {
         <PasswordInput id="password" autoComplete="current-password" aria-invalid={!!errors.password} {...register("password")} />
       </Field>
 
-      <AuthActions>
+      <AuthActions embedded={embedded}>
         <Button type="submit" size="lg" block loading={login.isPending} disabled={!online || locked}>
           {login.isPending ? "Memproses…" : "Masuk"}
         </Button>
-        <p className="hidden text-[13px] text-text-tertiary md:block">
+        <p className={embedded ? "text-[13px] text-text-tertiary" : "hidden text-[13px] text-text-tertiary md:block"}>
           Kami akan mengirim kode 6 digit ke email untuk memastikan ini Anda.
         </p>
         <SwitchLink text="Belum punya akun?" label="Daftar" href={withReturnTo("/register", returnTo)} />

@@ -72,9 +72,11 @@ export const FIX = {
     { slug: "festival-jazz-di-sawah", title: "Festival Jazz di Sawah", category: "Musik", startsAt: "2026-11-21T08:00:00Z", venueName: "Desa Wisata Brayut", startingPrice: 100000, poster: IMG("photo-1511192336575-5a79af67a629") },
     { slug: "meetup-desainer-produk-12", title: "Meetup Desainer Produk #12", category: "Komunitas", startsAt: "2026-10-29T11:00:00Z", venueName: "Kopi Klotok Kaliurang", startingPrice: 0, poster: IMG("photo-1528605248644-14dd04022da1") },
     { slug: "keroncong-di-pendopo", title: "Keroncong di Pendopo", category: "Musik", startsAt: "2026-12-05T12:00:00Z", venueName: "Pendopo Kalurahan Bangunjiwo", startingPrice: 50000, poster: IMG("photo-1514525253161-7a46d19cd819"), highlight: "new" as const },
-    { slug: "pameran-foto-kampung-kota", title: "Pameran Foto Kampung Kota", category: "Pameran", startsAt: "2026-11-27T03:00:00Z", venueName: "Lir Space, Kotagede", startingPrice: 0, poster: IMG("photo-1531058020387-3be344556be6"), highlight: "ending_soon" as const },
+    { slug: "pameran-foto-kampung-kota", title: "Pameran Foto Kampung Kota", category: "Seni & Budaya", startsAt: "2026-11-27T03:00:00Z", venueName: "Lir Space, Kotagede", startingPrice: 0, poster: IMG("photo-1531058020387-3be344556be6"), highlight: "ending_soon" as const },
     { slug: "bazar-buku-bekas-zine", title: "Bazar Buku Bekas & Zine", category: "Komunitas", startsAt: "2026-12-13T01:00:00Z", venueName: "Pendopo Ajiyasa", startingPrice: null, poster: IMG("photo-1521587760476-6c12a4b040da"), status: "sold_out" as const },
     { slug: "malam-eksperimen-gamelan-synth", title: "Malam Eksperimen Gamelan dan Synth", category: "Musik", startsAt: "2026-12-11T13:00:00Z", venueName: "Kedai Kebun Forum", startingPrice: 75000, poster: IMG("photo-1470225620780-dba8ba36b745") },
+    { slug: "kelas-membatik-tulis", title: "Kelas Membatik Tulis", category: "Lokakarya", startsAt: "2026-11-28T02:00:00Z", venueName: "Kampung Batik Giriloyo", startingPrice: 45000, poster: IMG("photo-1604881991720-f91add269bed") },
+    { slug: "nonton-bareng-film-pendek", title: "Nonton Bareng Film Pendek Jogja", category: "Seni & Budaya", startsAt: "2026-11-20T12:00:00Z", venueName: "Pendopo Sonobudoyo", startingPrice: 25000, poster: IMG("photo-1489599849927-2ee91cede3ba"), highlight: "new" as const },
     { slug: "panggung-halaman-rumah-8", title: "Panggung Halaman Rumah #8", category: "Musik", startsAt: "2026-12-20T09:00:00Z", venueName: "Kampung Ketandan", startingPrice: 0, poster: IMG("photo-1493225457124-a3eb161ffa5f") },
   ],
   order: {

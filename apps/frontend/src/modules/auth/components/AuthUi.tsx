@@ -85,7 +85,8 @@ export function OrDivider({ children = "atau gunakan email" }: { children?: Reac
  * Tombol utama dan tautan ganti halaman. Di mobile menempel di bawah layar,
  * di tablet dan desktop tetap di bawah form.
  */
-export function AuthActions({ children }: { children: ReactNode }) {
+export function AuthActions({ children, embedded = false }: { children: ReactNode; embedded?: boolean }) {
+  if (embedded) return <div className="flex flex-col gap-3 pt-1">{children}</div>;
   return (
     <div className="sticky bottom-0 mt-auto flex flex-col gap-3 bg-background pt-4 pb-[max(16px,env(safe-area-inset-bottom))] md:static md:mt-0 md:pt-0 md:pb-0">
       {children}

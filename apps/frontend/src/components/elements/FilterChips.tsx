@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { ChevronDown, X } from "lucide-react";
+import { Banknote, ChevronDown, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -107,7 +107,12 @@ export function PriceFilter({ value, onChange }: { value: PriceRange; onChange: 
       }}
     >
       <PopoverTrigger asChild>
-        <Chip selected={active} hasMenu={!active} onClear={active ? () => onChange({}) : undefined}>
+        <Chip
+          selected={active}
+          hasMenu={!active}
+          leading={<Banknote className="size-4" aria-hidden />}
+          onClear={active ? () => onChange({}) : undefined}
+        >
           {priceRangeLabel(value)}
         </Chip>
       </PopoverTrigger>

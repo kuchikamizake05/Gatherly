@@ -1,26 +1,12 @@
-"use client";
-
 import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
-import { RouteStub } from "@/components/elements/RouteStub";
-import { useEvents } from "@/modules/events/hooks";
 
-function PageContent() {
-  const search = useSearchParams();
-  const events = useEvents({
-    q: search.get("q") ?? undefined,
-    category: search.get("category") ?? undefined,
-    minPrice: search.get("minPrice") ? Number(search.get("minPrice")) : undefined,
-    maxPrice: search.get("maxPrice") ? Number(search.get("maxPrice")) : undefined,
-  });
-  return <RouteStub title="Hasil pencarian" band="03" scenario="B sampai D. Cari, filter, kategori" pendingIssue="#3 B10" queries={{ events: events }} />;
-}
+import { EventSearchResults } from "@/modules/events/components/EventSearchResults";
 
-/** useSearchParams wajib dibungkus Suspense. */
-export default function Page() {
+/** Hasil pencarian, filter, dan kategori. Pita 03. Filter dibaca dari URL, jadi dibungkus Suspense. */
+export default function EventsPage() {
   return (
     <Suspense>
-      <PageContent />
+      <EventSearchResults />
     </Suspense>
   );
 }

@@ -1,7 +1,8 @@
 import { api, page, wrap, type Paginated } from "@/lib/api/client";
 import { FIX } from "@/modules/_mock/fixtures";
 
-import type { EventCard, EventDetail, EventQuery, OrganizerProfile, ReportInput } from "./types";
+import { CATEGORIES, categorySlug } from "./categories";
+import type { EventCard, EventDetail, EventQuery, EventSuggestions, OrganizerProfile, ReportInput } from "./types";
 
 /**
  * Acara publik di gatherly.xyz. Pita desain 03, 04, 08, 09.
@@ -48,27 +49,62 @@ const festival: EventDetail = {
   maxPerOrder: FIX.festival.maxPerOrder,
   status: "on_sale",
   saved: true,
+  highlight: "almost_sold_out",
   organizer: {
     username: FIX.organizer.username,
     name: FIX.organizer.name,
     eventCount: FIX.organizer.eventCount,
     since: FIX.organizer.since,
+    description: FIX.organizer.description,
   },
 };
 
+/** Mock katalog: hanya acara yang belum lewat. Filter tanggal dan area diabaikan di mock. */
 function filterCards(query: EventQuery) {
-  return cards.filter((c) => {
+  const list = cards.filter((c) => {
+    if (PAST(c)) return false;
     if (query.q && !c.title.toLowerCase().includes(query.q.toLowerCase())) return false;
-    if (query.category && c.category.toLowerCase() !== query.category.toLowerCase()) return false;
+    if (query.category && categorySlug(c.category) !== query.category) return false;
     if (query.minPrice !== undefined && (c.startingPrice ?? 0) < query.minPrice) return false;
-    if (query.maxPrice !== undefined && (c.startingPrice ?? 0) > query.maxPrice) return false;
+    if (query.maxPrice !== undefined && (c.startingPrice ?? Infinity) > query.maxPrice) return false;
     return true;
   });
+  if (query.sort === "price_asc") list.sort((a, b) => (a.startingPrice ?? Infinity) - (b.startingPrice ?? Infinity));
+  else list.sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+  return list;
+}
+
+function mockList(query: EventQuery) {
+  const all = filterCards(query);
+  const limit = query.limit ?? 20;
+  const pageNo = query.page ?? 1;
+  return { data: all.slice(0, pageNo * limit), meta: { page: pageNo, limit, total: all.length } };
+}
+
+function mockSuggest(q: string): EventSuggestions {
+  const term = q.trim().toLowerCase();
+  const events = filterCards({ q: term }).slice(0, 2);
+  const words = new Set<string>([term]);
+  for (const c of cards) {
+    const title = c.title.toLowerCase();
+    if (title.includes(term)) words.add(title.split(" ").slice(0, 3).join(" "));
+  }
+  return {
+    keywords: [...words].slice(0, 3),
+    events,
+    categories: CATEGORIES.filter((cat) => filterCards({ q: term, category: cat.slug }).length > 0).map((cat) => ({
+      ...cat,
+      count: filterCards({ q: term, category: cat.slug }).length,
+    })),
+  };
 }
 
 export const eventsApi = {
   list: (query: EventQuery = {}, cookie?: string) =>
-    api.get<Paginated<EventCard>>("/events", { query, cookie, ...pending, mock: () => page(filterCards(query)) }),
+    api.get<Paginated<EventCard>>("/events", { query, cookie, ...pending, mock: () => mockList(query) }),
+  /** Saran kata kunci, acara, dan kategori saat mengetik. */
+  suggest: (q: string) =>
+    api.get<{ data: EventSuggestions }>("/events/suggestions", { query: { q }, ...pending, mock: () => wrap(mockSuggest(q)) }),
   detail: (slug: string, cookie?: string) =>
     api.get<{ data: EventDetail }>(`/events/${slug}`, { cookie, ...pending, mock: () => wrap({ ...festival, slug }) }),
 
