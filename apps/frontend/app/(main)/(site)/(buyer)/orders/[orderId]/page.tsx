@@ -1,11 +1,9 @@
-"use client";
+import { OrderStatusView } from "@/modules/orders/components/OrderStatusView";
 
-import { useParams } from "next/navigation";
-import { RouteStub } from "@/components/elements/RouteStub";
-import { useOrder } from "@/modules/orders/hooks";
+type Props = { params: Promise<{ orderId: string }> };
 
-export default function Page() {
-  const { orderId } = useParams<{ orderId: string }>();
-  const order = useOrder(orderId, { poll: true });
-  return <RouteStub title="Status pesanan" band="05" scenario="D. Menunggu, memverifikasi, berhasil, gagal, kedaluwarsa" queries={{ order: order }} />;
+/** Status pesanan. Pita 05 A4, A5, D. */
+export default async function OrderStatusPage({ params }: Props) {
+  const { orderId } = await params;
+  return <OrderStatusView orderId={orderId} />;
 }
