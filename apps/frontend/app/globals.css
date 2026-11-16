@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* Gatherly hanya mode terang. dark: dari komponen shadcn baru aktif bila ada kelas .dark (tidak pernah dipasang),
+   supaya tampilan tidak berubah di perangkat yang memakai mode gelap. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Token desain Gatherly. Sumber: pita 02 Design system di file pen.dev.
    Light mode saja. Lihat design/frontend-rules.md. */
 

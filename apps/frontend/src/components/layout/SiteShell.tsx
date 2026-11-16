@@ -35,8 +35,8 @@ const TABS = [
 
 /** Halaman yang punya tombol aksi menempel di bawah layar di mobile, jadi tab bar disembunyikan. */
 const HIDE_TAB_BAR = [/^\/events\/[^/]+$/, /^\/checkout/, /^\/orders\//, /^\/tickets\/[^/]+/];
-/** Halaman yang punya judul atau tombol sendiri di mobile, tanpa header logo (pita 03 hasil, 04 sampai 09). */
-const HIDE_MOBILE_HEADER = [/^\/saved$/, /^\/organizers\/[^/]+$/, /^\/events$/, /^\/events\/[^/]+$/, /^\/checkout/, /^\/orders\//, /^\/tickets/];
+/** Halaman yang punya judul atau tombol sendiri di mobile, tanpa header logo (pita 03 hasil, 04 sampai 09, 12). */
+const HIDE_MOBILE_HEADER = [/^\/saved$/, /^\/organizers\/[^/]+$/, /^\/events$/, /^\/events\/[^/]+$/, /^\/checkout/, /^\/orders\//, /^\/tickets/, /^\/account/];
 
 function Logo({ size = 28 }: { size?: number }) {
   return (

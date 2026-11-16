@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { CalendarPlus, Heart, LogOut, Receipt, User } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
-import { useLogout, useMe } from "@/modules/auth/hooks";
+import { useMe } from "@/modules/auth/hooks";
+import { useSignOut } from "@/modules/auth/use-sign-out";
 import { useOrders } from "@/modules/orders/hooks";
 import { useSavedEvents } from "@/modules/events/hooks";
 import {
@@ -52,11 +52,10 @@ function Item({ href, icon, label, meta, danger, onSelect }: { href?: string; ic
 }
 
 export function AccountMenu() {
-  const router = useRouter();
   const { data: me } = useMe();
   const orders = useOrders();
   const saved = useSavedEvents();
-  const logout = useLogout();
+  const { signOut } = useSignOut();
   if (!me) return null;
 
   const pending = orders.data?.data.filter((o) => o.paymentStatus === "pending" && o.canResumePayment).length ?? 0;
@@ -90,7 +89,7 @@ export function AccountMenu() {
           icon={<LogOut />}
           label="Keluar"
           danger
-          onSelect={() => logout.mutate(undefined, { onSuccess: () => router.refresh() })}
+          onSelect={signOut}
         />
       </DropdownMenuContent>
     </DropdownMenu>

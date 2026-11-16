@@ -96,6 +96,11 @@ export function LoginForm({ heading, returnTo: returnToProp, embedded = false }:
         <Alert title="Gagal masuk dengan Google">Jendela Google ditutup atau koneksi terputus. Silakan coba lagi.</Alert>
       )}
       {formError === "generic" && <Alert title="Gagal masuk">Terjadi kendala di server. Silakan coba lagi.</Alert>}
+      {search.get("reason") === "session" && !formError && (
+        <Alert tone="warning" title="Sesi Anda telah berakhir">
+          {returnTo.startsWith("/account") ? "Silakan masuk kembali untuk membuka Akun saya." : "Silakan masuk kembali untuk melanjutkan."}
+        </Alert>
+      )}
 
       <GoogleButton href={authApi.googleUrl(returnTo)} disabled={!online}>
         Masuk dengan Google
