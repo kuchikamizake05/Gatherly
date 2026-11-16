@@ -15,8 +15,8 @@ export function useEvent(slug: string) {
   return useQuery({ queryKey: qk.event(slug), queryFn: async () => (await eventsApi.detail(slug)).data });
 }
 
-export function useSavedEvents() {
-  return useQuery({ queryKey: qk.saved, queryFn: () => eventsApi.saved() });
+export function useSavedEvents({ enabled = true }: { enabled?: boolean } = {}) {
+  return useQuery({ queryKey: qk.saved, queryFn: () => eventsApi.saved(), enabled });
 }
 
 /** Simpan atau hapus dari Disimpan. Toast dengan tombol Batalkan diatur di komponen. */

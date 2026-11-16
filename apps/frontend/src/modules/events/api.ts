@@ -10,7 +10,15 @@ import type { EventCard, EventDetail, EventQuery, OrganizerProfile, ReportInput 
 
 const pending = { pending: true } as const;
 
-const cards: EventCard[] = FIX.catalog.map((e) => ({ ...e, saved: e.slug === "festival-jazz-di-sawah" }));
+const SAVED = ["festival-jazz-di-sawah", "pameran-foto-kampung-kota", "keroncong-di-pendopo", "bazar-buku-bekas-zine", "workshop-risograph", "senja-akustik-di-kotabaru"];
+const PAST = (c: EventCard) => new Date(c.startsAt).getTime() < Date.now();
+
+const cards: EventCard[] = FIX.catalog.map((e) => {
+  const card: EventCard = { ...e, saved: SAVED.includes(e.slug) };
+  if (e.slug === "festival-jazz-di-sawah") card.highlight = "almost_sold_out";
+  if (PAST(card)) card.status = "ended";
+  return card;
+});
 
 const festival: EventDetail = {
   id: FIX.festival.id,
@@ -64,7 +72,7 @@ export const eventsApi = {
   detail: (slug: string, cookie?: string) =>
     api.get<{ data: EventDetail }>(`/events/${slug}`, { cookie, ...pending, mock: () => wrap({ ...festival, slug }) }),
 
-  saved: () => api.get<Paginated<EventCard>>("/me/saved-events", { ...pending, mock: () => page(cards.filter((c) => c.saved)) }),
+  saved: () => api.get<Paginated<EventCard>>("/me/saved-events", { ...pending, mock: () => page(SAVED.map((slug) => cards.find((c) => c.slug === slug)!)) }),
   save: (slug: string) => api.put<void>(`/me/saved-events/${slug}`, undefined, { ...pending, mock: () => undefined }),
   unsave: (slug: string) => api.delete<void>(`/me/saved-events/${slug}`, { ...pending, mock: () => undefined }),
 
@@ -81,8 +89,10 @@ export const eventsApi = {
           description: FIX.organizer.description,
           links: FIX.organizer.links,
           eventCount: FIX.organizer.eventCount,
-          upcoming: cards.filter((c) => c.slug === "festival-jazz-di-sawah"),
-          past: [],
+          upcoming: ["festival-jazz-di-sawah", "keroncong-di-pendopo", "malam-eksperimen-gamelan-synth", "panggung-halaman-rumah-8"].map(
+            (slug) => cards.find((c) => c.slug === slug)!,
+          ),
+          past: cards.filter(PAST),
         }),
     }),
 

@@ -12,6 +12,11 @@ export type EventCard = {
   startingPrice: number | null;
   saved?: boolean;
   status?: EventStatus;
+  /**
+   * Sorotan penjualan untuk badge kartu. Dihitung backend:
+   * almost_sold_out sisa kuota di bawah 10%, ending_soon penjualan tutup dalam 3 hari, new terbit dalam 7 hari.
+   */
+  highlight?: "almost_sold_out" | "ending_soon" | "new";
 };
 
 export type TicketType = {

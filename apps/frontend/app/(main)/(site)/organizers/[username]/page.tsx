@@ -1,11 +1,23 @@
-import { RouteStub } from "@/components/elements/route-stub";
+import type { Metadata } from "next";
+
 import { eventsApi } from "@/modules/events/api";
+import { OrganizerProfileView } from "./organizer-profile";
 
 type Props = { params: Promise<{ username: string }> };
 
-/** Profil publik penyelenggara. */
+/** Judul tab dan pratinjau tautan saat profil dibagikan. */
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { username } = await params;
+  try {
+    const { data } = await eventsApi.organizerProfile(username);
+    return { title: `${data.name} di Gatherly`, description: data.description };
+  } catch {
+    return { title: "Penyelenggara di Gatherly" };
+  }
+}
+
+/** Profil publik penyelenggara. Pita 09. */
 export default async function OrganizerProfilePage({ params }: Props) {
   const { username } = await params;
-  const { data: profile } = await eventsApi.organizerProfile(username);
-  return <RouteStub title={profile.name} band="09" pendingIssue="B37" data={{ profile }} />;
+  return <OrganizerProfileView username={username} />;
 }
