@@ -13,12 +13,12 @@ import { formatRupiah, formatTime } from "@/lib/format";
 import { useOnline } from "@/hooks/use-online";
 import { useCancelOrder, useOrders } from "@/modules/orders/hooks";
 import type { Order } from "@/modules/orders/types";
-import { ConfirmDialog } from "@/modules/orders/components/CheckoutChrome";
 import { useTickets } from "@/modules/tickets/hooks";
 import { eventEnded, groupByOrder, ticketState, type TicketGroup } from "@/modules/tickets/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/elements/Alert";
+import { DangerConfirmDialog } from "@/components/elements/DangerConfirmDialog";
 import { CountdownPill, formatCountdown, useCountdown } from "@/components/elements/CountdownPill";
 import { StateView } from "@/components/elements/StateView";
 
@@ -434,10 +434,9 @@ export function TicketsView() {
     <div className="mx-auto flex w-full max-w-[1120px] flex-1 flex-col gap-5 px-5 pt-[max(12px,env(safe-area-inset-top))] pb-32 md:gap-7 md:px-6 md:pt-10 md:pb-24 xl:px-0">
       {header}
       {body}
-      <ConfirmDialog
+      <DangerConfirmDialog
         open={!!cancelling}
         onOpenChange={(o) => !o && setCancelling(null)}
-        danger
         title="Batalkan pesanan ini?"
         description={cancelling ? `Tiket ${cancelling.event.title} akan dilepas dan dapat dibeli orang lain.` : ""}
         cancelLabel="Tidak jadi"

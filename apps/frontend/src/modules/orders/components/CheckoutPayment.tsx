@@ -17,6 +17,7 @@ import type { Order } from "@/modules/orders/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/elements/Alert";
+import { DangerConfirmDialog } from "@/components/elements/DangerConfirmDialog";
 import { CountdownPill } from "@/components/elements/CountdownPill";
 import { initials } from "@/components/elements/AccountMenu";
 
@@ -304,10 +305,9 @@ function PaymentForm({ order, router }: { order: Order; router: ReturnType<typeo
           router.push("/tickets");
         }}
       />
-      <ConfirmDialog
+      <DangerConfirmDialog
         open={cancelOpen}
         onOpenChange={setCancelOpen}
-        danger
         title="Batalkan pesanan ini?"
         description={`${ticketLabel} untuk ${order.event.title} akan dilepas ke pembeli lain. Ini tidak bisa diurungkan.`}
         cancelLabel="Kembali"

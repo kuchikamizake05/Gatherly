@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } f
  * - CheckoutMobileHeader: kembali, judul, "Langkah N dari 4", bar progres.
  * - OrderSummary: kartu ringkasan pesanan.
  * - CheckoutLayout: kolom utama dan kolom samping, bar bawah menempel di mobile.
- * - ConfirmDialog: dialog keluar dan batalkan (baris E). Ganti ke DangerConfirmDialog (B54) setelah tersedia.
+ * - ConfirmDialog: dialog keluar yang tidak berbahaya (baris E2, E3). Untuk batalkan pesanan pakai DangerConfirmDialog.
  */
 
 const STEPS = ["Pilih tiket", "Data peserta", "Bayar", "E-tiket"];
