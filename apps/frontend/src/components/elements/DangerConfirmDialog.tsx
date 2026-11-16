@@ -41,6 +41,8 @@ type DangerConfirmDialogProps = {
   loading?: boolean;
   /** Pesan gagal dari server, tampil di atas tombol. */
   error?: ReactNode;
+  /** Bawaan merah. Pakai "primary" untuk dialog yang bukan tindakan berbahaya (misalnya pita 12 H4, I6). */
+  confirmVariant?: "dangerSolid" | "primary";
   children?: ReactNode;
 };
 
@@ -56,6 +58,7 @@ export function DangerConfirmDialog({
   canConfirm = true,
   loading = false,
   error,
+  confirmVariant = "dangerSolid",
   children,
 }: DangerConfirmDialogProps) {
   const desktop = useIsDesktop();
@@ -102,7 +105,7 @@ export function DangerConfirmDialog({
         <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
           {cancelLabel}
         </Button>
-        <Button type="submit" variant="dangerSolid" disabled={!enabled} loading={loading}>
+        <Button type="submit" variant={confirmVariant} disabled={!enabled} loading={loading}>
           {confirmLabel}
         </Button>
       </div>
