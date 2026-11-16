@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { RouteStub } from "@/components/elements/route-stub";
+import { RouteStub } from "@/components/elements/RouteStub";
 import { useOrder } from "@/modules/orders/hooks";
 import { useTickets, useResendTickets } from "@/modules/tickets/hooks";
 

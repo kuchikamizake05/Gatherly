@@ -1,6 +1,6 @@
 "use client";
 
-import { RouteStub } from "@/components/elements/route-stub";
+import { RouteStub } from "@/components/elements/RouteStub";
 import { useTickets } from "@/modules/tickets/hooks";
 import { useOrders } from "@/modules/orders/hooks";
 

@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { CalendarCheck, CalendarDays, CircleHelp, ExternalLink, LayoutDashboard, LogOut, Settings, Store } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import { WorkspaceShell, type NavItem } from "@/components/layout/workspace-shell";
+import { WorkspaceShell, type NavItem } from "@/components/layout/WorkspaceShell";
 import { useWorkspaceLogout, useWorkspaceMe } from "@/modules/organizer-auth/hooks";
 
 export function OrganizerShell({ children }: { children: ReactNode }) {

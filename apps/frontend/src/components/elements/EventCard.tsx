@@ -19,8 +19,9 @@ import type { EventCard as EventCardData } from "@/modules/events/types";
  *
  * - layout="card": poster di atas, untuk grid.
  * - layout="row": thumbnail 84 px di kiri, untuk daftar di mobile. Tombol hati di kanan bila showSave.
- * - Badge otomatis dari data (Hampir habis, Segera berakhir, Baru, Tiket habis, Sudah lewat, Gratis).
+ * - Kartu: badge otomatis dari data (Hampir habis, Segera berakhir, Baru, Tiket habis, Sudah lewat, Gratis).
  *   Kirim badge={null} untuk menyembunyikan, atau objek badge sendiri untuk menimpa.
+ * - Baris: tanpa badge kecuali dikirim, misalnya badge={eventBadge(event)} di Disimpan.
  */
 
 type Tone = "danger" | "warning" | "neutral" | "success" | "inverse" | "brand";
@@ -138,6 +139,8 @@ export function EventCard({
   const shownBadge = badge === undefined ? eventBadge(event) : badge;
 
   if (layout === "row") {
+    /** Baris tanpa badge: tanggal di atas (pita 03, 09). Dengan badge: badge di atas, tanggal di bawah (pita 08). */
+    const rowBadge = badge ?? null;
     return (
       <div className={cn("flex w-full items-center gap-3", className)}>
         <Link href={href} className={cn("press flex min-w-0 flex-1 items-center gap-3.5", dimmed && "opacity-60")}>
@@ -145,15 +148,16 @@ export function EventCard({
             <Image src={event.poster} alt="" fill sizes="84px" className="object-cover" priority={priority} />
           </span>
           <span className="flex min-w-0 flex-1 flex-col gap-1">
-            {shownBadge && (
-              <span className={cn("text-xs font-bold", ROW_TONE[shownBadge.tone ?? "neutral"])}>
-                {shownBadge.short ?? shownBadge.label}
-              </span>
+            {rowBadge ? (
+              <span className={cn("text-xs font-bold", ROW_TONE[rowBadge.tone ?? "neutral"])}>{rowBadge.short ?? rowBadge.label}</span>
+            ) : (
+              <span className="text-[13px] font-bold text-text-secondary">{shortDate(event.startsAt)}</span>
             )}
             <span className="line-clamp-2 text-[15px] leading-snug font-bold text-foreground">{event.title}</span>
             <span className="line-clamp-2 text-[13px] text-text-tertiary">
-              {shortDate(event.startsAt)}, {event.venueName}
-              {event.startingPrice !== null && !shownBadge?.label.includes("Gratis") && `, ${priceLabel(event.startingPrice)}`}
+              {rowBadge
+                ? `${shortDate(event.startsAt)}, ${event.venueName}`
+                : `${event.venueName}${event.startingPrice !== null ? `, ${priceLabel(event.startingPrice)}` : ""}`}
             </span>
           </span>
         </Link>

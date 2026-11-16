@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { RouteStub } from "@/components/elements/route-stub";
+import { RouteStub } from "@/components/elements/RouteStub";
 import { eventsApi } from "@/modules/events/api";
 
 type Props = { params: Promise<{ slug: string }> };

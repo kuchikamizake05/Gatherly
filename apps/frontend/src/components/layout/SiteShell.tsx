@@ -9,9 +9,9 @@ import { Compass, Heart, Ticket, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMe } from "@/modules/auth/hooks";
 import { Button } from "@/components/ui/button";
-import { OfflineBanner } from "@/components/elements/offline-banner";
-import { AccountMenu } from "@/components/elements/account-menu";
-import { InstagramIcon, TikTokIcon, XIcon } from "@/components/elements/brand-icons";
+import { OfflineBanner } from "@/components/elements/OfflineBanner";
+import { AccountMenu } from "@/components/elements/AccountMenu";
+import { InstagramIcon, TikTokIcon, XIcon } from "@/components/elements/BrandIcons";
 
 /**
  * Kerangka gatherly.xyz. Sesuai layar di pita 03 A1 (desktop, tablet, mobile).

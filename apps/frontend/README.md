@@ -39,18 +39,38 @@ app/
 src/
 ├── components/
 │   ├── ui/            komponen dasar shadcn yang sudah disesuaikan ke desain
-│   ├── elements/      komponen gabungan bersama (kartu acara, empty state, dan seterusnya)
-│   └── layout/        site-shell, workspace-shell, guards
-├── modules/<fitur>/   types.ts, api.ts, hooks.ts per fitur
+│   ├── elements/      komponen bersama lintas fitur (EventCard, StateView, Alert, dan seterusnya)
+│   └── layout/        SiteShell, WorkspaceShell, Guards
+├── modules/<fitur>/
+│   ├── types.ts, api.ts, hooks.ts
+│   └── components/    UI fitur itu, misalnya LoginForm.tsx, SavedView.tsx
 └── lib/               api client, format Rupiah dan tanggal, utils
 ```
+
+### Aturan folder dan nama file
+
+- `app/` hanya untuk routing: membaca params, metadata, fetch di server, lalu merender view dari modul. UI dan logika halaman tidak ditulis di `page.tsx`.
+
+  ```tsx
+  // app/(main)/(site)/saved/page.tsx
+  import { SavedView } from "@/modules/events/components/SavedView";
+
+  export default function SavedPage() {
+    return <SavedView />;
+  }
+  ```
+
+- UI yang hanya dipakai satu fitur masuk ke `src/modules/<fitur>/components/`. UI yang dipakai lebih dari satu fitur masuk ke `src/components/elements/`.
+- File komponen `.tsx` diberi nama sesuai komponennya dengan huruf besar di awal setiap kata: `LoginForm.tsx`, `EventCard.tsx`.
+- File `.ts` memakai huruf kecil: `api.ts`, `hooks.ts`, `use-online.ts`.
+- Pengecualian: file route Next.js (`page.tsx`, `layout.tsx`, `loading.tsx`, `error.tsx`, `not-found.tsx`) dan komponen shadcn di `src/components/ui/` tetap huruf kecil.
 
 ## Cara mengerjakan satu halaman
 
 1. Buka halamannya. Setiap halaman sekarang berisi `RouteStub` yang menunjukkan nomor pita desain dan data yang sudah tersambung.
 2. Lihat pita itu di file desain (tiga ukuran: 1440, 834, 390).
-3. Ganti `RouteStub` dengan UI asli. Hook data sudah tersedia di `src/modules/<fitur>/hooks.ts`.
-4. Komponen yang dipakai di lebih dari satu halaman masuk ke `src/components/elements`.
+3. Buat view di `src/modules/<fitur>/components/`, misalnya `TicketList.tsx`, lalu ganti `RouteStub` di `page.tsx` dengan view itu. Hook data sudah tersedia di `src/modules/<fitur>/hooks.ts`.
+4. Komponen yang dipakai lebih dari satu fitur masuk ke `src/components/elements`.
 5. Lengkapi keadaan memuat, kosong, gagal, dan luring sesuai desain.
 
 ## Data dan mock
@@ -69,7 +89,7 @@ src/
 
 ## Keadaan halaman
 
-Pakai `StateView` (`src/components/elements/state-view.tsx`) untuk semua keadaan selain konten normal:
+Pakai `StateView` (`src/components/elements/StateView.tsx`) untuk semua keadaan selain konten normal:
 kosong, tidak ditemukan, gagal dimuat, kedaluwarsa, berhasil. Komponen ini selalu memenuhi lebar dan tinggi ruang yang tersedia.
 
 ```tsx

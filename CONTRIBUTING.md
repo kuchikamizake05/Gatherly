@@ -35,7 +35,8 @@
 1. Komponen yang dipakai lebih dari satu halaman ditaruh di `apps/frontend/src/components/elements/`, satu file per komponen, dengan komentar singkat di atasnya: dipakai di mana dan rujukan pita desainnya.
 2. Sebelum membuat komponen, cek folder itu dulu. Bila sudah ada tapi kurang sesuai, tambahkan prop atau varian, jangan membuat salinan.
 3. PR yang menambah komponen bersama mencantumkan contoh pemakaian di deskripsinya dan menandai anggota tim frontend lain.
-4. Komponen yang hanya dipakai satu halaman tetap di folder halaman itu.
+4. Komponen yang hanya dipakai satu fitur ditaruh di `apps/frontend/src/modules/<fitur>/components/`, bukan di folder `app/`. Folder `app/` hanya untuk routing.
+5. Nama file komponen `.tsx` sesuai nama komponennya (`LoginForm.tsx`), file `.ts` huruf kecil (`hooks.ts`). File route Next.js dan `src/components/ui/` tetap huruf kecil.
 
 ## Data dari backend
 

@@ -14,11 +14,11 @@ import { useOrganizerProfile } from "@/modules/events/hooks";
 import type { EventCard as EventCardData, OrganizerProfile } from "@/modules/events/types";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert } from "@/components/elements/alert";
-import { initials } from "@/components/elements/account-menu";
-import { InstagramIcon, TikTokIcon } from "@/components/elements/brand-icons";
-import { EventCard, EventCardSkeleton } from "@/components/elements/event-card";
-import { StateView } from "@/components/elements/state-view";
+import { Alert } from "@/components/elements/Alert";
+import { initials } from "@/components/elements/AccountMenu";
+import { InstagramIcon, TikTokIcon } from "@/components/elements/BrandIcons";
+import { EventCard, EventCardSkeleton } from "@/components/elements/EventCard";
+import { StateView } from "@/components/elements/StateView";
 
 /**
  * Profil publik penyelenggara. Pita 09.

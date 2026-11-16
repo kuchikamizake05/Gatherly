@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { eventsApi } from "@/modules/events/api";
-import { OrganizerProfileView } from "./organizer-profile";
+import { OrganizerProfileView } from "@/modules/events/components/OrganizerProfile";
 
 type Props = { params: Promise<{ username: string }> };
 

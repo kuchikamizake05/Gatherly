@@ -8,7 +8,7 @@ import { Menu, PanelLeftClose, PanelLeftOpen, type LucideIcon } from "lucide-rea
 
 import { cn } from "@/lib/utils";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
-import { OfflineBanner } from "@/components/elements/offline-banner";
+import { OfflineBanner } from "@/components/elements/OfflineBanner";
 
 /**
  * Kerangka ruang kerja organizer dan admin: sidebar + topbar.

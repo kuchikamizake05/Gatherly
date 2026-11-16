@@ -1,4 +1,4 @@
-import { RouteStub } from "@/components/elements/route-stub";
+import { RouteStub } from "@/components/elements/RouteStub";
 import { eventsApi } from "@/modules/events/api";
 
 /** Data katalog diperbarui tiap 60 detik. */

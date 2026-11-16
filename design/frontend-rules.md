@@ -140,7 +140,7 @@ Tampilan:
 - Light mode saja.
 - Warna, radius, bayangan, dan durasi hanya dari token di `globals.css`. Tidak ada kode hex langsung di komponen, kecuali di ilustrasi.
 - Ikon hanya dari lucide, ukuran 16, 18, 20, atau 24.
-- Logo aplikasi atau merek lain (Instagram, TikTok, X, Google, bank, e-wallet, dan sejenisnya) diambil dari [thesvg.org](https://thesvg.org) (`/icons/<nama>/mono.svg` atau `default.svg`), lalu ditaruh di `src/components/elements/brand-icons.tsx`. Jangan menggambar ulang sendiri.
+- Logo aplikasi atau merek lain (Instagram, TikTok, X, Google, bank, e-wallet, dan sejenisnya) diambil dari [thesvg.org](https://thesvg.org) (`/icons/<nama>/mono.svg` atau `default.svg`), lalu ditaruh di `src/components/elements/BrandIcons.tsx`. Jangan menggambar ulang sendiri.
 
 ## Gambar
 

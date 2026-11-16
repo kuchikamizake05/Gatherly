@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { RouteStub } from "@/components/elements/route-stub";
+import { RouteStub } from "@/components/elements/RouteStub";
 import { useEvent } from "@/modules/events/hooks";
 import { useCreateOrder } from "@/modules/orders/hooks";
 
