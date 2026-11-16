@@ -1,15 +1,9 @@
-"use client";
+import { ETicketView } from "@/modules/tickets/components/ETicketView";
 
-import { useParams } from "next/navigation";
-import { RouteStub } from "@/components/elements/RouteStub";
-import { useOrder } from "@/modules/orders/hooks";
-import { useTickets, useResendTickets } from "@/modules/tickets/hooks";
+type Props = { params: Promise<{ orderId: string }> };
 
-export default function Page() {
-  const { orderId } = useParams<{ orderId: string }>();
-  const order = useOrder(orderId);
-  const tickets = useTickets();
-  const resend = useResendTickets();
-  void resend; // Satu e-tiket per tampilan, pindah peserta lewat tab nama.
-  return <RouteStub title="E-tiket" band="06" pendingIssue="#25 B25 untuk kirim ulang" queries={{ order: order, tickets: tickets }} />;
+/** E-tiket satu pesanan. Pita 06. */
+export default async function ETicketPage({ params }: Props) {
+  const { orderId } = await params;
+  return <ETicketView orderId={orderId} />;
 }
