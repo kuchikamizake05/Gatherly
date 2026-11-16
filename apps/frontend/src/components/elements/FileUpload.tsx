@@ -269,7 +269,7 @@ export function FileUpload({
         onChange={(e) => pick(e.target.files)}
         className="sr-only"
       />
-      {error && status.kind === "idle" && !value && <p className="text-[13px] text-danger-ink" role="alert">{error}</p>}
+      {error && status.kind === "idle" && <p className="text-[13px] text-danger-ink" role="alert">{error}</p>}
     </div>
   );
 }

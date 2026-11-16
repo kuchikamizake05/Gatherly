@@ -153,6 +153,76 @@ export const api = {
     apiRequest<T>(path, { ...options, method: "DELETE" }),
 };
 
+/**
+ * Unggah satu berkas dengan progres (XHR, karena fetch belum punya progres unggah).
+ * Cookie sesi dan header CSRF ikut terkirim. Dipakai FileUpload: dokumen pengajuan, poster acara, logo.
+ *
+ * upload<{ data: UploadedFile }>("/organizer-applications/documents", file, { field: "file", onProgress, signal })
+ */
+export function upload<T>(
+  path: string,
+  file: File,
+  options: {
+    field?: string;
+    extra?: Record<string, string>;
+    onProgress?: (percent: number) => void;
+    signal?: AbortSignal;
+    mock?: () => T;
+    pending?: boolean;
+  } = {},
+): Promise<T> {
+  if (options.mock && (MOCK_ALL || options.pending === true)) {
+    // Simulasi progres supaya tampilan unggah bisa dicek tanpa backend.
+    return new Promise<T>((resolve, reject) => {
+      let p = 0;
+      const id = setInterval(() => {
+        if (options.signal?.aborted) {
+          clearInterval(id);
+          reject(new ApiError(0, "ABORTED", "Unggahan dibatalkan."));
+          return;
+        }
+        p = Math.min(100, p + 20);
+        options.onProgress?.(p);
+        if (p === 100) {
+          clearInterval(id);
+          resolve(options.mock!());
+        }
+      }, 120);
+    });
+  }
+
+  return new Promise<T>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", buildUrl(path));
+    xhr.withCredentials = true;
+    xhr.setRequestHeader("Accept", "application/json");
+    if (csrfToken) xhr.setRequestHeader("X-CSRF-Token", csrfToken);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) options.onProgress?.(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => {
+      const json = (() => {
+        try {
+          return JSON.parse(xhr.responseText);
+        } catch {
+          return null;
+        }
+      })();
+      if (xhr.status >= 200 && xhr.status < 300) return resolve(json as T);
+      const error = json?.error ?? {};
+      reject(new ApiError(xhr.status, error.code ?? "UNKNOWN", error.message ?? "Berkas gagal diunggah.", error.fields, error.details));
+    };
+    xhr.onerror = () => reject(new ApiError(0, "NETWORK_ERROR", "Koneksi terputus. Periksa internet Anda lalu coba lagi."));
+    options.signal?.addEventListener("abort", () => xhr.abort());
+    xhr.onabort = () => reject(new ApiError(0, "ABORTED", "Unggahan dibatalkan."));
+
+    const body = new FormData();
+    body.append(options.field ?? "file", file);
+    for (const [k, v] of Object.entries(options.extra ?? {})) body.append(k, v);
+    xhr.send(body);
+  });
+}
+
 /** Membungkus data mock dalam bentuk respons backend. */
 export const wrap = <T>(data: T) => ({ data });
 export const page = <T>(data: T[], pageNo = 1, limit = 20): Paginated<T> => ({

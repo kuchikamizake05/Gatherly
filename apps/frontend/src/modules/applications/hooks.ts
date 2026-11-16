@@ -2,30 +2,30 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 
-import { applicationsApi } from "./api";
+import { applicationsApi, type ApplicationInput } from "./api";
 
 /** Cek username 0,5 detik setelah berhenti mengetik. Debounce dilakukan di komponen. */
-export function useUsernameCheck(username: string) {
+export function useUsernameCheck(username: string, enabled = true) {
   return useQuery({
     queryKey: ["application-username", username],
     queryFn: async () => (await applicationsApi.checkUsername(username)).data,
-    enabled: username.length >= 3,
+    enabled: enabled && username.length >= 4,
     staleTime: 10_000,
   });
 }
 
 export function useSubmitApplication() {
-  return useMutation({ mutationFn: applicationsApi.submit });
+  return useMutation({ mutationFn: (input: ApplicationInput) => applicationsApi.submit(input) });
 }
 
 export function useOpenApplication() {
   return useMutation({
-    mutationFn: ({ number, email }: { number: string; email: string }) => applicationsApi.open(number, email),
+    mutationFn: async ({ number, email }: { number: string; email: string }) => (await applicationsApi.open(number, email)).data,
   });
 }
 
 export function useSubmitApplicationFix() {
   return useMutation({
-    mutationFn: ({ number, form }: { number: string; form: FormData }) => applicationsApi.submitFix(number, form),
+    mutationFn: ({ number, input }: { number: string; input: Partial<ApplicationInput> }) => applicationsApi.submitFix(number, input),
   });
 }

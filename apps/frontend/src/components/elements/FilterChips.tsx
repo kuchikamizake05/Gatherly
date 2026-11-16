@@ -35,6 +35,7 @@ export function Chip({ selected, leading, hasMenu, onClear, className, children,
             ? "border-inverse bg-inverse text-inverse-foreground"
             : "border-border-strong bg-background text-foreground [@media(hover:hover)]:hover:bg-surface",
           "data-[state=open]:border-foreground data-[state=open]:bg-surface-2",
+          "disabled:cursor-not-allowed disabled:opacity-50",
           onClear && selected && "rounded-r-none pr-2",
           className,
         )}
