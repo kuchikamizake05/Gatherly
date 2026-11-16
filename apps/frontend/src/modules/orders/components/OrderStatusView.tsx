@@ -13,10 +13,11 @@ import { useCancelOrder, useOrder } from "@/modules/orders/hooks";
 import type { Order } from "@/modules/orders/types";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/elements/Alert";
+import { DangerConfirmDialog } from "@/components/elements/DangerConfirmDialog";
 import { CountdownPill } from "@/components/elements/CountdownPill";
 import { Illustration, type IllustrationName } from "@/components/elements/Illustration";
 
-import { CheckoutMobileHeader, CheckoutProgress, ConfirmDialog } from "./CheckoutChrome";
+import { CheckoutMobileHeader, CheckoutProgress } from "./CheckoutChrome";
 import { CheckoutSkeleton, OrderLoadError, OrderNotFound } from "./OrderStates";
 
 /**
@@ -185,10 +186,9 @@ function StatusCard({ order, refetch, refetching }: { order: Order; refetch: () 
           </div>
         </section>
       </div>
-      <ConfirmDialog
+      <DangerConfirmDialog
         open={cancelOpen}
         onOpenChange={setCancelOpen}
-        danger
         title="Batalkan pesanan ini?"
         description={`${ticketLabel} untuk ${order.event.title} akan dilepas ke pembeli lain. Ini tidak bisa diurungkan.`}
         cancelLabel="Kembali"
