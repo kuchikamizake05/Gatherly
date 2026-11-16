@@ -25,14 +25,16 @@ function remainingMs(expiresAt: string, offset: number) {
   return Math.max(0, new Date(expiresAt).getTime() - (Date.now() + offset));
 }
 
-function format(ms: number) {
+/** 12.40 (menit.detik) */
+export function formatCountdown(ms: number) {
   const total = Math.ceil(ms / 1000);
   const m = Math.floor(total / 60);
   const s = total % 60;
   return `${String(m).padStart(2, "0")}.${String(s).padStart(2, "0")}`;
 }
 
-export function CountdownPill({ expiresAt, serverTime, label = "Tiket ditahan untuk Anda", onExpire, className }: CountdownPillProps) {
+/** Sisa waktu dalam milidetik, diperbarui tiap detik. Dipakai juga di kartu menunggu bayar Tiketku. */
+export function useCountdown(expiresAt: string, serverTime?: string, onExpire?: () => void) {
   const offset = useRef(serverTime ? new Date(serverTime).getTime() - Date.now() : 0);
   const [ms, setMs] = useState(() => remainingMs(expiresAt, offset.current));
   const fired = useRef(false);
@@ -51,6 +53,12 @@ export function CountdownPill({ expiresAt, serverTime, label = "Tiket ditahan un
     return () => window.clearInterval(id);
   }, [expiresAt, onExpire]);
 
+  return ms;
+}
+
+export function CountdownPill({ expiresAt, serverTime, label = "Tiket ditahan untuk Anda", onExpire, className }: CountdownPillProps) {
+  const ms = useCountdown(expiresAt, serverTime, onExpire);
+
   return (
     <div
       className={cn(
@@ -65,7 +73,7 @@ export function CountdownPill({ expiresAt, serverTime, label = "Tiket ditahan un
         role="timer"
         aria-label={`Sisa waktu ${Math.ceil(ms / 60000)} menit`}
       >
-        {format(ms)}
+        {formatCountdown(ms)}
       </span>
     </div>
   );
