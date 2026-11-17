@@ -1,5 +1,6 @@
 "use client";
 
+import { IconInput } from "@/components/elements/IconInput";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DateTimePicker } from "@/components/elements/DateTimePicker";
 import { useState } from "react";
@@ -194,13 +195,20 @@ export function TicketEditor({
               helper={
                 selected?.sold
                   ? "Harga terkunci karena tiket sudah terjual."
-                  : "Harga dalam rupiah"
+                  : free
+                    ? "Tiket gratis tidak memerlukan harga."
+                    : undefined
               }
             >
-              <Input
+              <IconInput
                 id="ticket-price"
                 inputMode="numeric"
                 placeholder="0"
+                leading={
+                  <span className="text-[15px] font-semibold text-text-secondary">
+                    Rp
+                  </span>
+                }
                 value={
                   free || !form.price ? "" : form.price.toLocaleString("id-ID")
                 }
