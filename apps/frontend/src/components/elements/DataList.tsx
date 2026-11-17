@@ -14,7 +14,7 @@ export type DataColumn<T> = {
 const isAction = (key: string) => key === "action" || key === "actions";
 const align = (key: string, numeric?: boolean) =>
   isAction(key)
-    ? "w-40 pl-6 pr-0 text-right [&>*]:ml-auto"
+    ? "w-64 pl-6 pr-0 text-right whitespace-nowrap [&>*]:ml-auto"
     : `pr-6 ${numeric ? "text-right" : ""}`;
 export function DataList<T>({
   rows,
