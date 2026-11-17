@@ -26,7 +26,7 @@ const isExplore = (p: string) => p === "/" || p.startsWith("/events") || p.start
 
 const NAV = [
   { href: "/", label: "Jelajahi", icon: Compass, match: isExplore },
-  { href: "/tickets", label: "Tiketku", icon: Ticket, match: (p: string) => p.startsWith("/tickets") || p.startsWith("/orders") },
+  { href: "/tickets", label: "Tiketku", icon: Ticket, match: (p: string) => (p.startsWith("/tickets") && !p.startsWith("/tickets/shared")) || p.startsWith("/orders") },
 ];
 
 const TABS = [
@@ -250,7 +250,8 @@ export function SiteShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-dvh flex-col">
       <header className="sticky top-0 z-30 isolate">
         {/* Blur bertahap yang menjulur 32 px di bawah header, tanpa tepi tegas. */}
-        <ProgressiveBlur className="top-0 -bottom-8 -z-10" />
+        {/* Di mobile hanya bila header logo tampil. Halaman tanpa header punya header sendiri yang tidak boleh ikut buram. */}
+        <ProgressiveBlur className={cn("top-0 -bottom-8 -z-10", hideMobileHeader && "hidden md:block")} />
         <DesktopNav pathname={pathname} guest={guest} />
         {!hideMobileHeader && <MobileHeader pathname={pathname} guest={guest} />}
         <OfflineBanner />

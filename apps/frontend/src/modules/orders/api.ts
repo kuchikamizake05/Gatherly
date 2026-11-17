@@ -1,5 +1,6 @@
 import { api, page, wrap, type Paginated } from "@/lib/api/client";
 import { FIX } from "@/modules/_mock/fixtures";
+import { refundDemoEvent } from "@/modules/tickets/api";
 
 import { estimateAmounts } from "./pricing";
 import type { CreateOrderInput, Order, PaymentSession } from "./types";
@@ -96,6 +97,25 @@ const mockOrders: Order[] = [
   }),
 ];
 
+/** Pesanan contoh yang sudah dibayar dan masih bisa diajukan pengembalian dana. */
+const refundDemoOrder = () =>
+  mockOrder({
+    id: "ord_gs01",
+    orderCode: "GTH-GS01",
+    event: ev("malam-eksperimen-gamelan-synth", refundDemoEvent),
+    ticketType: { name: "Reguler", unitPrice: 75000 },
+    quantity: 2,
+    paymentStatus: "paid",
+    reservationStatus: "converted",
+    issuanceStatus: "issued",
+    canResumePayment: false,
+    paidAt: "2026-11-10T04:12:00Z",
+    createdAt: "2026-11-10T04:08:00Z",
+    paymentMethod: "qris",
+    buyer: { name: FIX.buyer.name, email: FIX.buyer.email },
+    ticketIds: ["tk_gs00", "tk_gs01"],
+  });
+
 /** Pesanan yang sudah dibayar (dipakai e-tiket dan bukti pembayaran). */
 const paidOrder = () =>
   mockOrder({
@@ -132,7 +152,14 @@ export const ordersApi = {
   /** Mock: ord_4a7n sudah dibayar (e-tiket, bukti bayar), pesanan lain menunggu bayar (checkout). */
   get: (id: string) =>
     api.get<{ data: Order }>(`/orders/${id}`, {
-      mock: () => wrap(id === FIX.order.id ? paidOrder() : (mockOrders.find((o) => o.id === id) ?? mockOrder({ id }))),
+      mock: () =>
+        wrap(
+          id === FIX.order.id
+            ? paidOrder()
+            : id === "ord_gs01"
+              ? refundDemoOrder()
+              : (mockOrders.find((o) => o.id === id) ?? mockOrder({ id })),
+        ),
     }),
   list: () => api.get<Paginated<Order>>("/orders", { mock: () => page([paidOrder(), ...mockOrders]) }),
   /** method: kode dari payment-methods.ts. Backend meneruskannya sebagai enabled_payments Snap. */

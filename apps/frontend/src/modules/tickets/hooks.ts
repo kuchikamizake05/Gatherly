@@ -3,6 +3,7 @@
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 import { get, set } from "idb-keyval";
 
+import { ApiError } from "@/lib/api/client";
 import { qk } from "@/lib/api/query-keys";
 
 import { ticketsApi } from "./api";
@@ -38,6 +39,28 @@ export function useTicket(id: string) {
 export function useTicketDetails(ids: string[]) {
   return useQueries({
     queries: ids.map((id) => ({ queryKey: qk.ticket(id), queryFn: () => fetchTicket(id) })),
+  });
+}
+
+/** Tiket dari tautan e-tiket yang dibagikan. Ikut disimpan di perangkat seperti e-tiket biasa. */
+export function useSharedTicket(token: string) {
+  return useQuery({
+    queryKey: ["ticket", "shared", token] as const,
+    queryFn: async (): Promise<TicketDetail & { fromDevice?: boolean }> => {
+      const key = `gatherly:shared-ticket:${token}`;
+      try {
+        const { data } = await ticketsApi.shared(token);
+        set(key, data).catch(() => undefined);
+        return data;
+      } catch (error) {
+        // Token salah tetap 404. Hanya gangguan jaringan yang memakai salinan di perangkat.
+        if (error instanceof ApiError && error.status === 404) throw error;
+        const saved = await get<TicketDetail>(key).catch(() => undefined);
+        if (saved) return { ...saved, fromDevice: true };
+        throw error;
+      }
+    },
+    retry: (count, error) => !(error instanceof ApiError && error.status === 404) && count < 2,
   });
 }
 

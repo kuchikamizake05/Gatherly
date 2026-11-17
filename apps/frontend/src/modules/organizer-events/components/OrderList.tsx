@@ -384,14 +384,17 @@ export function OrderList() {
         </Sheet>
       ) : (
         <Drawer open={!!selected} onOpenChange={close}>
-          <DrawerContent className="max-h-[92dvh] overflow-y-auto">
-            <DrawerTitle>
-              {order.data?.orderCode ?? "Detail pesanan"}
-            </DrawerTitle>
-            <DrawerDescription className="mb-5">
-              Informasi pemesan, tiket, dan pembayaran.
-            </DrawerDescription>
-            {detail}
+          <DrawerContent className="max-h-[92dvh]">
+            {/* Gulir di pembungkus dalam, supaya lapisan pantulan vaul tidak jadi ruang kosong. */}
+            <div className="-mx-5 flex min-h-0 flex-1 flex-col overflow-y-auto px-5">
+              <DrawerTitle>
+                {order.data?.orderCode ?? "Detail pesanan"}
+              </DrawerTitle>
+              <DrawerDescription className="mb-5">
+                Informasi pemesan, tiket, dan pembayaran.
+              </DrawerDescription>
+              {detail}
+            </div>
           </DrawerContent>
         </Drawer>
       )}

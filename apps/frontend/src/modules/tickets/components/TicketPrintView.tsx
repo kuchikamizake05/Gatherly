@@ -28,6 +28,11 @@ export function TicketPrintView({ orderId }: { orderId: string }) {
     return <StateView layout="screen" tone="error" illustration="failed-load" title="E-tiket gagal dimuat" description="Periksa koneksi internet Anda, lalu buka lagi halaman ini." />;
   if (!ready) return <div className="min-h-dvh bg-surface-2" aria-busy />;
 
+  return <TicketSheets tickets={tickets} />;
+}
+
+/** Lembar A4 e-tiket, satu tiket per halaman. Dipakai juga oleh PDF tiket yang dibagikan. */
+export function TicketSheets({ tickets }: { tickets: TicketDetail[] }) {
   return (
     <PrintDocument title="E-tiket">
       {tickets.map((t, i) => (

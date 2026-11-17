@@ -22,6 +22,7 @@ import { StateView } from "@/components/elements/StateView";
 
 import { CalendarMenu } from "./CalendarMenu";
 import { ETicketCard } from "./ETicketCard";
+import { RefundNotice, RefundOrderBlock, useOrderRefund } from "@/modules/refunds/components/RefundPanel";
 
 /**
  * E-tiket satu pesanan. Pita 06 A sampai F dan H.
@@ -58,6 +59,7 @@ export function ETicketView({ orderId }: { orderId: string }) {
   const tickets = details.map((q) => q.data).filter(Boolean) as (TicketDetail & { fromDevice?: boolean })[];
   const loading = (list.isPending && order.isPending) || (details.length > 0 && details.some((q) => q.isPending) && tickets.length === 0);
   const ticket = tickets[Math.min(active, tickets.length - 1)];
+  const refund = useOrderRefund(orderId, order.data?.paymentStatus === "paid");
 
   if (loading) return <ETicketSkeleton />;
 
@@ -157,6 +159,7 @@ export function ETicketView({ orderId }: { orderId: string }) {
           E-tiket tetap dapat ditunjukkan karena tersimpan di perangkat ini.
         </Alert>
       )}
+      <RefundNotice refund={refund.latest} tickets={tickets} />
       {cancelled && <Alert title="Acara ini dibatalkan penyelenggara">E-tiket tidak berlaku. Informasi pengembalian dana dikirim ke email Anda.</Alert>}
     </>
   );
@@ -340,6 +343,7 @@ export function ETicketView({ orderId }: { orderId: string }) {
                     Unduh bukti pembayaran
                   </a>
                 </Button>
+                <RefundOrderBlock order={o} tickets={tickets} />
               </section>
             )}
           </aside>
