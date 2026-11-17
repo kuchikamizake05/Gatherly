@@ -115,6 +115,15 @@ function mockSuggest(q: string): EventSuggestions {
   };
 }
 
+/** Mock: ubah daftar Disimpan dan status kartu supaya simpan dan hapus bisa dicoba. */
+function mockSetSaved(slug: string, saved: boolean) {
+  const i = SAVED.indexOf(slug);
+  if (saved && i < 0) SAVED.unshift(slug);
+  if (!saved && i >= 0) SAVED.splice(i, 1);
+  const card = cards.find((c) => c.slug === slug);
+  if (card) card.saved = saved;
+}
+
 export const eventsApi = {
   list: (query: EventQuery = {}, cookie?: string) =>
     api.get<Paginated<EventCard>>("/events", { query, cookie, ...pending, mock: () => mockList(query) }),
@@ -124,11 +133,11 @@ export const eventsApi = {
   suggest: (q: string) =>
     api.get<{ data: EventSuggestions }>("/events/suggestions", { query: { q }, ...pending, mock: () => wrap(mockSuggest(q)) }),
   detail: (slug: string, cookie?: string) =>
-    api.get<{ data: EventDetail }>(`/events/${slug}`, { cookie, ...pending, mock: () => wrap({ ...festival, slug }) }),
+    api.get<{ data: EventDetail }>(`/events/${slug}`, { cookie, ...pending, mock: () => wrap({ ...festival, slug, saved: SAVED.includes(slug) }) }),
 
   saved: () => api.get<Paginated<EventCard>>("/me/saved-events", { mock: () => page(SAVED.map((slug) => cards.find((c) => c.slug === slug)!)) }),
-  save: (slug: string) => api.put<void>(`/me/saved-events/${slug}`, undefined, { mock: () => undefined }),
-  unsave: (slug: string) => api.delete<void>(`/me/saved-events/${slug}`, { mock: () => undefined }),
+  save: (slug: string) => api.put<void>(`/me/saved-events/${slug}`, undefined, { mock: () => mockSetSaved(slug, true) }),
+  unsave: (slug: string) => api.delete<void>(`/me/saved-events/${slug}`, { mock: () => mockSetSaved(slug, false) }),
 
   organizerProfile: (username: string, cookie?: string) =>
     api.get<{ data: OrganizerProfile }>(`/organizers/${username}/profile`, {
