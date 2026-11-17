@@ -17,6 +17,8 @@ import { Field } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
 import { DangerConfirmDialog } from "@/components/elements/DangerConfirmDialog";
 import { Alert } from "@/components/elements/Alert";
+import { StateView } from "@/components/elements/StateView";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatRupiah, formatDateShort } from "@/lib/format";
 import { useOnline } from "@/hooks/use-online";
 import { AdminCard, AdminPage, AdminQueryState, publicHref } from "./AdminPage";
@@ -137,49 +139,78 @@ export function OrganizerDetail({ id }: { id: string }) {
         ))}
       </div>
       <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="space-y-6">
-          <AdminCard title="Acara">
-            <div className="divide-y divide-border">
-              {data.events.map((event) => (
-                <div
-                  key={event.id}
-                  className="grid gap-3 py-4 md:grid-cols-[2fr_1fr_auto]"
-                >
-                  <strong className="min-w-0 break-words text-sm">
-                    {event.title}
-                  </strong>
-                  <span className="text-xs text-text-secondary">
-                    {event.startsAt
-                      ? formatDateShort(event.startsAt)
-                      : "Belum dijadwalkan"}
-                  </span>
-                  <span className="text-xs text-text-secondary">
-                    {event.sold} dari {event.capacity} tiket
-                    <span className="mt-1 block">
-                      {event.status === "draft"
-                        ? "Draf"
-                        : event.status === "scheduled"
-                          ? "Dijadwalkan"
-                          : "Dijual"}
-                    </span>
-                  </span>
+        {/* Acara dan log aktivitas dalam satu kartu bertab, masing-masing dengan state kosong. */}
+        <AdminCard>
+          <Tabs defaultValue="events" className="gap-4">
+            <TabsList aria-label="Aktivitas organizer">
+              <TabsTrigger value="events" count={data.events.length}>
+                Acara
+              </TabsTrigger>
+              <TabsTrigger value="activity" count={data.activity.length}>
+                Log aktivitas
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="events">
+              {data.events.length ? (
+                <div className="divide-y divide-border">
+                  {data.events.map((event) => (
+                    <div
+                      key={event.id}
+                      className="grid gap-3 py-4 md:grid-cols-[2fr_1fr_auto]"
+                    >
+                      <strong className="min-w-0 break-words text-sm">
+                        {event.title}
+                      </strong>
+                      <span className="text-xs text-text-secondary">
+                        {event.startsAt
+                          ? formatDateShort(event.startsAt)
+                          : "Belum dijadwalkan"}
+                      </span>
+                      <span className="text-xs text-text-secondary">
+                        {event.sold} dari {event.capacity} tiket
+                        <span className="mt-1 block">
+                          {event.status === "draft"
+                            ? "Draf"
+                            : event.status === "scheduled"
+                              ? "Dijadwalkan"
+                              : "Dijual"}
+                        </span>
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </AdminCard>
-          <AdminCard title="Log aktivitas">
-            <ul className="space-y-4">
-              {data.activity.map((item, index) => (
-                <li key={index} className="text-sm">
-                  {item.action}
-                  <span className="mt-1 block text-xs text-text-secondary">
-                    {formatDateShort(item.at)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </AdminCard>
-        </div>
+              ) : (
+                <StateView
+                  layout="section"
+                  illustration="no-events"
+                  title="Belum ada acara"
+                  description="Acara yang dibuat organizer ini akan muncul di sini."
+                />
+              )}
+            </TabsContent>
+            <TabsContent value="activity">
+              {data.activity.length ? (
+                <ul className="space-y-4">
+                  {data.activity.map((item, index) => (
+                    <li key={index} className="text-sm">
+                      {item.action}
+                      <span className="mt-1 block text-xs text-text-secondary">
+                        {formatDateShort(item.at)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <StateView
+                  layout="section"
+                  illustration="no-results"
+                  title="Belum ada aktivitas"
+                  description="Persetujuan, pembekuan, dan perubahan lain pada organizer ini akan tercatat di sini."
+                />
+              )}
+            </TabsContent>
+          </Tabs>
+        </AdminCard>
         <AdminCard title="Penanggung jawab">
           <dl className="space-y-5 text-sm">
             {[

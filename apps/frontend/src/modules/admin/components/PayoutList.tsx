@@ -23,6 +23,7 @@ import {
   AdminTabs,
   AdminOnline,
   AdminQueue,
+  AdminListSkeleton,
 } from "./AdminPage";
 
 const schema = z.object({
@@ -107,7 +108,9 @@ export function PayoutList() {
           </p>
         )}
         <AdminCard>
-          {rows.length ? (
+          {query.isPlaceholderData ? (
+            <AdminListSkeleton label="Pencairan" />
+          ) : rows.length ? (
             <AdminQueue
               columns={[
                 { label: "Nomor", className: "hidden xl:table-cell" },
@@ -137,24 +140,34 @@ export function PayoutList() {
                       {formatDateShort(row.transferredAt)}
                     </span>
                   );
+                // Backend belum mengirim nomor pencairan, jadi pakai potongan id. Acara bisa sudah dihapus.
+                const number =
+                  row.number || `#${row.id.slice(-6).toUpperCase()}`;
+                const eventTitle = row.eventTitle || "Acara tidak ditemukan";
                 return {
                   id: row.id,
                   cells: [
-                    row.number,
+                    number,
                     <strong key="name">{row.organizerName}</strong>,
-                    row.eventTitle,
+                    row.eventTitle ? (
+                      eventTitle
+                    ) : (
+                      <span key="event" className="text-text-tertiary">
+                        {eventTitle}
+                      </span>
+                    ),
                     <strong key="amount">{formatRupiah(row.amount)}</strong>,
                     formatDateTimeCompact(row.requestedAt),
                     action,
                   ],
-                  number: row.number,
+                  number,
                   title: row.organizerName,
                   status: (
                     <strong className="text-sm">
                       {formatRupiah(row.amount)}
                     </strong>
                   ),
-                  meta: `${row.eventTitle}, diajukan ${formatDateTimeCompact(row.requestedAt)}`,
+                  meta: `${eventTitle}, diajukan ${formatDateTimeCompact(row.requestedAt)}`,
                   action,
                 };
               })}

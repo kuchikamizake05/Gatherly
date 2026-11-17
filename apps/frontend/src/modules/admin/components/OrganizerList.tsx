@@ -14,6 +14,7 @@ import {
   AdminTabs,
   AdminOnline,
   AdminQueue,
+  AdminListSkeleton,
 } from "./AdminPage";
 import { IconInput } from "@/components/elements/IconInput";
 import { Search } from "lucide-react";
@@ -59,7 +60,9 @@ export function OrganizerList() {
               onChange={(event) => setSearch(event.target.value)}
             />
           </label>
-          {rows.length ? (
+          {query.isPlaceholderData ? (
+            <AdminListSkeleton label="Organizer" />
+          ) : rows.length ? (
             <AdminQueue
               columns={[
                 { label: "Organizer" },

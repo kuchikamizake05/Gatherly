@@ -307,7 +307,8 @@ export function ApplicationReview({ id }: { id: string }) {
           </AdminCard>
         </div>
       </div>
-      <div className="sticky bottom-0 flex flex-wrap gap-3 border-t border-border bg-background py-4">
+      {/* Bar aksi selebar area konten: margin negatif menutup padding halaman (AdminPage p-4 md:p-8). */}
+      <div className="sticky bottom-0 z-10 -mx-4 -mb-4 flex flex-wrap gap-3 border-t border-border bg-background px-4 py-4 md:-mx-8 md:-mb-8 md:px-8">
         <Button
           disabled={
             busy || flagged.length > 0 || !data.checks.usernameAvailable

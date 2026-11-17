@@ -14,6 +14,7 @@ import {
   AdminOnline,
   AdminQueue,
   reportReasons,
+  AdminListSkeleton,
 } from "./AdminPage";
 
 const tabs = [
@@ -39,7 +40,9 @@ export function ReportList() {
           counts={query.data.counts}
         />
         <AdminCard>
-          {rows.length ? (
+          {query.isPlaceholderData ? (
+            <AdminListSkeleton label="Laporan" />
+          ) : rows.length ? (
             <AdminQueue
               columns={[
                 { label: "Acara" },

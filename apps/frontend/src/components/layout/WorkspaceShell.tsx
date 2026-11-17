@@ -14,6 +14,9 @@ import {
 import { cn } from "@/lib/utils";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { OfflineBanner } from "@/components/elements/OfflineBanner";
+import { ResponsiveDialog } from "@/components/elements/ResponsiveDialog";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 /**
  * Kerangka ruang kerja organizer dan admin: sidebar + topbar.
@@ -89,6 +92,51 @@ function AppBadge({ app }: { app: WorkspaceShellProps["app"] }) {
   );
 }
 
+/**
+ * Menu Bantuan berisi alamat email (mailto:). Klik membuka dialog dengan alamatnya, tombol salin,
+ * dan tombol buka aplikasi email, supaya tetap ada respons walau perangkat tidak punya aplikasi email.
+ */
+function HelpDialog({
+  email,
+  onClose,
+}: {
+  email: string | null;
+  onClose: () => void;
+}) {
+  return (
+    <ResponsiveDialog
+      open={!!email}
+      onOpenChange={(open) => !open && onClose()}
+      title="Butuh bantuan?"
+      description="Kirim pertanyaan atau kendala Anda ke tim Gatherlyy. Kami membalas di hari kerja."
+    >
+      <div className="flex flex-col gap-4 pt-2">
+        <p className="rounded-md bg-surface px-4 py-3 text-center text-[15px] font-bold break-all">
+          {email}
+        </p>
+        <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-end">
+          <Button
+            variant="outline"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(email ?? "");
+                toast.success("Alamat email disalin");
+              } catch {
+                toast.error("Gagal menyalin. Salin alamatnya secara manual.");
+              }
+            }}
+          >
+            Salin alamat
+          </Button>
+          <Button asChild>
+            <a href={`mailto:${email}`}>Buka aplikasi email</a>
+          </Button>
+        </div>
+      </div>
+    </ResponsiveDialog>
+  );
+}
+
 function NavList({
   items,
   collapsed,
@@ -99,64 +147,71 @@ function NavList({
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
+  const [helpEmail, setHelpEmail] = useState<string | null>(null);
   return (
-    <ul className="flex flex-col gap-1">
-      {items.map((item) => {
-        const active =
-          !item.external && !item.onClick && isActive(pathname, item.href);
-        const inner = (
-          <>
-            <item.icon
-              className={cn(
-                "size-5 shrink-0",
-                active ? "text-foreground" : "text-text-secondary",
+    <>
+      <ul className="flex flex-col gap-1">
+        {items.map((item) => {
+          const active =
+            !item.external && !item.onClick && isActive(pathname, item.href);
+          const inner = (
+            <>
+              <item.icon
+                className={cn(
+                  "size-5 shrink-0",
+                  active ? "text-foreground" : "text-text-secondary",
+                )}
+                aria-hidden
+              />
+              {!collapsed && (
+                <span className="flex-1 truncate">{item.label}</span>
               )}
-              aria-hidden
-            />
-            {!collapsed && (
-              <span className="flex-1 truncate">{item.label}</span>
-            )}
-            {!collapsed && item.badge !== undefined && (
-              <span className="rounded-full bg-inverse px-2 text-xs font-bold text-inverse-foreground">
-                {item.badge}
-              </span>
-            )}
-          </>
-        );
-        const cls = cn(
-          "press flex h-11 w-full items-center gap-3 rounded-md px-3 text-left text-[15px] transition-colors",
-          collapsed && "justify-center px-0",
-          active
-            ? "bg-primary font-extrabold"
-            : "font-semibold text-text-secondary [@media(hover:hover)]:hover:bg-surface-2",
-        );
-        return (
-          <li key={item.label} title={collapsed ? item.label : undefined}>
-            {item.onClick ? (
-              <button
-                type="button"
-                onClick={item.onClick}
-                className={cls}
-                aria-label={collapsed ? item.label : undefined}
-              >
-                {inner}
-              </button>
-            ) : (
-              <Link
-                href={item.href}
-                className={cls}
-                aria-current={active ? "page" : undefined}
-                aria-label={collapsed ? item.label : undefined}
-                target={item.external ? "_blank" : undefined}
-                onClick={onNavigate}
-              >
-                {inner}
-              </Link>
-            )}
-          </li>
-        );
-      })}
-    </ul>
+              {!collapsed && item.badge !== undefined && (
+                <span className="rounded-full bg-inverse px-2 text-xs font-bold text-inverse-foreground">
+                  {item.badge}
+                </span>
+              )}
+            </>
+          );
+          const mail = item.href.startsWith("mailto:")
+            ? item.href.slice("mailto:".length)
+            : null;
+          const cls = cn(
+            "press flex h-11 w-full items-center gap-3 rounded-md px-3 text-left text-[15px] transition-colors",
+            collapsed && "justify-center px-0",
+            active
+              ? "bg-primary font-extrabold"
+              : "font-semibold text-text-secondary [@media(hover:hover)]:hover:bg-surface-2",
+          );
+          return (
+            <li key={item.label} title={collapsed ? item.label : undefined}>
+              {item.onClick || mail ? (
+                <button
+                  type="button"
+                  onClick={mail ? () => setHelpEmail(mail) : item.onClick}
+                  className={cls}
+                  aria-label={collapsed ? item.label : undefined}
+                >
+                  {inner}
+                </button>
+              ) : (
+                <Link
+                  href={item.href}
+                  className={cls}
+                  aria-current={active ? "page" : undefined}
+                  aria-label={collapsed ? item.label : undefined}
+                  target={item.external ? "_blank" : undefined}
+                  onClick={onNavigate}
+                >
+                  {inner}
+                </Link>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      <HelpDialog email={helpEmail} onClose={() => setHelpEmail(null)} />
+    </>
   );
 }
 
@@ -252,7 +307,11 @@ export function WorkspaceShell({
   const pathname = usePathname();
   // Tanpa crumb khusus, header menampilkan nama menu yang sedang dibuka (desain band 20 sampai 24).
   const title =
-    crumb ?? nav.find((item) => !item.external && !item.onClick && isActive(pathname, item.href))?.label;
+    crumb ??
+    nav.find(
+      (item) =>
+        !item.external && !item.onClick && isActive(pathname, item.href),
+    )?.label;
 
   return (
     <div className="flex min-h-dvh bg-surface">
@@ -262,7 +321,8 @@ export function WorkspaceShell({
       <aside
         className={cn(
           "sticky top-0 hidden h-dvh shrink-0 overflow-hidden border-r border-border bg-background md:block",
-          animate && "transition-[width] duration-200 ease-in-out motion-reduce:transition-none",
+          animate &&
+            "transition-[width] duration-200 ease-in-out motion-reduce:transition-none",
           collapsed ? "md:w-[76px]" : "md:w-[76px] xl:w-[264px]",
         )}
       >
