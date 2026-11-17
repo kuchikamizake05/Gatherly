@@ -128,7 +128,7 @@ Dokumentasi proyek tersedia dalam folder [`docs`](docs/README.md).
 - **Aplikasi web:** [gatherlyy.fun](https://gatherlyy.fun)
 - **Video presentasi dan demonstrasi:** [Video Demo Kelompok 11](https://bit.ly/VideoDemo_Kel11_PAW)
 - **File presentasi:** [PPT Kelompok 11](https://bit.ly/PPT_Kel11_PAW)
-- **Repositori:** [Gatherlyy di GitHub](https://github.com/kuchikamizake05/Gatherly)
+- **Repositori:** [Gatherlyy di GitHub](https://github.com/kuchikamizake05/Gatherlyy)
 
 ## Deployment
 

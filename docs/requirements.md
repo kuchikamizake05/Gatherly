@@ -96,7 +96,7 @@ Inventory invariant: total capacity = available + reserved + sold; all values re
 
 Seat maps, resale, ticket transfer, coupons, organizer payouts, automatic refunds, offline admission, and travel booking.
 
-Work tracking: [GitHub Project Gatherly MVP](https://github.com/users/kuchikamizake05/projects/3/views/1). Initial work items are maintained in [GitHub Issues](https://github.com/kuchikamizake05/Gatherly/issues).
+Work tracking: [GitHub Project Gatherly MVP](https://github.com/users/kuchikamizake05/projects/3/views/1). Initial work items are maintained in [GitHub Issues](https://github.com/kuchikamizake05/Gatherlyy/issues).
 
 ## Budget and success boundary
 
