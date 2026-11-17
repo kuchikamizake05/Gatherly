@@ -163,7 +163,8 @@ function PendingCard({ order, onCancel }: { order: Order; onCancel: () => void }
         )}
         <div className="flex min-w-0 flex-col gap-0.5 md:gap-1.5">
           <span className="text-xs font-bold text-warning-ink md:hidden">Menunggu pembayaran, {formatCountdown(ms)}</span>
-          <Badge tone="warning" className="hidden md:inline-flex">
+          {/* Latar badge dan pil sama dengan latar kartu, jadi padding-nya dihapus supaya sejajar. */}
+          <Badge tone="warning" className="hidden bg-transparent px-0 md:inline-flex">
             Menunggu pembayaran
           </Badge>
           <span className="truncate text-[15px] font-extrabold md:text-[19px]">{order.event.title}</span>
@@ -179,7 +180,7 @@ function PendingCard({ order, onCancel }: { order: Order; onCancel: () => void }
         </div>
       </div>
       <div className="flex flex-col gap-2 md:items-end">
-        <CountdownPill expiresAt={order.expiresAt} serverTime={order.serverTime} label={`Bayar sebelum ${until} WIB`} className="hidden md:inline-flex" />
+        <CountdownPill expiresAt={order.expiresAt} serverTime={order.serverTime} label={`Bayar sebelum ${until} WIB`} className="hidden bg-transparent pr-0 pl-0 md:inline-flex md:self-end" />
         <div className="flex gap-2">
           <Button variant="ghost" className="hidden md:inline-flex" onClick={onCancel}>
             Batalkan
@@ -254,7 +255,7 @@ export function TicketsView() {
         </Alert>
       )}
       {!empty && !failed && (
-        <div role="tablist" aria-label="Status tiket" className="flex gap-1 rounded-full bg-surface-2 p-1 md:gap-7 md:rounded-none md:border-b md:border-border md:bg-transparent md:p-0">
+        <div role="tablist" aria-label="Status tiket" className="flex gap-1 rounded-full bg-surface-2 p-1 md:gap-7 md:rounded-none md:bg-transparent md:p-0">
           {tabs.map((t) => {
             const active = tab === t.value;
             return (

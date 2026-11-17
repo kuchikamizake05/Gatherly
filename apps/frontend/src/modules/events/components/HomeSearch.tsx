@@ -7,6 +7,8 @@ import { useOnline } from "@/hooks/use-online";
 import { Alert } from "@/components/elements/Alert";
 import { MobileSearch, SearchBar } from "@/components/elements/EventSearch";
 import { FilterButton, FilterPanel, type Filters } from "@/components/elements/EventFilters";
+import { Button } from "@/components/ui/button";
+import { useCity } from "@/modules/events/use-city";
 
 /** Bagian interaktif beranda (pita 03 A, B). Sisanya dirender di server oleh HomeView. */
 
@@ -45,4 +47,10 @@ export function HomeOffline() {
       </Alert>
     </div>
   );
+}
+
+/** Tombol di state kosong beranda untuk kembali ke semua kota. */
+export function AllCitiesButton() {
+  const { setCity } = useCity();
+  return <Button onClick={() => setCity(undefined)}>Lihat semua kota</Button>;
 }

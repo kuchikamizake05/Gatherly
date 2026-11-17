@@ -31,10 +31,10 @@ export function Chip({ selected, leading, hasMenu, onClear, className, children,
         aria-pressed={selected}
         className={cn(
           "press inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold whitespace-nowrap transition-colors",
+          // Saat menu terbuka, chip terpilih tetap gelap supaya teks putihnya terbaca.
           selected
             ? "border-inverse bg-inverse text-inverse-foreground"
-            : "border-border-strong bg-background text-foreground [@media(hover:hover)]:hover:bg-surface",
-          "data-[state=open]:border-foreground data-[state=open]:bg-surface-2",
+            : "border-border-strong bg-background text-foreground data-[state=open]:border-foreground data-[state=open]:bg-surface-2 [@media(hover:hover)]:hover:bg-surface",
           "disabled:cursor-not-allowed disabled:opacity-50",
           onClear && selected && "rounded-r-none pr-2",
           className,

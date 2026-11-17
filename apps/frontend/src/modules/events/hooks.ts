@@ -11,6 +11,11 @@ export function useEvents(query: EventQuery = {}) {
   return useQuery({ queryKey: qk.events(query), queryFn: () => eventsApi.list(query), placeholderData: keepPreviousData });
 }
 
+/** Pilihan kota di pencarian. Jarang berubah, jadi disimpan lima menit. */
+export function useCities() {
+  return useQuery({ queryKey: ["events", "cities"] as const, queryFn: async () => (await eventsApi.cities()).data, staleTime: 300_000 });
+}
+
 /** Saran pencarian. Kirim kata kunci yang sudah ditunda (debounce) dari komponen. */
 export function useEventSuggestions(q: string) {
   return useQuery({

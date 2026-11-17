@@ -52,6 +52,8 @@ export default function nextConfig(phase) {
   }
   return {
     poweredByHeader: false,
+    // Jangan buat AGENTS.md otomatis saat next dev.
+    agentRules: false,
     async rewrites() {
       return [
         {

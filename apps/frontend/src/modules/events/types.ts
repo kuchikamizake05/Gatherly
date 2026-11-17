@@ -67,6 +67,8 @@ export type EventQuery = {
   minPrice?: number;
   maxPrice?: number;
   date?: "today" | "tomorrow" | "weekend" | "week";
+  /** Nama kota seperti di data acara, misalnya "Kota Yogyakarta". Kosong berarti semua kota. */
+  city?: string;
   /** Chip "Dekat kampus" di beranda. */
   area?: "campus";
   sort?: "date_asc" | "price_asc";
@@ -95,3 +97,6 @@ export type OrganizerProfile = {
 
 export type ReportReason = "fraud" | "wrong_info" | "inappropriate" | "other";
 export type ReportInput = { reason: ReportReason; note: string };
+
+/** Kota yang punya acara aktif, untuk pilihan kota di pencarian. */
+export type CityOption = { name: string; count: number };

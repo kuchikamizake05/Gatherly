@@ -10,6 +10,7 @@ import {
   publicEventDetail,
   publicSuggestions,
   publicEventQuery,
+  publicCities,
 } from "./public-event.service.js";
 
 async function optionalUserId(request: Request) {
@@ -44,6 +45,12 @@ publicEventRouter.get(
       request.query,
     );
     response.json({ data: await publicSuggestions(q ?? "", await optionalUserId(request)) });
+  }),
+);
+publicEventRouter.get(
+  "/cities",
+  asyncHandler(async (_request, response) => {
+    response.json({ data: await publicCities() });
   }),
 );
 publicEventRouter.get(

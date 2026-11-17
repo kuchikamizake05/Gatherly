@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { OfflineBanner } from "@/components/elements/OfflineBanner";
 import { AccountMenu } from "@/components/elements/AccountMenu";
 import { InstagramIcon, TikTokIcon, XIcon } from "@/components/elements/BrandIcons";
+import { ProgressiveBlur } from "@/components/elements/ProgressiveBlur";
 
 /**
  * Kerangka gatherly.xyz. Sesuai layar di pita 03 A1 (desktop, tablet, mobile).
@@ -246,7 +247,9 @@ export function SiteShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md">
+      <header className="sticky top-0 z-30 isolate">
+        {/* Blur bertahap yang menjulur 32 px di bawah header, tanpa tepi tegas. */}
+        <ProgressiveBlur className="top-0 -bottom-8 -z-10" />
         <DesktopNav pathname={pathname} guest={guest} />
         {!hideMobileHeader && <MobileHeader pathname={pathname} guest={guest} />}
         <OfflineBanner />

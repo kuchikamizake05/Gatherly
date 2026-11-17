@@ -289,3 +289,54 @@
     border-radius: var(--radius-md);
   }
 }
+
+/* Scrollbar tipis seperti app hellonear (apps/fe): thumb membulat, tanpa panah, tanpa track.
+   Berlaku untuk halaman dan semua area yang bisa digulir. Chrome dan Safari memakai ::-webkit-scrollbar.
+   Jangan pasang scrollbar-width atau scrollbar-color untuk mereka, karena Chrome lalu memakai
+   scrollbar sistem yang berpanah di Windows. Firefox hanya mendapat dua properti itu. */
+:root {
+  --scrollbar-thumb: color-mix(in oklab, var(--foreground) 35%, transparent);
+  --scrollbar-thumb-hover: color-mix(in oklab, var(--foreground) 50%, transparent);
+}
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+::-webkit-scrollbar-button {
+  display: none;
+}
+::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: var(--scrollbar-thumb);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+/* .scrollbar-on-hover: thumb hanya muncul saat kursor di atas area atau fokus ada di dalamnya (sidebar). */
+.scrollbar-on-hover::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+.scrollbar-on-hover:hover::-webkit-scrollbar-thumb,
+.scrollbar-on-hover:focus-within::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+}
+.scrollbar-on-hover:hover::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+@supports (-moz-appearance: none) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+  .scrollbar-on-hover {
+    scrollbar-color: transparent transparent;
+  }
+  .scrollbar-on-hover:hover,
+  .scrollbar-on-hover:focus-within {
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+}
