@@ -1,0 +1,20 @@
+[Unit]
+Description=Gatherly backend API and WebSocket
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=gatherly
+Group=gatherly
+WorkingDirectory=/opt/gatherly/app/backend
+EnvironmentFile=/etc/gatherly/backend.env
+ExecStart=/usr/bin/node dist/server.js
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
