@@ -57,6 +57,7 @@ async function issueClaimedOrder(orderId: string) {
                 ticketTypeId: order.ticketTypeId,
                 sequence,
                 attendeeName: attendee.name,
+                attendeeEmail: attendee.email ?? order.buyerSnapshot.email,
                 ticketCode: ticketCode(),
                 qrToken: qrToken(),
                 checkInStatus: "unused",

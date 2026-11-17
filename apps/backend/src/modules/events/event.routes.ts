@@ -7,26 +7,157 @@ import { AppError } from "../../lib/app-error.js";
 import { requireCsrf, requireSession, type AuthenticatedRequest } from "../auth/auth.middleware.js";
 import { requireOrganizer } from "../authorization/authorization.middleware.js";
 import { CommitteeAssignment } from "../committee/committee-assignment.model.js";
-import { User } from "../auth/auth.models.js";
+import { Order } from "../orders/order.model.js";
+import { requestEventCancellation } from "../refunds/refund.service.js";
+import { queueEmail } from "../notifications/email.service.js";
+import { publishUpdate } from "../realtime/events.js";
+import { StorageAsset, claimUploads } from "../storage/storage.service.js";
+import mongoose from "mongoose";
+import { WorkspaceAccount } from "../workspace/workspace.models.js";
 import { Event, TicketType } from "./event.models.js";
 
 const date = z.coerce.date();
-const eventSchema = z.object({
-  title: z.string().trim().min(2).max(160), description: z.string().trim().min(1).max(5_000),
-  category: z.string().trim().min(2).max(80), startsAt: date, endsAt: date,
-  timezone: z.string().trim().min(1).max(100), venueName: z.string().trim().min(2).max(160),
-  address: z.string().trim().min(2).max(300), city: z.string().trim().min(2).max(100),
-  posterAssetId: z.string().trim().min(1).optional(),
-}).refine((data) => data.endsAt > data.startsAt, { message: "endsAt must be after startsAt", path: ["endsAt"] });
-const eventUpdateSchema = eventSchema.innerType().partial().extend({ salesClosed: z.boolean().optional() });
+const eventSchema = z
+  .object({
+    title: z.string().trim().min(2).max(160),
+    description: z.string().trim().min(1).max(5_000),
+    category: z.string().trim().min(2).max(80),
+    startsAt: date,
+    endsAt: date,
+    timezone: z.string().trim().min(1).max(100),
+    venueName: z.string().trim().min(2).max(160),
+    address: z.string().trim().min(2).max(300),
+    city: z.string().trim().min(2).max(100),
+    posterAssetId: z.string().trim().min(1).optional(),
+    locationType: z.enum(["offline", "online"]).default("offline"),
+    terms: z.array(z.string().trim().min(1).max(1000)).max(30).default([]),
+    performerLabel: z.string().trim().min(1).max(80).default("Performers"),
+    performers: z
+      .array(
+        z.object({
+          name: z.string().trim().min(1).max(100),
+          note: z.string().max(500).default(""),
+          time: z.string().max(30).default(""),
+          photoAssetId: z.string().optional(),
+          photoUrl: z.string().url().optional(),
+        }),
+      )
+      .max(100)
+      .default([]),
+    showRemaining: z.boolean().default(true),
+    checkInOpensAt: date.optional(),
+    checkInClosesAt: date.optional(),
+  })
+  .refine((data) => data.endsAt > data.startsAt, {
+    message: "endsAt must be after startsAt",
+    path: ["endsAt"],
+  });
+const eventUpdateSchema = eventSchema
+  .innerType()
+  .partial()
+  .extend({ salesClosed: z.boolean().optional() });
 const ticketSchema = z.object({
-  name: z.string().trim().min(2).max(80), description: z.string().trim().min(1).max(500),
-  price: z.number().int().positive(), capacity: z.number().int().positive(), salesStartsAt: date, salesEndsAt: date,
+  name: z.string().trim().min(2).max(80),
+  description: z.string().trim().max(500).default(""),
+  price: z.number().int().nonnegative(),
+  capacity: z.number().int().positive(),
+  salesStartsAt: date,
+  salesEndsAt: date,
 });
 
-function invalid(result: { success: false }) { throw new AppError(400, "VALIDATION_ERROR", "Please check the submitted fields."); }
-function slugify(value: string) { return `${value.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}-${Math.random().toString(36).slice(2, 8)}`; }
-function dto(event: any) { return { id: event._id.toString(), slug: event.slug, title: event.title, description: event.description, category: event.category, startsAt: event.startsAt, endsAt: event.endsAt, timezone: event.timezone, venueName: event.venueName, address: event.address, city: event.city, posterAssetId: event.posterAssetId ?? null, publicationStatus: event.publicationStatus, salesClosed: event.salesClosed }; }
+async function validateEventUploads(
+  input: { posterAssetId?: string; performers?: { photoAssetId?: string; photoUrl?: string }[] },
+  userId: string,
+) {
+  const ids = [input.posterAssetId, ...(input.performers ?? []).map((p) => p.photoAssetId)].filter(
+    (id): id is string => !!id,
+  );
+  for (const id of ids) {
+    if (
+      !Types.ObjectId.isValid(id) ||
+      !(await StorageAsset.exists({
+        _id: id,
+        ownerId: userId,
+        private: false,
+        type: { $in: ["image/png", "image/jpeg", "image/webp"] },
+      }))
+    )
+      throw new AppError(400, "INVALID_ASSET", "Select an image uploaded by this organizer.");
+  }
+  if (ids.length) await claimUploads(ids, userId);
+  for (const performer of input.performers ?? [])
+    if (performer.photoAssetId) performer.photoUrl = `/api/v1/media/${performer.photoAssetId}`;
+}
+function validateCheckInWindow(event: {
+  startsAt: Date;
+  endsAt: Date;
+  checkInOpensAt?: Date;
+  checkInClosesAt?: Date;
+  timezone?: string;
+}) {
+  try {
+    if (event.timezone) new Intl.DateTimeFormat("en", { timeZone: event.timezone }).format();
+  } catch {
+    throw new AppError(400, "VALIDATION_ERROR", "Invalid event timezone.");
+  }
+  const opens = event.checkInOpensAt ?? new Date(event.startsAt.getTime() - 2 * 3600000);
+  const closes = event.checkInClosesAt ?? event.endsAt;
+  if (opens >= closes || closes > event.endsAt)
+    throw new AppError(
+      400,
+      "VALIDATION_ERROR",
+      "Check-in must open before closing and close no later than event end.",
+    );
+}
+function invalid(result: { success: false }) {
+  throw new AppError(400, "VALIDATION_ERROR", "Please check the submitted fields.");
+}
+function slugify(value: string) {
+  return `${value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")}-${Math.random().toString(36).slice(2, 8)}`;
+}
+function dto(event: any) {
+  return {
+    posterUrl: event.posterAssetId ? `/api/v1/media/${event.posterAssetId}` : null,
+    locationType: event.locationType ?? "offline",
+    terms: event.terms ?? [],
+    performerLabel: event.performerLabel ?? "Performers",
+    performers: event.performers ?? [],
+    showRemaining: event.showRemaining ?? true,
+    checkInOpensAt: event.checkInOpensAt ?? new Date(event.startsAt.getTime() - 2 * 3600000),
+    checkInClosesAt: event.checkInClosesAt ?? event.endsAt,
+    cancellationStatus: event.cancellationStatus ?? null,
+    cancellationReason: event.cancellationReason ?? null,
+    updatedAt: event.updatedAt,
+    status:
+      event.publicationStatus === "cancelled"
+        ? "cancelled"
+        : event.publicationStatus === "draft"
+          ? "draft"
+          : event.endsAt <= new Date()
+            ? "ended"
+            : event.salesClosed
+              ? "scheduled"
+              : "on_sale",
+    id: event._id.toString(),
+    slug: event.slug,
+    title: event.title,
+    description: event.description,
+    category: event.category,
+    startsAt: event.startsAt,
+    endsAt: event.endsAt,
+    timezone: event.timezone,
+    venueName: event.venueName,
+    address: event.address,
+    city: event.city,
+    posterAssetId: event.posterAssetId ?? null,
+    publicationStatus: event.publicationStatus,
+    salesClosed: event.salesClosed,
+  };
+}
 async function owned(request: AuthenticatedRequest) {
   const id = String(request.params.id);
   if (!Types.ObjectId.isValid(id)) throw new AppError(404, "NOT_FOUND", "Event not found.");
@@ -37,59 +168,405 @@ async function owned(request: AuthenticatedRequest) {
 
 export const eventRouter = Router();
 eventRouter.use(requireSession, requireOrganizer);
-eventRouter.get("/", asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const events = await Event.find({ organizerId: request.auth!.organizerId }).sort({ startsAt: -1 });
-  response.json({ data: events.map(dto) });
-}));
-eventRouter.post("/", requireCsrf, asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const parsed = eventSchema.safeParse(request.body); if (!parsed.success) invalid(parsed);
-  if (parsed.data!.startsAt <= new Date()) throw new AppError(400, "VALIDATION_ERROR", "The event must start in the future.");
-  const event = await Event.create({ ...parsed.data!, organizerId: new Types.ObjectId(request.auth!.organizerId), slug: slugify(parsed.data!.title) });
-  response.status(201).json({ data: dto(event) });
-}));
-eventRouter.get("/:id", asyncHandler(async (request: AuthenticatedRequest, response) => { response.json({ data: dto(await owned(request)) }); }));
-eventRouter.patch("/:id", requireCsrf, asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const parsed = eventUpdateSchema.safeParse(request.body); if (!parsed.success) invalid(parsed);
-  const event = await owned(request); Object.assign(event, parsed.data!);
-  if (event.endsAt <= event.startsAt) throw new AppError(400, "VALIDATION_ERROR", "endsAt must be after startsAt");
-  event.checkoutVersion += 1;
-  await event.save(); response.json({ data: dto(event) });
-}));
-eventRouter.delete("/:id", requireCsrf, asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const event = await owned(request); if (event.publicationStatus !== "draft") throw new AppError(409, "CONFLICT", "Only draft events can be deleted.");
-  await TicketType.deleteMany({ eventId: event._id }); await event.deleteOne(); response.status(204).send();
-}));
-eventRouter.post("/:id/publish", requireCsrf, asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const event = await owned(request); const types = await TicketType.find({ eventId: event._id });
-  if (!event.posterAssetId || types.length === 0) throw new AppError(409, "CONFLICT", "A poster and at least one ticket type are required.");
-  event.publicationStatus = "published"; event.checkoutVersion += 1; await event.save(); response.json({ data: dto(event) });
-}));
-eventRouter.post("/:id/ticket-types", requireCsrf, asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const event = await owned(request); const parsed = ticketSchema.safeParse(request.body); if (!parsed.success) invalid(parsed);
-  if (parsed.data!.salesEndsAt <= parsed.data!.salesStartsAt || parsed.data!.salesEndsAt > event.startsAt) throw new AppError(400, "VALIDATION_ERROR", "Invalid ticket sales period.");
-  const ticket = await TicketType.create({ ...parsed.data!, eventId: event._id }); response.status(201).json({ data: { id: ticket._id.toString(), ...parsed.data!, available: ticket.capacity } });
-}));
-eventRouter.patch("/:id/ticket-types/:typeId", requireCsrf, asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const event = await owned(request); const parsed = ticketSchema.partial().safeParse(request.body); if (!parsed.success) invalid(parsed);
-  const ticket = await TicketType.findOne({ _id: request.params.typeId, eventId: event._id }); if (!ticket) throw new AppError(404, "NOT_FOUND", "Ticket type not found.");
-  if (parsed.data!.capacity !== undefined && parsed.data!.capacity < ticket.sold + ticket.reserved) throw new AppError(409, "CONFLICT", "Capacity cannot be below sold or reserved tickets.");
-  Object.assign(ticket, parsed.data!); await ticket.save(); response.json({ data: { id: ticket._id.toString(), ...ticket.toObject(), available: ticket.capacity - ticket.sold - ticket.reserved } });
-}));
-eventRouter.delete("/:id/ticket-types/:typeId", requireCsrf, asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const event = await owned(request); const ticket = await TicketType.findOne({ _id: request.params.typeId, eventId: event._id }); if (!ticket) throw new AppError(404, "NOT_FOUND", "Ticket type not found.");
-  if (ticket.sold + ticket.reserved > 0) throw new AppError(409, "CONFLICT", "Ticket type already has orders.");
-  await ticket.deleteOne(); response.status(204).send();
-}));
-eventRouter.get("/:id/committee", asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const event = await owned(request); const assignments = await CommitteeAssignment.find({ eventId: event._id }).populate("userId", "name emailNormalized");
-  response.json({ data: assignments.map((assignment: any) => ({ userId: assignment.userId._id.toString(), name: assignment.userId.name, email: assignment.userId.emailNormalized })) });
-}));
-eventRouter.post("/:id/committee", requireCsrf, asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const event = await owned(request); const parsed = z.object({ email: z.string().trim().email() }).safeParse(request.body); if (!parsed.success) invalid(parsed);
-  const user = await User.findOne({ emailNormalized: parsed.data!.email.toLowerCase() }); if (!user) throw new AppError(404, "NOT_FOUND", "User not found.");
-  const exists = await CommitteeAssignment.exists({ eventId: event._id, userId: user._id }); if (exists) throw new AppError(409, "CONFLICT", "Committee member already assigned.");
-  await CommitteeAssignment.create({ eventId: event._id, userId: user._id, assignedBy: request.auth!.user._id }); response.status(201).json({ data: { userId: user._id.toString(), name: user.name, email: user.emailNormalized } });
-}));
-eventRouter.delete("/:id/committee/:userId", requireCsrf, asyncHandler(async (request: AuthenticatedRequest, response) => {
-  const event = await owned(request); const result = await CommitteeAssignment.deleteOne({ eventId: event._id, userId: request.params.userId }); if (result.deletedCount === 0) throw new AppError(404, "NOT_FOUND", "Committee assignment not found."); response.status(204).send();
-}));
+eventRouter.get(
+  "/",
+  asyncHandler(async (request: AuthenticatedRequest, response) => {
+    const events = await Event.find({ organizerId: request.auth!.organizerId }).sort({
+      startsAt: -1,
+    });
+    const data = [];
+    for (const event of events) {
+      const types = await TicketType.find({ eventId: event._id });
+      const orders = await Order.find({ eventId: event._id, paymentStatus: "paid" }).select(
+        "subtotalAmount unitPrice quantity refundedBaseAmount",
+      );
+      data.push({
+        ...dto(event),
+        sold: types.reduce((n, t) => n + t.sold, 0),
+        capacity: types.reduce((n, t) => n + t.capacity, 0),
+        gross: orders.reduce(
+          (n, o) =>
+            n + (o.subtotalAmount ?? o.unitPrice * o.quantity) - (o.refundedBaseAmount ?? 0),
+          0,
+        ),
+      });
+    }
+    response.json({ data, meta: { page: 1, limit: data.length, total: data.length } });
+  }),
+);
+eventRouter.post(
+  "/",
+  requireCsrf,
+  asyncHandler(async (request: AuthenticatedRequest, response) => {
+    const parsed = eventSchema.safeParse(request.body);
+    if (!parsed.success) invalid(parsed);
+    if (parsed.data!.startsAt <= new Date())
+      throw new AppError(400, "VALIDATION_ERROR", "The event must start in the future.");
+    validateCheckInWindow(parsed.data!);
+    await validateEventUploads(parsed.data!, request.auth!.user._id);
+    const event = await Event.create({
+      ...parsed.data!,
+      organizerId: new Types.ObjectId(request.auth!.organizerId),
+      slug: slugify(parsed.data!.title),
+    });
+    response.status(201).json({ data: dto(event) });
+  }),
+);
+eventRouter.get(
+  "/:id",
+  asyncHandler(async (request: AuthenticatedRequest, response) => {
+    const event = await owned(request);
+    const types = await TicketType.find({ eventId: event._id });
+    response.json({
+      data: {
+        ...dto(event),
+        ticketTypes: types.map((t) => ({
+          ...t.toObject(),
+          id: t._id.toString(),
+          available: t.capacity - t.sold - t.reserved,
+        })),
+      },
+    });
+  }),
+);
+eventRouter.patch(
+  "/:id",
+  requireCsrf,
+  asyncHandler(async (request: AuthenticatedRequest, response) => {
+    const parsed = eventUpdateSchema.safeParse(request.body);
+    if (!parsed.success) invalid(parsed);
+    const event = await owned(request);
+    if (event.publicationStatus === "cancelled")
+      throw new AppError(409, "EVENT_CANCELLED", "Cancelled events cannot be changed.");
+    const changedSchedule = ["startsAt", "endsAt", "venueName", "address", "city"].some(
+      (k) => k in parsed.data! && String((event as any)[k]) !== String((parsed.data as any)[k]),
+    );
+    await validateEventUploads(parsed.data!, request.auth!.user._id);
+    Object.assign(event, parsed.data!);
+    validateCheckInWindow(event);
+    if (event.endsAt <= event.startsAt)
+      throw new AppError(400, "VALIDATION_ERROR", "endsAt must be after startsAt");
+    event.checkoutVersion += 1;
+    await event.save();
+    if (changedSchedule) {
+      const orders = await Order.find({ eventId: event._id, paymentStatus: "paid" });
+      for (const order of orders)
+        for (const email of new Set([
+          order.buyerSnapshot.email,
+          ...order.attendees.map((a) => a.email).filter((e): e is string => !!e),
+        ]))
+          await queueEmail({
+            key: `schedule-${event._id}-${event.checkoutVersion}-${order._id}-${email}`,
+            to: email,
+            subject: "Informasi acara diperbarui",
+            text: `Jadwal atau lokasi ${event.title} diperbarui. Buka Gatherly untuk melihat informasi terbaru.`,
+          });
+    }
+    await publishUpdate({ topic: "event", id: event._id.toString(), type: "event.updated" });
+    response.json({ data: dto(event) });
+  }),
+);
+eventRouter.delete(
+  "/:id",
+  requireCsrf,
+  asyncHandler(async (request: AuthenticatedRequest, response) => {
+    const event = await owned(request);
+    if (event.publicationStatus !== "draft")
+      throw new AppError(409, "CONFLICT", "Only draft events can be deleted.");
+    if (await Order.exists({ eventId: event._id }))
+      throw new AppError(409, "HAS_ORDERS", "Events with orders cannot be deleted.");
+    await TicketType.deleteMany({ eventId: event._id });
+    await event.deleteOne();
+    response.status(204).send();
+  }),
+);
+eventRouter.post(
+  "/:id/publish",
+  requireCsrf,
+  asyncHandler(async (request: AuthenticatedRequest, response) => {
+    const event = await owned(request);
+    if (event.publicationStatus === "cancelled")
+      throw new AppError(409, "EVENT_CANCELLED", "Cancelled events cannot be republished.");
+    const types = await TicketType.find({ eventId: event._id });
+    if (!event.posterAssetId || types.length === 0)
+      throw new AppError(409, "CONFLICT", "A poster and at least one ticket type are required.");
+    event.publicationStatus = "published";
+    event.checkoutVersion += 1;
+    await event.save();
+    response.json({ data: dto(event) });
+  }),
+);
+eventRouter.post(
+  "/:id/ticket-types",
+  requireCsrf,
+  asyncHandler(async (request: AuthenticatedRequest, response) => {
+    const event = await owned(request);
+    const parsed = ticketSchema.safeParse(request.body);
+    if (!parsed.success) invalid(parsed);
+    if (
+      parsed.data!.salesEndsAt <= parsed.data!.salesStartsAt ||
+      parsed.data!.salesEndsAt > event.startsAt
+    )
+      throw new AppError(400, "VALIDATION_ERROR", "Invalid ticket sales period.");
+    const ticket = await TicketType.create({ ...parsed.data!, eventId: event._id });
+    response
+      .status(201)
+      .json({ data: { id: ticket._id.toString(), ...parsed.data!, available: ticket.capacity } });
+  }),
+);
+eventRouter.patch(
+  "/:id/ticket-types/:typeId",
+  requireCsrf,
+  asyncHandler(async (request: AuthenticatedRequest, response) => {
+    const ownedEvent = await owned(request);
+    const parsed = ticketSchema.partial().safeParse(request.body);
+    if (!parsed.success) invalid(parsed);
+    const session = await mongoose.startSession();
+    let result: any;
+    try {
+      await session.withTransaction(async () => {
+        const event = await Event.findOneAndUpdate(
+          { _id: ownedEvent._id, publicationStatus: { $ne: "cancelled" } },
+          { $inc: { checkoutVersion: 1 } },
+          { session, returnDocument: "after" },
+        );
+        if (!event)
+          throw new AppError(409, "EVENT_CANCELLED", "Cancelled events cannot be changed.");
+        const ticket = await TicketType.findOne({
+          _id: request.params.typeId,
+          eventId: event._id,
+        }).session(session);
+        if (!ticket) throw new AppError(404, "NOT_FOUND", "Ticket type not found.");
+        if (
+          parsed.data!.capacity !== undefined &&
+          parsed.data!.capacity < ticket.sold + ticket.reserved
+        )
+          throw new AppError(409, "CONFLICT", "Capacity cannot be below sold or reserved tickets.");
+        Object.assign(ticket, parsed.data!);
+        if (ticket.salesEndsAt <= ticket.salesStartsAt || ticket.salesEndsAt > event.startsAt)
+          throw new AppError(400, "VALIDATION_ERROR", "Invalid ticket sales period.");
+        await ticket.save({ session });
+        result = {
+          ...ticket.toObject(),
+          id: ticket._id.toString(),
+          available: ticket.capacity - ticket.sold - ticket.reserved,
+        };
+      });
+    } finally {
+      await session.endSession();
+    }
+    response.json({ data: result });
+  }),
+);
+eventRouter.delete(
+  "/:id/ticket-types/:typeId",
+  requireCsrf,
+  asyncHandler(async (request: AuthenticatedRequest, response) => {
+    const event = await owned(request);
+    const session = await mongoose.startSession();
+    try {
+      await session.withTransaction(async () => {
+        await Event.updateOne({ _id: event._id }, { $inc: { checkoutVersion: 1 } }, { session });
+        const ticket = await TicketType.findOne({
+          _id: request.params.typeId,
+          eventId: event._id,
+        }).session(session);
+        if (!ticket) throw new AppError(404, "NOT_FOUND", "Ticket type not found.");
+        if (
+          (await Order.exists({ ticketTypeId: ticket._id }).session(session)) ||
+          ticket.sold + ticket.reserved > 0
+        )
+          throw new AppError(409, "HAS_ORDERS", "Ticket type already has orders.");
+        await ticket.deleteOne({ session });
+      });
+    } finally {
+      await session.endSession();
+    }
+    response.status(204).send();
+  }),
+);
+eventRouter.get(
+  "/:id/committee",
+  asyncHandler(async (request: AuthenticatedRequest, response) => {
+    const event = await owned(request);
+    const assignments = await CommitteeAssignment.find({ eventId: event._id }).populate(
+      "userId",
+      "name emailNormalized",
+    );
+    response.json({
+      data: assignments.map((assignment: any) => ({
+        userId: assignment.userId._id.toString(),
+        name: assignment.userId.name,
+        email: assignment.userId.emailNormalized,
+      })),
+    });
+  }),
+);
+eventRouter.post(
+  "/:id/committee",
+  requireCsrf,
+  asyncHandler(async (request: AuthenticatedRequest, response) => {
+    const event = await owned(request);
+    const members = z
+      .object({
+        memberIds: z
+          .array(z.string().regex(/^[a-f\d]{24}$/i))
+          .min(1)
+          .max(100),
+      })
+      .safeParse(request.body);
+    if (members.success) {
+      const accounts = await WorkspaceAccount.find({
+        _id: { $in: members.data.memberIds },
+        organizerId: event.organizerId,
+        role: "committee",
+        active: true,
+      });
+      if (accounts.length !== new Set(members.data.memberIds).size)
+        throw new AppError(
+          400,
+          "INVALID_MEMBERS",
+          "Select active committee accounts belonging to this organizer.",
+        );
+      await CommitteeAssignment.bulkWrite(
+        accounts.map((account) => ({
+          updateOne: {
+            filter: { eventId: event._id, userId: account.userId },
+            update: {
+              $setOnInsert: {
+                assignedBy: new Types.ObjectId(request.auth!.user._id),
+                checkInVersion: 0,
+                createdAt: new Date(),
+              },
+            },
+            upsert: true,
+          },
+        })),
+      );
+      response
+        .status(201)
+        .json({
+          data: accounts.map((a) => ({
+            userId: a.userId!.toString(),
+            username: a.username,
+            name: a.name,
+          })),
+        });
+      return;
+    }
+    throw new AppError(400, "VALIDATION_ERROR", "Select committee accounts by memberIds.");
+  }),
+);
+eventRouter.delete(
+  "/:id/committee/:userId",
+  requireCsrf,
+  asyncHandler(async (request: AuthenticatedRequest, response) => {
+    const event = await owned(request);
+    const result = await CommitteeAssignment.deleteOne({
+      eventId: event._id,
+      userId: request.params.userId,
+    });
+    if (result.deletedCount === 0)
+      throw new AppError(404, "NOT_FOUND", "Committee assignment not found.");
+    response.status(204).send();
+  }),
+);
+
+eventRouter.post(
+  "/:id/cancel",
+  requireCsrf,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const parsed = z
+      .object({ confirmTitle: z.string(), reason: z.string().trim().min(10).max(1000) })
+      .safeParse(req.body);
+    if (!parsed.success) invalid(parsed);
+    res
+      .status(201)
+      .json({
+        data: await requestEventCancellation(
+          String(req.params.id),
+          req.auth!.organizerId!,
+          parsed.data!.confirmTitle,
+          parsed.data!.reason,
+        ),
+      });
+  }),
+);
+eventRouter.post(
+  "/:id/duplicate",
+  requireCsrf,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const source = await owned(req);
+    const session = await mongoose.startSession();
+    let id = "";
+    try {
+      await session.withTransaction(async () => {
+        const { _id, createdAt, updatedAt, __v, ...input } = source.toObject() as any;
+        const [copy] = await Event.create(
+          [
+            {
+              ...input,
+              title: `${source.title} (salinan)`,
+              slug: slugify(source.title),
+              publicationStatus: "draft",
+              salesClosed: false,
+              checkoutVersion: 0,
+              financialVersion: 0,
+              cancellationStatus: undefined,
+              cancellationReason: undefined,
+              cancellationRequestedAt: undefined,
+              cancellationDecidedAt: undefined,
+              cancellationDecidedBy: undefined,
+              cancellationDecisionNote: undefined,
+            },
+          ],
+          { session },
+        );
+        const types = await TicketType.find({ eventId: source._id }).session(session);
+        if (types.length)
+          await TicketType.create(
+            types.map((t) => ({
+              eventId: copy._id,
+              name: t.name,
+              description: t.description,
+              price: t.price,
+              capacity: t.capacity,
+              reserved: 0,
+              sold: 0,
+              salesStartsAt: t.salesStartsAt,
+              salesEndsAt: t.salesEndsAt,
+              salesStopped: false,
+            })),
+            { session },
+          );
+        id = copy._id.toString();
+      });
+    } finally {
+      await session.endSession();
+    }
+    res.status(201).json({ data: { id } });
+  }),
+);
+for (const action of ["stop", "resume"] as const)
+  eventRouter.post(
+    `/:id/ticket-types/:typeId/${action}`,
+    requireCsrf,
+    asyncHandler(async (req: AuthenticatedRequest, res) => {
+      const event = await owned(req);
+      const session = await mongoose.startSession();
+      try {
+        await session.withTransaction(async () => {
+          await Event.updateOne({ _id: event._id }, { $inc: { checkoutVersion: 1 } }, { session });
+          const ticket = await TicketType.findOneAndUpdate(
+            { _id: req.params.typeId, eventId: event._id },
+            { $set: { salesStopped: action === "stop" } },
+            { session },
+          );
+          if (!ticket) throw new AppError(404, "NOT_FOUND", "Ticket type not found.");
+        });
+      } finally {
+        await session.endSession();
+      }
+      res.status(204).send();
+    }),
+  );

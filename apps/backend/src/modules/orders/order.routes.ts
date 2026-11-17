@@ -5,6 +5,8 @@ import { z } from "zod";
 import { AppError } from "../../lib/app-error.js";
 import { asyncHandler } from "../../lib/async-handler.js";
 import { requireCsrf, requireSession, type AuthenticatedRequest } from "../auth/auth.middleware.js";
+import { Ticket } from "../tickets/ticket.model.js";
+import { cancelPendingOrder } from "./order-cancellation.service.js";
 import { Order } from "./order.model.js";
 import { createOrder, orderDto } from "./order.service.js";
 import { createOrderSchema, idempotencyKeySchema, paginationSchema } from "./order.schemas.js";
@@ -46,10 +48,13 @@ orderRouter.get(
     const { page, limit } = parsed.data;
     const filter = { buyerId: request.auth!.user._id };
     const [orders, total] = await Promise.all([
-      Order.find(filter).sort({ createdAt: -1, _id: -1 }).skip((page - 1) * limit).limit(limit),
+      Order.find(filter)
+        .sort({ createdAt: -1, _id: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit),
       Order.countDocuments(filter),
     ]);
-    response.json({ data: orders.map(orderDto), meta: { page, limit, total } });
+    response.json({ data: orders.map((order) => orderDto(order)), meta: { page, limit, total } });
   }),
 );
 
@@ -57,7 +62,14 @@ orderRouter.post(
   "/:id/payment-session",
   requireCsrf,
   asyncHandler(async (request: AuthenticatedRequest, response) => {
-    const result = await createPaymentSession(String(request.params.id), request.auth!.user._id);
+    const body = z.object({ method: z.string().max(30).optional() }).safeParse(request.body ?? {});
+    if (!body.success) throw validationError(body.error);
+    const result = await createPaymentSession(
+      String(request.params.id),
+      request.auth!.user._id,
+      undefined,
+      body.data.method,
+    );
     if (result.status !== "ready") {
       response.status(202).json({ data: { status: result.status } });
       return;
@@ -81,6 +93,21 @@ orderRouter.get(
     }
     const order = await Order.findOne({ _id: orderId, buyerId: request.auth!.user._id });
     if (!order) throw new AppError(404, "NOT_FOUND", "Order not found.");
-    response.json({ data: orderDto(order) });
+    const tickets = await Ticket.find({ orderId: order._id }).select("_id");
+    response.json({
+      data: orderDto(
+        order,
+        tickets.map((t) => t._id.toString()),
+      ),
+    });
+  }),
+);
+
+orderRouter.post(
+  "/:id/cancel",
+  requireCsrf,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    await cancelPendingOrder(String(req.params.id), req.auth!.user._id);
+    res.status(204).send();
   }),
 );

@@ -58,7 +58,9 @@ before(async () => {
   if (!process.env.MONGODB_URI) throw new Error("MONGODB_URI is required for integration tests.");
   await mongoose.connect(process.env.MONGODB_URI, { dbName: testDatabase });
   if (mongoose.connection.db?.databaseName !== testDatabase) {
-    throw new Error(`Refusing to reset database ${mongoose.connection.db?.databaseName ?? "unknown"}.`);
+    throw new Error(
+      `Refusing to reset database ${mongoose.connection.db?.databaseName ?? "unknown"}.`,
+    );
   }
   await mongoose.connection.dropDatabase();
   await Promise.all([
@@ -178,14 +180,21 @@ async function prepareCheckInFixture(quantity = 1) {
   const now = new Date();
   await Event.updateOne(
     { _id: context.event._id },
-    { $set: { startsAt: new Date(now.getTime() + 10 * 60_000), endsAt: new Date(now.getTime() + 2 * 60 * 60_000) } },
+    {
+      $set: {
+        startsAt: new Date(now.getTime() + 10 * 60_000),
+        endsAt: new Date(now.getTime() + 2 * 60 * 60_000),
+      },
+    },
   );
   await CommitteeAssignment.create({
     eventId: context.event._id,
     userId: context.buyerB._id,
     assignedBy: new mongoose.Types.ObjectId(),
   });
-  const tickets = await Ticket.find({ orderId: order._id }).select("+qrToken").sort({ sequence: 1 });
+  const tickets = await Ticket.find({ orderId: order._id })
+    .select("+qrToken")
+    .sort({ sequence: 1 });
   return { ...context, order, tickets, now };
 }
 
@@ -228,7 +237,7 @@ test("creates a held reservation using the server price", async () => {
 
   assert.equal(result.created, true);
   assert.equal(result.order.unitPrice, 100_000);
-  assert.equal(result.order.totalAmount, 200_000);
+  assert.equal(result.order.totalAmount, 210_000);
   assert.equal(result.order.reservationStatus, "held");
   const inventory = await TicketType.findById(ticketType._id).lean();
   assert.equal(inventory?.reserved, 2);
@@ -319,7 +328,7 @@ test("creates and reads an order through the authenticated API", async () => {
     tokenHash: hashToken(sessionToken),
     csrfTokenHash: hashToken(csrfToken),
     userId: buyerA._id,
-    expiresAt: new Date(Date.now() + 60_000),
+    expiresAt: new Date(Date.now() + 10 * 60_000),
   });
 
   const createResponse = await fetch(`${baseUrl}/api/v1/orders`, {
@@ -334,7 +343,7 @@ test("creates and reads an order through the authenticated API", async () => {
   });
   assert.equal(createResponse.status, 201);
   const created = (await createResponse.json()) as { data: { id: string; totalAmount: number } };
-  assert.equal(created.data.totalAmount, 200_000);
+  assert.equal(created.data.totalAmount, 210_000);
 
   const detailResponse = await fetch(`${baseUrl}/api/v1/orders/${created.data.id}`, {
     headers: { Cookie: `gatherly_session=${sessionToken}` },
@@ -361,7 +370,7 @@ test("creates one Snap session from server-owned order data and reuses it", asyn
   const transport: SnapTransport = async (payload) => {
     calls += 1;
     assert.equal(payload.transaction_details.order_id, order.providerOrderId);
-    assert.equal(payload.transaction_details.gross_amount, 200_000);
+    assert.equal(payload.transaction_details.gross_amount, 210_000);
     assert.equal(payload.item_details[0].price * payload.item_details[0].quantity, 200_000);
     assert.equal(payload.expiry.duration, 15);
     return {
@@ -388,8 +397,12 @@ test("allows only one provider call for concurrent payment-session requests", as
   );
   let releaseProvider!: () => void;
   let providerStarted!: () => void;
-  const started = new Promise<void>((resolve) => { providerStarted = resolve; });
-  const release = new Promise<void>((resolve) => { releaseProvider = resolve; });
+  const started = new Promise<void>((resolve) => {
+    providerStarted = resolve;
+  });
+  const release = new Promise<void>((resolve) => {
+    releaseProvider = resolve;
+  });
   let calls = 0;
   const transport: SnapTransport = async () => {
     calls += 1;
@@ -502,7 +515,7 @@ test("returns a stored Snap session through the authenticated API", async () => 
     tokenHash: hashToken(sessionToken),
     csrfTokenHash: hashToken(csrfToken),
     userId: buyerA._id,
-    expiresAt: new Date(Date.now() + 60_000),
+    expiresAt: new Date(Date.now() + 10 * 60_000),
   });
 
   const response = await fetch(`${baseUrl}/api/v1/orders/${order._id}/payment-session`, {
@@ -634,7 +647,10 @@ test("keeps inventory nonnegative when paid races with expiry", async () => {
   assert.equal(updatedOrder?.paymentStatus, "paid");
   assert.ok((inventory?.reserved ?? -1) >= 0);
   assert.ok((inventory?.sold ?? -1) >= 0);
-  assert.equal((inventory?.reserved ?? 0) + (inventory?.sold ?? 0), updatedOrder?.reservationStatus === "released" ? 0 : 1);
+  assert.equal(
+    (inventory?.reserved ?? 0) + (inventory?.sold ?? 0),
+    updatedOrder?.reservationStatus === "released" ? 0 : 1,
+  );
 });
 
 test("issues exactly one ticket per attendee after payment", async () => {
@@ -647,13 +663,14 @@ test("issues exactly one ticket per attendee after payment", async () => {
   await applyPaymentStatus(order._id.toString(), "paid", new Date());
 
   assert.equal(await issueDueTickets(), 1);
-  const tickets = await Ticket.find({ orderId: order._id }).select("+qrToken").sort({ sequence: 1 });
+  const tickets = await Ticket.find({ orderId: order._id })
+    .select("+qrToken")
+    .sort({ sequence: 1 });
   assert.equal(tickets.length, 3);
-  assert.deepEqual(tickets.map((ticket) => ticket.attendeeName), [
-    "Attendee 1",
-    "Attendee 2",
-    "Attendee 3",
-  ]);
+  assert.deepEqual(
+    tickets.map((ticket) => ticket.attendeeName),
+    ["Attendee 1", "Attendee 2", "Attendee 3"],
+  );
   assert.equal(new Set(tickets.map((ticket) => ticket.ticketCode)).size, 3);
   assert.equal(new Set(tickets.map((ticket) => ticket.qrToken)).size, 3);
   assert.ok(tickets.every((ticket) => /^[A-Za-z0-9_-]{43}$/.test(ticket.qrToken)));
@@ -699,7 +716,10 @@ test("makes retries and concurrent issuance idempotent", async () => {
   );
 
   const processed = await Promise.all([issueDueTickets(1), issueDueTickets(1)]);
-  assert.equal(processed.reduce((sum, count) => sum + count, 0), 1);
+  assert.equal(
+    processed.reduce((sum, count) => sum + count, 0),
+    1,
+  );
   assert.equal(await Ticket.countDocuments({ orderId: order._id }), 2);
   assert.equal(await issueDueTickets(), 0);
   assert.equal(await Ticket.countDocuments({ orderId: order._id }), 2);
@@ -723,13 +743,13 @@ test("lists safe ticket data and reveals QR only to its owner", async () => {
       tokenHash: hashToken(ownerSession),
       csrfTokenHash: hashToken("unused-owner-csrf"),
       userId: buyerA._id,
-      expiresAt: new Date(Date.now() + 60_000),
+      expiresAt: new Date(Date.now() + 10 * 60_000),
     },
     {
       tokenHash: hashToken(otherSession),
       csrfTokenHash: hashToken("unused-other-csrf"),
       userId: buyerB._id,
-      expiresAt: new Date(Date.now() + 60_000),
+      expiresAt: new Date(Date.now() + 10 * 60_000),
     },
   ]);
 
@@ -785,6 +805,7 @@ test("enforces both check-in time boundaries", async () => {
   const currentEvent = await Event.findById(event._id).lean();
   assert.ok(currentEvent);
   const opensAt = new Date(currentEvent.startsAt.getTime() - 30 * 60_000);
+  await Event.updateOne({ _id: event._id }, { $set: { checkInOpensAt: opensAt } });
 
   await assert.rejects(
     checkInTicket(
@@ -796,21 +817,25 @@ test("enforces both check-in time boundaries", async () => {
     (error: unknown) => error instanceof AppError && error.code === "CHECKIN_CLOSED",
   );
   assert.equal(
-    (await checkInTicket(
-      event._id.toString(),
-      buyerB._id.toString(),
-      { ticketCode: tickets[0]!.ticketCode },
-      opensAt,
-    )).checkInStatus,
+    (
+      await checkInTicket(
+        event._id.toString(),
+        buyerB._id.toString(),
+        { ticketCode: tickets[0]!.ticketCode },
+        opensAt,
+      )
+    ).checkInStatus,
     "used",
   );
   assert.equal(
-    (await checkInTicket(
-      event._id.toString(),
-      buyerB._id.toString(),
-      { ticketCode: tickets[1]!.ticketCode },
-      currentEvent.endsAt,
-    )).checkInStatus,
+    (
+      await checkInTicket(
+        event._id.toString(),
+        buyerB._id.toString(),
+        { ticketCode: tickets[1]!.ticketCode },
+        currentEvent.endsAt,
+      )
+    ).checkInStatus,
     "used",
   );
 });
@@ -818,8 +843,18 @@ test("enforces both check-in time boundaries", async () => {
 test("accepts exactly one of two concurrent scans", async () => {
   const { buyerB, event, tickets, now } = await prepareCheckInFixture();
   const scans = await Promise.allSettled([
-    checkInTicket(event._id.toString(), buyerB._id.toString(), { ticketCode: tickets[0]!.ticketCode }, now),
-    checkInTicket(event._id.toString(), buyerB._id.toString(), { ticketCode: tickets[0]!.ticketCode }, now),
+    checkInTicket(
+      event._id.toString(),
+      buyerB._id.toString(),
+      { ticketCode: tickets[0]!.ticketCode },
+      now,
+    ),
+    checkInTicket(
+      event._id.toString(),
+      buyerB._id.toString(),
+      { ticketCode: tickets[0]!.ticketCode },
+      now,
+    ),
   ]);
 
   assert.equal(scans.filter((scan) => scan.status === "fulfilled").length, 1);
@@ -855,22 +890,18 @@ test("distinguishes wrong-event and invalid credentials without attendee data", 
   });
 
   await assert.rejects(
-    checkInTicket(
-      secondEvent._id.toString(),
-      first.buyerB._id.toString(),
-      { ticketCode: first.tickets[0]!.ticketCode },
-    ),
+    checkInTicket(secondEvent._id.toString(), first.buyerB._id.toString(), {
+      ticketCode: first.tickets[0]!.ticketCode,
+    }),
     (error: unknown) =>
       error instanceof AppError &&
       error.code === "WRONG_EVENT" &&
       !error.message.includes(first.tickets[0]!.attendeeName),
   );
   await assert.rejects(
-    checkInTicket(
-      secondEvent._id.toString(),
-      first.buyerB._id.toString(),
-      { ticketCode: "GTH-T-DOES-NOT-EXIST" },
-    ),
+    checkInTicket(secondEvent._id.toString(), first.buyerB._id.toString(), {
+      ticketCode: "GTH-T-DOES-NOT-EXIST",
+    }),
     (error: unknown) => error instanceof AppError && error.code === "INVALID_TICKET",
   );
   await Order.updateOne({ _id: first.order._id }, { $set: { paymentStatus: "pending" } });
@@ -890,7 +921,12 @@ test("revokes committee access for check-in, lookup, and history", async () => {
   await CommitteeAssignment.deleteOne({ eventId: event._id, userId: buyerB._id });
 
   await assert.rejects(
-    checkInTicket(event._id.toString(), buyerB._id.toString(), { ticketCode: tickets[0]!.ticketCode }, now),
+    checkInTicket(
+      event._id.toString(),
+      buyerB._id.toString(),
+      { ticketCode: tickets[0]!.ticketCode },
+      now,
+    ),
     (error: unknown) => error instanceof AppError && error.code === "FORBIDDEN",
   );
   await assert.rejects(
@@ -958,7 +994,7 @@ test("calculates organizer summary from paid orders with half-open paidAt period
     tokenHash: hashToken(sessionToken),
     csrfTokenHash: hashToken("organizer-summary-csrf"),
     userId: buyerB._id,
-    expiresAt: new Date(Date.now() + 60_000),
+    expiresAt: new Date(Date.now() + 10 * 60_000),
   });
   const response = await fetch(`${baseUrl}/api/v1/organizer/summary`, {
     headers: { Cookie: `gatherly_session=${sessionToken}` },
@@ -993,7 +1029,12 @@ test("reports event inventory, attendance, and paid sales without double countin
   const now = new Date();
   await Event.updateOne(
     { _id: event._id },
-    { $set: { startsAt: new Date(now.getTime() + 10 * 60_000), endsAt: new Date(now.getTime() + 2 * 60 * 60_000) } },
+    {
+      $set: {
+        startsAt: new Date(now.getTime() + 10 * 60_000),
+        endsAt: new Date(now.getTime() + 2 * 60 * 60_000),
+      },
+    },
   );
   await CommitteeAssignment.create({
     eventId: event._id,
@@ -1002,7 +1043,12 @@ test("reports event inventory, attendance, and paid sales without double countin
   });
   const ticket = await Ticket.findOne({ orderId: paidOrder._id });
   assert.ok(ticket);
-  await checkInTicket(event._id.toString(), buyerB._id.toString(), { ticketCode: ticket.ticketCode }, now);
+  await checkInTicket(
+    event._id.toString(),
+    buyerB._id.toString(),
+    { ticketCode: ticket.ticketCode },
+    now,
+  );
 
   const summary = await getOrganizerEventSummary(event._id.toString(), organizer._id.toString());
   assert.equal(summary.capacity, 6);
@@ -1089,7 +1135,9 @@ const authTestSecret = "integration-test-otp-secret-at-least-32-characters";
 
 test("creates a user and session only after a valid registration OTP", async () => {
   let deliveredCode = "";
-  const mailer = async ({ code }: { code: string }) => { deliveredCode = code; };
+  const mailer = async ({ code }: { code: string }) => {
+    deliveredCode = code;
+  };
   const challenge = await beginRegistration(
     { name: "OTP User", email: "otp-user@example.test", password: "StrongPassword123!" },
     { mailer, secret: authTestSecret },
@@ -1097,7 +1145,9 @@ test("creates a user and session only after a valid registration OTP", async () 
   assert.equal(await User.countDocuments({ emailNormalized: "otp-user@example.test" }), 0);
   assert.match(deliveredCode, /^\d{6}$/);
 
-  const result = await verifyRegistration(challenge.challengeId, deliveredCode, { secret: authTestSecret });
+  const result = await verifyRegistration(challenge.challengeId, deliveredCode, {
+    secret: authTestSecret,
+  });
   assert.equal(result.user.email, "otp-user@example.test");
   assert.equal(await User.countDocuments({ emailNormalized: "otp-user@example.test" }), 1);
   assert.equal(await Session.countDocuments({ userId: result.user.id }), 1);
@@ -1112,11 +1162,18 @@ test("creates a login session only after password and OTP", async () => {
   let deliveredCode = "";
   const challenge = await beginLogin(
     { email: user.emailNormalized, password: "StrongPassword123!" },
-    { mailer: async ({ code }) => { deliveredCode = code; }, secret: authTestSecret },
+    {
+      mailer: async ({ code }) => {
+        deliveredCode = code;
+      },
+      secret: authTestSecret,
+    },
   );
   assert.equal(await Session.countDocuments({ userId: user._id }), 0);
 
-  const result = await verifyLogin(challenge.challengeId, deliveredCode, { secret: authTestSecret });
+  const result = await verifyLogin(challenge.challengeId, deliveredCode, {
+    secret: authTestSecret,
+  });
   assert.equal(result.user.id, user._id.toString());
   assert.equal(await Session.countDocuments({ userId: user._id }), 1);
   assert.ok((await User.findById(user._id).lean())?.emailVerifiedAt);
@@ -1127,16 +1184,27 @@ test("invalidates the old OTP on resend and locks repeated wrong codes", async (
   const start = new Date("2026-09-29T00:00:00.000Z");
   const challenge = await beginRegistration(
     { name: "Resend User", email: "resend@example.test", password: "StrongPassword123!" },
-    { mailer: async ({ code }) => { codes.push(code); }, now: start, secret: authTestSecret },
+    {
+      mailer: async ({ code }) => {
+        codes.push(code);
+      },
+      now: start,
+      secret: authTestSecret,
+    },
   );
   await resendOtp(challenge.challengeId, {
-    mailer: async ({ code }) => { codes.push(code); },
+    mailer: async ({ code }) => {
+      codes.push(code);
+    },
     now: new Date(start.getTime() + 61_000),
     secret: authTestSecret,
   });
   assert.equal(codes.length, 2);
   await assert.rejects(
-    verifyRegistration(challenge.challengeId, codes[0]!, { now: new Date(start.getTime() + 62_000), secret: authTestSecret }),
+    verifyRegistration(challenge.challengeId, codes[0]!, {
+      now: new Date(start.getTime() + 62_000),
+      secret: authTestSecret,
+    }),
     (error: unknown) => error instanceof AppError && error.code === "OTP_INVALID",
   );
   await verifyRegistration(challenge.challengeId, codes[1]!, {
@@ -1147,7 +1215,12 @@ test("invalidates the old OTP on resend and locks repeated wrong codes", async (
   let lockCode = "";
   const locked = await beginRegistration(
     { name: "Locked User", email: "locked@example.test", password: "StrongPassword123!" },
-    { mailer: async ({ code }) => { lockCode = code; }, secret: authTestSecret },
+    {
+      mailer: async ({ code }) => {
+        lockCode = code;
+      },
+      secret: authTestSecret,
+    },
   );
   assert.ok(lockCode);
   const wrongCode = lockCode === "000000" ? "000001" : "000000";
@@ -1167,7 +1240,12 @@ test("allows only one concurrent registration verification", async () => {
   let code = "";
   const challenge = await beginRegistration(
     { name: "Race User", email: "race@example.test", password: "StrongPassword123!" },
-    { mailer: async (mail) => { code = mail.code; }, secret: authTestSecret },
+    {
+      mailer: async (mail) => {
+        code = mail.code;
+      },
+      secret: authTestSecret,
+    },
   );
   const results = await Promise.allSettled([
     verifyRegistration(challenge.challengeId, code, { secret: authTestSecret }),
@@ -1182,11 +1260,19 @@ test("removes a challenge when email delivery fails", async () => {
   await assert.rejects(
     beginRegistration(
       { name: "Mail Failure", email: "mail-failure@example.test", password: "StrongPassword123!" },
-      { mailer: async () => { throw new Error("SMTP unavailable"); }, secret: authTestSecret },
+      {
+        mailer: async () => {
+          throw new Error("SMTP unavailable");
+        },
+        secret: authTestSecret,
+      },
     ),
     (error: unknown) => error instanceof AppError && error.code === "EMAIL_UNAVAILABLE",
   );
-  assert.equal(await AuthChallenge.countDocuments({ emailNormalized: "mail-failure@example.test" }), 0);
+  assert.equal(
+    await AuthChallenge.countDocuments({ emailNormalized: "mail-failure@example.test" }),
+    0,
+  );
 });
 
 test("allows one concurrent resend and restores the previous OTP when delivery fails", async () => {
@@ -1194,17 +1280,27 @@ test("allows one concurrent resend and restores the previous OTP when delivery f
   const start = new Date("2026-09-29T00:00:00.000Z");
   const challenge = await beginRegistration(
     { name: "Resend Race", email: "resend-race@example.test", password: "StrongPassword123!" },
-    { mailer: async ({ code }) => { originalCode = code; }, now: start, secret: authTestSecret },
+    {
+      mailer: async ({ code }) => {
+        originalCode = code;
+      },
+      now: start,
+      secret: authTestSecret,
+    },
   );
   let deliveries = 0;
   const attempts = await Promise.allSettled([
     resendOtp(challenge.challengeId, {
-      mailer: async () => { deliveries += 1; },
+      mailer: async () => {
+        deliveries += 1;
+      },
       now: new Date(start.getTime() + 61_000),
       secret: authTestSecret,
     }),
     resendOtp(challenge.challengeId, {
-      mailer: async () => { deliveries += 1; },
+      mailer: async () => {
+        deliveries += 1;
+      },
       now: new Date(start.getTime() + 61_000),
       secret: authTestSecret,
     }),
@@ -1214,12 +1310,24 @@ test("allows one concurrent resend and restores the previous OTP when delivery f
 
   let fallbackCode = "";
   const fallback = await beginRegistration(
-    { name: "Resend Fallback", email: "resend-fallback@example.test", password: "StrongPassword123!" },
-    { mailer: async ({ code }) => { fallbackCode = code; }, now: start, secret: authTestSecret },
+    {
+      name: "Resend Fallback",
+      email: "resend-fallback@example.test",
+      password: "StrongPassword123!",
+    },
+    {
+      mailer: async ({ code }) => {
+        fallbackCode = code;
+      },
+      now: start,
+      secret: authTestSecret,
+    },
   );
   await assert.rejects(
     resendOtp(fallback.challengeId, {
-      mailer: async () => { throw new Error("SMTP unavailable"); },
+      mailer: async () => {
+        throw new Error("SMTP unavailable");
+      },
       now: new Date(start.getTime() + 61_000),
       secret: authTestSecret,
     }),
@@ -1256,7 +1364,12 @@ test("links verified Google email and consumes OAuth state once", async () => {
   });
   assert.equal(googleOnly.passwordHash, undefined);
   await assert.rejects(
-    resolveGoogleUser({ id: "unverified", displayName: "No", email: "no@example.test", emailVerified: false }),
+    resolveGoogleUser({
+      id: "unverified",
+      displayName: "No",
+      email: "no@example.test",
+      emailVerified: false,
+    }),
     (error: unknown) => error instanceof AppError && error.code === "UNAUTHENTICATED",
   );
 

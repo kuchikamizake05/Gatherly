@@ -6,17 +6,27 @@ import { hashToken } from "../../lib/crypto.js";
 import { Event } from "../events/event.models.js";
 import { TicketType } from "../events/event.models.js";
 import { User } from "../auth/auth.models.js";
+import { orderPricing } from "./pricing.js";
+import { Organizer } from "../organizers/organizer.model.js";
 import { Order, type OrderDocument } from "./order.model.js";
 import type { CreateOrderInput } from "./order.schemas.js";
 
 const reservationDurationMs = 15 * 60 * 1000;
 
 function requestHash(input: CreateOrderInput) {
-  return hashToken(JSON.stringify({
-    ticketTypeId: input.ticketTypeId,
-    quantity: input.quantity,
-    attendees: input.attendees.map(({ name }) => ({ name: name.trim() })),
-  }));
+  return hashToken(
+    JSON.stringify({
+      ticketTypeId: input.ticketTypeId,
+      quantity: input.quantity,
+      contactPhone: input.contactPhone,
+      attendees: input.attendees.map(({ name, email, phone, birthDate }) => ({
+        name: name.trim(),
+        ...(email ? { email: email.toLowerCase() } : {}),
+        ...(phone ? { phone } : {}),
+        ...(birthDate ? { birthDate } : {}),
+      })),
+    }),
+  );
 }
 
 function isDuplicateKey(error: unknown) {
@@ -75,18 +85,26 @@ export async function createOrder(
         if (event.publicationStatus !== "published") {
           throw new AppError(404, "NOT_FOUND", "Event not found.");
         }
-        if (event.salesClosed || event.endsAt <= now) {
+        const organizer = await Organizer.findById(event.organizerId).session(session).lean();
+        if ((organizer as unknown as { status?: string })?.status === "frozen")
+          throw new AppError(409, "SALES_CLOSED", "Organizer sales are suspended.");
+        if (event.salesClosed || event.cancellationStatus === "approved" || event.endsAt <= now) {
           throw new AppError(409, "SALES_CLOSED", "Ticket sales are closed.");
         }
-        if (ticketType.salesStartsAt > now || ticketType.salesEndsAt <= now) {
+        if (
+          ticketType.salesStopped ||
+          ticketType.salesStartsAt > now ||
+          ticketType.salesEndsAt <= now
+        ) {
           throw new AppError(409, "SALES_CLOSED", "This ticket type is not currently on sale.");
         }
 
         const buyer = await User.findById(buyerId).session(session);
-        if (!buyer) {
+        if (!buyer || (buyer as unknown as { deletedAt?: Date }).deletedAt) {
           throw new AppError(401, "UNAUTHENTICATED", "Authentication is required.");
         }
 
+        await User.updateOne({ _id: buyer._id }, { $set: { updatedAt: now } }, { session });
         const eventTouch = await Event.updateOne(
           { _id: event._id, checkoutVersion: event.checkoutVersion },
           { $inc: { checkoutVersion: 1 } },
@@ -123,11 +141,20 @@ export async function createOrder(
               orderCode: `GTH-${randomBytes(5).toString("hex").toUpperCase()}`,
               providerOrderId: `gatherly-${randomUUID()}`,
               quantity: input.quantity,
-              attendees: input.attendees.map(({ name }) => ({ name: name.trim() })),
+              contactPhone: input.contactPhone,
+              attendees: input.attendees.map(({ name, email, phone, birthDate }) => ({
+                name: name.trim(),
+                ...(email ? { email: email.toLowerCase() } : {}),
+                ...(phone ? { phone } : {}),
+                ...(birthDate ? { birthDate } : {}),
+              })),
               unitPrice: ticketType.price,
-              totalAmount: ticketType.price * input.quantity,
+              ...orderPricing(ticketType.price, input.quantity),
               currency: "IDR",
               eventSnapshot: {
+                slug: event.slug,
+                poster: event.posterAssetId,
+                endsAt: event.endsAt,
                 title: event.title,
                 startsAt: event.startsAt,
                 timezone: event.timezone,
@@ -137,10 +164,11 @@ export async function createOrder(
               },
               ticketTypeSnapshot: { name: ticketType.name, unitPrice: ticketType.price },
               buyerSnapshot: { name: buyer.name, email: buyer.emailNormalized },
-              paymentStatus: "pending",
-              reservationStatus: "held",
-              issuanceStatus: "not_ready",
-              paymentSessionState: "not_started",
+              paymentStatus: ticketType.price === 0 ? "paid" : "pending",
+              reservationStatus: ticketType.price === 0 ? "converted" : "held",
+              issuanceStatus: ticketType.price === 0 ? "processing" : "not_ready",
+              paymentSessionState: ticketType.price === 0 ? "closed" : "not_started",
+              ...(ticketType.price === 0 ? { paidAt: now, issuanceNextAttemptAt: now } : {}),
               expiresAt,
               idempotencyKey,
               requestHash: hash,
@@ -150,6 +178,12 @@ export async function createOrder(
           ],
           { session },
         );
+        if (ticketType.price === 0)
+          await TicketType.updateOne(
+            { _id: ticketType._id },
+            { $inc: { reserved: -input.quantity, sold: input.quantity } },
+            { session },
+          );
         createdOrder = order;
       },
       { readConcern: { level: "snapshot" }, writeConcern: { w: "majority" } },
@@ -176,7 +210,10 @@ export async function createOrder(
   return { order: createdOrder, created: true };
 }
 
-export function orderDto(order: HydratedDocument<OrderDocument> | OrderDocument & { _id: Types.ObjectId }) {
+export function orderDto(
+  order: HydratedDocument<OrderDocument> | (OrderDocument & { _id: Types.ObjectId }),
+  ticketIds: string[] = [],
+) {
   const now = new Date();
   return {
     id: order._id.toString(),
@@ -185,6 +222,10 @@ export function orderDto(order: HydratedDocument<OrderDocument> | OrderDocument 
     ticketType: order.ticketTypeSnapshot,
     quantity: order.quantity,
     attendees: order.attendees,
+    subtotalAmount: order.subtotalAmount ?? order.unitPrice * order.quantity,
+    serviceFeeAmount: order.serviceFeeAmount ?? 0,
+    refundedAmount: order.refundedAmount ?? 0,
+    refundStatus: order.refundStatus ?? "none",
     totalAmount: order.totalAmount,
     currency: order.currency,
     paymentStatus: order.paymentStatus,
@@ -198,6 +239,13 @@ export function orderDto(order: HydratedDocument<OrderDocument> | OrderDocument 
       order.reservationStatus === "held" &&
       (order.paymentSessionState === "not_started" || order.paymentSessionState === "ready") &&
       order.expiresAt > now,
-    ticketIds: [],
+    ticketIds,
+    createdAt: order.createdAt,
+    paidAt: order.paidAt ?? null,
+    buyer: order.buyerSnapshot,
+    paymentMethod: order.paymentMethod ?? null,
+    contactPhone: order.contactPhone ?? null,
+    cancelledAt: order.cancelledAt ?? null,
+    cancelledBy: order.cancelledBy ?? null,
   };
 }
