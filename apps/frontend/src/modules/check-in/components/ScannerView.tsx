@@ -14,7 +14,6 @@ import {
   X,
   WifiOff,
 } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -30,17 +29,8 @@ import {
   useScanHistory,
   useTicketLookup,
 } from "../hooks";
-import { checkInApi, type LookupTicket } from "../api";
+import { type LookupTicket } from "../api";
 import { scanError, type ScanFeedback } from "../result";
-import {
-  loadQueue,
-  saveQueue,
-  loadBundle,
-  saveBundle,
-  resolveOffline,
-  type OfflineBundle,
-  type OfflineEntry,
-} from "../offline";
 import { cn } from "@/lib/utils";
 import { formatTime } from "@/lib/format";
 
@@ -85,12 +75,6 @@ export function ScannerView({ eventId }: { eventId: string }) {
   const deferredQuery = useDebounced(query);
   const lookup = useTicketLookup(eventId, deferredQuery);
   const [confirm, setConfirm] = useState<LookupTicket | null>(null);
-  const [queue, setQueue] = useState<OfflineEntry[]>([]);
-  const [queueReady, setQueueReady] = useState(false);
-  const bundle = useRef<OfflineBundle | undefined>(undefined);
-  const [syncing, setSyncing] = useState(false);
-  const syncingRef = useRef(false);
-  const [syncError, setSyncError] = useState("");
   const [processing, setProcessing] = useState(false);
   const result = useCallback(
     (value: ScanFeedback) => {
@@ -117,84 +101,6 @@ export function ScannerView({ eventId }: { eventId: string }) {
     const timeout = setTimeout(reset, 3000);
     return () => clearTimeout(timeout);
   }, [feedback]);
-  useEffect(() => {
-    if (!account) return;
-    let stopped = false;
-    void Promise.all([
-      loadQueue(account, eventId),
-      loadBundle(account, eventId),
-    ])
-      .then(([entries, cached]) => {
-        if (!stopped) {
-          setQueue(entries);
-          bundle.current = cached;
-          setQueueReady(true);
-        }
-      })
-      .catch(() => {
-        if (!stopped) {
-          setQueueReady(true);
-          setSyncError(
-            "Penyimpanan luring tidak tersedia. Gunakan pemindai dengan koneksi internet.",
-          );
-        }
-      });
-    if (online)
-      void checkInApi
-        .offlineBundle(eventId)
-        .then((response) => {
-          if (!stopped && response.data.expiresAt) {
-            bundle.current = response.data;
-            void saveBundle(account, eventId, response.data).catch(() => {});
-          }
-        })
-        .catch(() => {});
-    return () => {
-      stopped = true;
-    };
-  }, [account, eventId, online]);
-  useEffect(() => {
-    if (
-      !online ||
-      !account ||
-      !queueReady ||
-      !queue.length ||
-      syncingRef.current ||
-      syncError
-    )
-      return;
-    syncingRef.current = true;
-    setSyncing(true);
-    void (async () => {
-      let remaining = [...queue];
-      try {
-        for (const entry of queue) {
-          if (!mounted.current) return;
-          try {
-            await checkInApi.checkIn(eventId, { ticketCode: entry.ticketCode });
-          } catch (error) {
-            const failure = scanError(error as { code?: string });
-            if (failure.kind !== "used") throw error;
-            toast.warning(
-              "Satu tiket luring sudah digunakan. Periksa riwayat bersama organizer.",
-            );
-          }
-          remaining = remaining.filter((item) => item.id !== entry.id);
-          await saveQueue(account, eventId, remaining);
-          if (mounted.current) setQueue(remaining);
-        }
-        void history.refetch();
-      } catch {
-        if (mounted.current)
-          setSyncError(
-            "Sebagian check-in luring belum tersinkron. Periksa koneksi dan akses Anda, lalu coba lagi.",
-          );
-      } finally {
-        syncingRef.current = false;
-        if (mounted.current) setSyncing(false);
-      }
-    })();
-  }, [online, account, queueReady, queue, eventId, syncError]);
   const submitRef = useRef<
     (input: { qrPayload: string } | { ticketCode: string }) => Promise<void>
   >(async () => {});
@@ -216,29 +122,9 @@ export function ScannerView({ eventId }: { eventId: string }) {
         return;
       }
       if (!online) {
-        const ticket = await resolveOffline(
-          bundle.current,
-          input,
-          queue,
-          Date.now(),
-        );
-        const entries = [
-          ...queue,
-          {
-            id: crypto.randomUUID(),
-            ticketCode: ticket.ticketCode,
-            scannedAt: new Date().toISOString(),
-          },
-        ];
-        await saveQueue(account, eventId, entries);
-        setQueue(entries);
-        result({
-          kind: "queued",
-          title: "Tercatat di perangkat",
-          description:
-            "Belum dikonfirmasi server. Data dikirim saat koneksi kembali.",
-          attendee: ticket.attendeeName,
-        });
+        // Check-in wajib online. Tanpa koneksi, status tiket tidak bisa dipastikan.
+        result(scanError({ code: "NETWORK_ERROR" }));
+        return;
       } else {
         const response = await checkIn.mutateAsync(input);
         result({
@@ -401,24 +287,9 @@ export function ScannerView({ eventId }: { eventId: string }) {
               role="status"
               className="rounded-md bg-warning-tint p-3 text-sm text-warning-ink"
             >
-              <WifiOff className="mr-2 inline size-4" />
-              Mode luring.{" "}
-              {bundle.current?.tickets.length
-                ? `${queue.length} check-in menunggu sinkronisasi.`
-                : "Daftar tiket luring belum tersedia. Status tiket perlu diperiksa saat koneksi kembali."}
-            </div>
-          )}
-          {(queue.length > 0 || syncError) && (
-            <div className="space-y-2 rounded-md bg-warning-tint p-3 text-sm text-warning-ink">
-              <p>
-                {syncError ||
-                  `${queue.length} check-in ${syncing ? "sedang dikirim" : "menunggu sinkronisasi"}.`}
-              </p>
-              {syncError && (
-                <Button variant="outline" onClick={() => setSyncError("")}>
-                  Coba sinkronisasi lagi
-                </Button>
-              )}
+              <WifiOff className="mr-2 inline size-4" aria-hidden />
+              Anda sedang luring. Pemindaian dihentikan sampai koneksi kembali,
+              karena status tiket hanya bisa dipastikan secara online.
             </div>
           )}
           {feedback ? (
@@ -429,9 +300,7 @@ export function ScannerView({ eventId }: { eventId: string }) {
                 "flex flex-col items-center gap-3 rounded-lg p-5 text-center",
                 feedback.kind === "valid"
                   ? "bg-success-tint text-success-ink"
-                  : ["queued", "network", "used", "closed"].includes(
-                        feedback.kind,
-                      )
+                  : ["network", "used", "closed"].includes(feedback.kind)
                     ? "bg-warning-tint text-warning-ink"
                     : "bg-danger-tint text-danger-ink",
               )}

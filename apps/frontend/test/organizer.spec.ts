@@ -11,9 +11,10 @@ import {
   toLocalInput,
 } from "../src/modules/organizer-events/date-input";
 import { scanError } from "../src/modules/check-in/result";
-import { resolveOffline } from "../src/modules/check-in/offline";
 
-test.beforeEach(async ({ page }) => { await loginWorkspace(page); });
+test.beforeEach(async ({ page }) => {
+  await loginWorkspace(page);
+});
 
 const base = "/events/ev_festival_jazz";
 async function noOverflow(page: Page) {
@@ -24,7 +25,7 @@ async function noOverflow(page: Page) {
   ).toBe(true);
   expect(await page.locator("body").innerText()).not.toContain("RouteStub");
 }
-test("validates inventory, timezone and offline boundaries", async () => {
+test("validates inventory, timezone and scan error boundaries", async () => {
   expect(fromLocalInput("2027-11-21T15:00", "Asia/Jakarta")).toBe(
     "2027-11-21T08:00:00.000Z",
   );
@@ -47,17 +48,6 @@ test("validates inventory, timezone and offline boundaries", async () => {
   ).toContain("118");
   expect(scanError({ code: "NETWORK_ERROR" }).kind).toBe("network");
   expect(scanError({ code: "TICKET_ALREADY_USED" }).kind).toBe("used");
-  await expect(
-    resolveOffline(undefined, { ticketCode: "GTH-X" }, [], Date.now()),
-  ).rejects.toMatchObject({ code: "NETWORK_ERROR" });
-  await expect(
-    resolveOffline(
-      { tickets: [], qrHashes: [], generatedAt: new Date().toISOString() },
-      { ticketCode: "GTH-X" },
-      [],
-      Date.now(),
-    ),
-  ).rejects.toMatchObject({ code: "NETWORK_ERROR" });
 });
 test("validates the wizard and restores an autosaved draft", async ({
   page,
@@ -111,9 +101,13 @@ test("creates a ticket and publishes through all five steps", async ({
     .fill("2027-12-01T21:00");
   await page.getByLabel("Nama tempat", { exact: true }).fill("Ruang komunitas");
   await page.getByLabel("Provinsi", { exact: true }).click();
-  await page.getByRole("option", { name: "DI Yogyakarta", exact: true }).click();
+  await page
+    .getByRole("option", { name: "DI Yogyakarta", exact: true })
+    .click();
   await page.getByLabel("Kota atau kabupaten", { exact: true }).click();
-  await page.getByRole("option", { name: "Kota Yogyakarta", exact: true }).click();
+  await page
+    .getByRole("option", { name: "Kota Yogyakarta", exact: true })
+    .click();
   await page
     .getByLabel("Alamat lengkap", { exact: true })
     .fill("Jalan Komunitas 12");
