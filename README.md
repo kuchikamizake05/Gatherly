@@ -123,6 +123,13 @@ Dokumentasi proyek tersedia dalam folder [`docs`](docs/README.md).
 
 **Laporan PDF final:** [PAW2026_M1_Kelompok 11.pdf](https://drive.google.com/file/d/1jbkOKAdMCIKqKcThbcAU_jo6EtpathBQ/view?usp=sharing).
 
+## URL Milestone 2
+
+- **Aplikasi web:** [gatherlyy.fun](https://gatherlyy.fun)
+- **Video presentasi dan demonstrasi:** [Video Demo Kelompok 11](https://bit.ly/VideoDemo_Kel11_PAW)
+- **File presentasi:** [PPT Kelompok 11](https://bit.ly/PPT_Kel11_PAW)
+- **Repositori:** [Gatherly di GitHub](https://github.com/kuchikamizake05/Gatherly)
+
 ## Deployment
 
 | Bagian | Alamat | Keterangan |
