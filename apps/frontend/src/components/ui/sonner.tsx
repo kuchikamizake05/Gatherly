@@ -42,9 +42,11 @@ export function Toaster(props: ToasterProps) {
         classNames: {
           toast:
             "flex w-[calc(100vw-32px)] items-center gap-3 rounded-2xl bg-inverse py-3.5 pr-3.5 pl-[18px] text-inverse-foreground shadow-[0_1px_2px_#1111131a,0_16px_40px_#11111333] md:w-[420px]",
-          title: "flex-1 text-[15px] font-semibold",
+          // Wadah judul dan deskripsi melebar supaya tombol aksi rata kanan.
+          content: "flex min-w-0 flex-1 flex-col gap-0.5",
+          title: "text-[15px] font-semibold",
           description: "text-sm text-neutral-300",
-          actionButton: "cursor-pointer text-[15px] font-extrabold text-primary",
+          actionButton: "ml-auto shrink-0 cursor-pointer text-[15px] font-extrabold text-primary",
           cancelButton: "cursor-pointer text-[15px] font-semibold text-neutral-300",
         },
       }}
