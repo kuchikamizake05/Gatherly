@@ -61,7 +61,7 @@ export function PrintSheet({ label, footerLeft, footerRight, children, className
       <header className="flex items-center justify-between border-b border-border pb-[6mm]">
         <span className="flex items-center gap-2">
           <Image src="/gatherly-symbol-ink.svg" alt="" width={24} height={24} />
-          <span className="text-lg font-extrabold">gatherly</span>
+          <span className="text-lg font-extrabold">gatherlyy</span>
         </span>
         <span className="text-xs text-text-secondary">{label}</span>
       </header>

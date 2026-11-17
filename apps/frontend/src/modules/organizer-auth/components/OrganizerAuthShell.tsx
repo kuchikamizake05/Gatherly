@@ -8,13 +8,13 @@ export function OrganizerAuthShell({ children }: { children: ReactNode }) {
     <div className="grid min-h-dvh xl:grid-cols-2">
       <div className="flex flex-col px-4 py-6 md:px-12">
         <span className="flex items-center gap-2">
-          <Image
-            src="/gatherly-horizontal-ink.svg"
-            alt="Gatherlyy"
-            width={120}
-            height={30}
-            priority
-          />
+          {/* Simbol + teks, sama dengan navbar, supaya wordmark mudah diganti. */}
+          <span className="flex items-center gap-2">
+            <Image src="/gatherly-symbol-ink.svg" alt="" width={28} height={28} priority />
+            <span className="text-[22px] font-extrabold tracking-tight">
+              gatherlyy
+            </span>
+          </span>
           <span className="rounded-sm bg-inverse px-2 py-0.5 text-xs font-extrabold text-inverse-foreground">
             organizer
           </span>

@@ -44,7 +44,7 @@ function Logo({ size = 28 }: { size?: number }) {
   return (
     <Link href="/" aria-label="Gatherlyy, ke beranda" className="flex shrink-0 items-center gap-2">
       <Image src="/gatherly-symbol-ink.svg" alt="" width={size} height={size} priority />
-      <span className="text-[20px] font-extrabold tracking-tight md:text-[22px]">gatherly</span>
+      <span className="text-[20px] font-extrabold tracking-tight md:text-[22px]">gatherlyy</span>
     </Link>
   );
 }
@@ -183,7 +183,7 @@ function Footer({ guest }: { guest: boolean }) {
           <div className="flex flex-col gap-[18px] xl:flex-1">
             <span className="flex items-center gap-2">
               <Image src="/gatherly-symbol-on-dark.svg" alt="" width={26} height={26} />
-              <span className="text-[21px] font-extrabold">gatherly</span>
+              <span className="text-[21px] font-extrabold">gatherlyy</span>
             </span>
             <p className="max-w-[340px] text-[15px] leading-relaxed text-neutral-400">
               Titik kumpul acara komunitas. Temukan acara, pesan tiket, dan masuk cukup dengan kode QR.

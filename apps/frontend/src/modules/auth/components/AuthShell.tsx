@@ -52,7 +52,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
           <div className="hidden md:block">
             <Link href="/" aria-label="Gatherlyy, ke beranda" className="flex w-fit items-center gap-2">
               <Image src="/gatherly-symbol-ink.svg" alt="" width={28} height={28} priority />
-              <span className="text-[22px] font-extrabold">gatherly</span>
+              <span className="text-[22px] font-extrabold">gatherlyy</span>
             </Link>
           </div>
           <div className="md:hidden">
