@@ -59,6 +59,8 @@ const BY_MESSAGE: Record<string, string> = {
   "Refund not found.": "Pengembalian dana tidak ditemukan.",
   "Report was not found.": "Laporan tidak ditemukan.",
   "Resource not found.": "Data tidak ditemukan.",
+  "Route not found.":
+    "Fitur ini belum tersedia di layanan. Hubungi tim Gatherlyy.",
   "Ticket not found.": "Tiket tidak ditemukan.",
   "Ticket type not found.": "Jenis tiket tidak ditemukan.",
 
@@ -303,9 +305,14 @@ const BY_CODE: Record<string, string> = {
   WRONG_PASSWORD: "Password saat ini salah.",
 };
 
-/** Kata yang menandakan pesan berbahasa Inggris. Pesan yang sudah berbahasa Indonesia dibiarkan. */
-const ENGLISH =
-  /(the|is|are|was|were|must|cannot|not|already|required|invalid|please|unavailable|expired|incorrect|found|only|select|choose|before|after|this|your)/i;
+/**
+ * Kata umum bahasa Indonesia. Pesan backend hanya ditampilkan apa adanya bila jelas berbahasa
+ * Indonesia. Selain itu dipakai pesan per kode, jadi pesan Inggris baru tidak lolos ke layar.
+ */
+const INDONESIAN = new RegExp(
+  "\\b(yang|tidak|belum|sudah|silakan|anda|dan|untuk|atau|dengan|coba|lagi|data|tiket|acara|pesanan|layanan|masuk|sesi|wajib|harus|bisa|dapat|kembali|periksa|berakhir|tersedia|ditemukan)\\b",
+  "i",
+);
 
 /**
  * Pesan Indonesia untuk error backend. Urutan: pesan persis, pesan backend yang sudah berbahasa
@@ -316,6 +323,6 @@ export function translateApiError(
   message: string | undefined,
 ): string | undefined {
   if (message && BY_MESSAGE[message]) return BY_MESSAGE[message];
-  if (message && !ENGLISH.test(message)) return message;
+  if (message && INDONESIAN.test(message)) return message;
   return BY_CODE[code];
 }
