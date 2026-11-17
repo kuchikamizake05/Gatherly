@@ -52,7 +52,7 @@ const glass =
 
 function DesktopNav({ pathname, guest }: { pathname: string; guest: boolean }) {
   return (
-    <div className="mx-auto hidden h-[84px] w-full max-w-[1440px] items-center justify-between gap-6 px-6 md:flex xl:px-10">
+    <div className="hidden h-[84px] w-full items-center justify-between gap-6 px-10 md:flex xl:px-20">
       <div className="flex w-[260px] items-center">
         <Logo />
       </div>
@@ -242,18 +242,24 @@ export function SiteShell({ children }: { children: ReactNode }) {
   const { data: me } = useMe();
   const guest = !me;
   const hideTabBar = HIDE_TAB_BAR.some((re) => re.test(pathname));
+  const hideMobileHeader = HIDE_MOBILE_HEADER.some((re) => re.test(pathname));
 
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md">
         <DesktopNav pathname={pathname} guest={guest} />
-        {!HIDE_MOBILE_HEADER.some((re) => re.test(pathname)) && <MobileHeader pathname={pathname} guest={guest} />}
+        {!hideMobileHeader && <MobileHeader pathname={pathname} guest={guest} />}
         <OfflineBanner />
       </header>
       {/* flex kolom supaya StateView dan halaman bisa mengisi tinggi penuh. */}
       {/* --bottom-bar: tinggi tab bar mobile, dipakai StateView supaya tombolnya tidak tertutup. */}
+      {/* Konten minimal setinggi layar dikurangi header (56 px mobile, 84 px desktop), jadi footer selalu di bawah lipatan. */}
       <main
-        className={cn("flex w-full flex-1 flex-col", !hideTabBar && "[--bottom-bar:94px] md:[--bottom-bar:0px]")}
+        className={cn(
+          "flex w-full flex-1 flex-col md:min-h-[calc(100dvh-84px)]",
+          hideMobileHeader ? "min-h-dvh" : "min-h-[calc(100dvh-56px)]",
+          !hideTabBar && "[--bottom-bar:94px] md:[--bottom-bar:0px]",
+        )}
       >
         {children}
       </main>

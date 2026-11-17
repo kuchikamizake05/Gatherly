@@ -205,7 +205,7 @@ export function OrderList() {
     </>
   );
   return (
-    <section className="space-y-5 rounded-lg bg-background p-4 md:p-6">
+    <section className="flex flex-col gap-5 rounded-lg bg-background p-4 has-[[data-state-view]]:flex-1 md:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-xl font-extrabold">Pesanan</h2>
         <Button

@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { ApiError } from "@/lib/api/client";
 import { useOnline } from "@/hooks/use-online";
-import { StateView } from "@/components/elements/StateView";
+import { StateView, fillState } from "@/components/elements/StateView";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -146,7 +147,7 @@ export function AdminCard({
   children: ReactNode;
 }) {
   return (
-    <section className="min-w-0 rounded-xl border border-border bg-background p-5 md:p-6">
+    <section className={cn("min-w-0 rounded-xl border border-border bg-background p-5 md:p-6", fillState)}>
       {title && <h2 className="mb-5 text-lg font-extrabold">{title}</h2>}
       {children}
     </section>

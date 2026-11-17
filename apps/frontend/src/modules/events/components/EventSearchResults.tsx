@@ -64,7 +64,7 @@ export function EventSearchResults() {
       <FilterPanel open={filterOpen} onOpenChange={setFilterOpen} filters={filters} onApply={apply} />
 
       {/* Tablet dan desktop: kolom cari dan bar filter */}
-      <div className="hidden max-w-[760px] pt-6 md:block">
+      <div className="hidden w-full pt-6 md:block">
         <SearchBar defaultValue={filters.q ?? ""} />
       </div>
       <div className="hidden items-center justify-between gap-4 pt-5 md:flex">
