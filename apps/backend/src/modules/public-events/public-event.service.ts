@@ -20,6 +20,8 @@ export const publicEventQuery = z
   .object({
     q: z.string().trim().max(100).optional(),
     category: z.string().trim().max(100).optional(),
+    /** Nama kota seperti yang diisi penyelenggara, misalnya "Kota Yogyakarta". */
+    city: z.string().trim().max(100).optional(),
     minPrice: z.coerce.number().int().min(0).optional(),
     maxPrice: z.coerce.number().int().min(0).optional(),
     date: z.enum(["today", "tomorrow", "weekend", "week"]).optional(),
@@ -73,6 +75,7 @@ export async function publicEventList(
       [field]: { $regex: escaped(input.q!), $options: "i" },
     }));
   if (category) match.category = { $regex: `^${escaped(category)}$`, $options: "i" };
+  if (input.city) match.city = { $regex: `^${escaped(input.city)}$`, $options: "i" };
   if (input.date) {
     const range = publicDateRange(input.date, now);
     match.startsAt = { $gte: range.from, $lt: range.to };
@@ -159,6 +162,26 @@ export async function publicEventList(
     data: await eventCards(page?.items ?? [], userId, now),
     meta: { page: input.page, limit: input.limit, total: page?.count[0]?.total ?? 0 },
   };
+}
+
+/** Kota yang punya acara terbit dan belum selesai, untuk pilihan kota di pencarian. */
+export async function publicCities(now = new Date()) {
+  const rows: { _id: string; count: number }[] = await Event.aggregate([
+    { $match: { publicationStatus: "published", endsAt: { $gte: now }, city: { $nin: [null, ""] } } },
+    {
+      $lookup: {
+        from: Organizer.collection.name,
+        localField: "organizerId",
+        foreignField: "_id",
+        as: "organizer",
+      },
+    },
+    { $match: { "organizer.0": { $exists: true }, "organizer.status": { $ne: "frozen" } } },
+    { $group: { _id: "$city", count: { $sum: 1 } } },
+    { $sort: { count: -1, _id: 1 } },
+    { $limit: 50 },
+  ]);
+  return rows.map((row) => ({ name: row._id, count: row.count }));
 }
 
 export function ticketSaleStatus(type: TicketTypeDocument, closed: boolean, now: Date) {

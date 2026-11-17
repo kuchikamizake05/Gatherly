@@ -7,6 +7,9 @@ import { ArrowUpDown, CalendarDays, LayoutGrid, MapPin, SlidersHorizontal, X } f
 import { cn } from "@/lib/utils";
 import { useIsDesktop } from "@/hooks/use-media-query";
 import { useEvents } from "@/modules/events/hooks";
+import { ALL_CITIES } from "@/modules/events/city";
+import { ALL_CITY_VALUE, useCityCookie, useCityOptions, writeCityCookie } from "@/modules/events/use-city";
+import { Combobox } from "@/components/elements/Combobox";
 import { CATEGORIES, DATE_OPTIONS, categoryName, dateLabel } from "@/modules/events/categories";
 import type { EventQuery } from "@/modules/events/types";
 import { Button } from "@/components/ui/button";
@@ -23,7 +26,8 @@ import { Chip, priceRangeLabel, type PriceRange } from "@/components/elements/Fi
 
 /**
  * Filter acara di hasil pencarian dan kategori. Pita 03 baris C dan D.
- * Semua filter tersimpan di URL: /events?q=jazz&category=musik&date=week&minPrice=50000&sort=price_asc
+ * Semua filter tersimpan di URL: /events?q=jazz&category=musik&date=week&minPrice=50000&sort=price_asc&city=Kota%20Yogyakarta
+ * Kota tanpa ?city= diambil dari pilihan terakhir pembeli (cookie, lihat modules/events/city.ts).
  */
 
 export type Filters = Omit<EventQuery, "page" | "limit">;
@@ -35,9 +39,11 @@ export function useEventFilters() {
   const search = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+  const cookieCity = useCityCookie();
 
   const filters: Filters = {
     q: search.get("q") || undefined,
+    city: search.get("city") || cookieCity,
     category: search.get("category") || undefined,
     date: (search.get("date") as Filters["date"]) || undefined,
     area: (search.get("area") as Filters["area"]) || undefined,
@@ -47,6 +53,7 @@ export function useEventFilters() {
   };
 
   const set = (next: Filters) => {
+    if (next.city !== filters.city) writeCityCookie(next.city);
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(next)) {
       if (value !== undefined && value !== "") params.set(key, String(value));
@@ -60,6 +67,7 @@ export function useEventFilters() {
   /** Jumlah filter aktif selain kata kunci dan urutan, untuk angka di tombol filter mobile. */
   const activeCount =
     (filters.category ? 1 : 0) +
+    (filters.city ? 1 : 0) +
     (filters.date ? 1 : 0) +
     (filters.area ? 1 : 0) +
     (filters.minPrice !== undefined || filters.maxPrice !== undefined ? 1 : 0);
@@ -80,6 +88,7 @@ export function ActiveFilters({ filters, onChange, className }: { filters: Filte
   if (filters.category)
     items.push({ key: "category", label: categoryName(filters.category) ?? filters.category, clear: { category: undefined } });
   if (filters.area) items.push({ key: "area", label: "Dekat kampus", clear: { area: undefined } });
+  if (filters.city) items.push({ key: "city", label: filters.city, clear: { city: undefined } });
   if (items.length === 0) return null;
 
   return (
@@ -230,6 +239,7 @@ function PanelBody({
 }) {
   const [draft, setDraft] = useState<Filters>(initial);
   const count = useEvents({ ...draft, limit: 1 });
+  const cityOptions = useCityOptions(draft.city);
   const total = count.data?.meta.total;
   const price: PriceRange = { min: draft.minPrice, max: draft.maxPrice };
 
@@ -286,12 +296,19 @@ function PanelBody({
           ))}
         </Section>
         <div className="flex flex-col gap-2.5">
-          <p className="text-[15px] font-bold">Kota</p>
-          <div className="flex h-12 items-center gap-2.5 rounded-md border border-border-strong px-3.5 text-[15px] font-semibold">
-            <MapPin className="size-[18px] text-text-tertiary" aria-hidden />
-            Yogyakarta
-            <span className="ml-auto text-[13px] font-medium text-text-tertiary">Kota lain segera hadir</span>
-          </div>
+          <label htmlFor="filter-city" className="text-[15px] font-bold">
+            Kota
+          </label>
+          <Combobox
+            id="filter-city"
+            options={cityOptions}
+            value={draft.city ?? ALL_CITY_VALUE}
+            onChange={(v) => setDraft((f) => ({ ...f, city: v === ALL_CITY_VALUE ? undefined : v }))}
+            placeholder={ALL_CITIES}
+            searchPlaceholder="Cari kota atau kabupaten"
+            emptyText="Kota atau kabupaten tidak ditemukan"
+            leading={<MapPin className="text-text-tertiary" aria-hidden />}
+          />
         </div>
       </div>
       <div className="px-5 pt-3 pb-[max(20px,env(safe-area-inset-bottom))] md:px-6 md:pb-6">

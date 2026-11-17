@@ -30,6 +30,7 @@ import {
 import {
   publicDateRange,
   publicEventList,
+  publicCities,
   publicEventDetail,
 } from "../src/modules/public-events/public-event.service.js";
 import { EmailJob } from "../src/modules/notifications/email.service.js";
@@ -342,4 +343,15 @@ test("discovery date filters respect WIB day boundaries", () => {
   const range = publicDateRange("today", new Date("2026-11-17T18:00:00Z"));
   assert.equal(range.from.toISOString(), "2026-11-17T17:00:00.000Z");
   assert.equal(range.to.toISOString(), "2026-11-18T17:00:00.000Z");
+});
+
+test("public catalog filters by city and lists cities with active events", async () => {
+  const { user, event } = await fixture();
+  const now = new Date();
+  assert.equal((await publicEventList({ city: "jakarta" }, user.id, now)).meta.total, 1);
+  assert.equal((await publicEventList({ city: "Kota Yogyakarta" }, user.id, now)).meta.total, 0);
+  assert.equal((await publicEventList({ city: "Jak.*" }, user.id, now)).meta.total, 0);
+  assert.deepEqual(await publicCities(now), [{ name: "Jakarta", count: 1 }]);
+  await Event.updateOne({ _id: event._id }, { $set: { publicationStatus: "draft" } });
+  assert.deepEqual(await publicCities(now), []);
 });

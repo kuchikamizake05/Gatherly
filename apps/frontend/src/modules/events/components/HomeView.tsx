@@ -8,10 +8,12 @@ import { id as localeId } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { EventCard } from "@/components/elements/EventCard";
+import { StateView } from "@/components/elements/StateView";
 import { CATEGORIES } from "@/modules/events/categories";
 import type { EventCard as EventCardData } from "@/modules/events/types";
 
-import { HomeOffline, HomeSearch } from "./HomeSearch";
+import { AllCitiesButton, HomeOffline, HomeSearch } from "./HomeSearch";
+import { inCity } from "@/modules/events/city";
 
 /**
  * Beranda dan Jelajahi. Pita 03 baris A.
@@ -19,6 +21,8 @@ import { HomeOffline, HomeSearch } from "./HomeSearch";
  */
 
 type HomeViewProps = {
+  /** Kota pilihan pembeli, kosong berarti semua kota. */
+  city?: string;
   featured: EventCardData[];
   thisWeek: EventCardData[];
   affordable: EventCardData[];
@@ -116,7 +120,7 @@ function CardGrid({ events }: { events: EventCardData[] }) {
   );
 }
 
-export function HomeView({ featured, thisWeek, affordable }: HomeViewProps) {
+export function HomeView({ city, featured, thisWeek, affordable }: HomeViewProps) {
   return (
     <div className="flex w-full flex-col pb-14 md:pb-20">
       <HomeOffline />
@@ -128,8 +132,8 @@ export function HomeView({ featured, thisWeek, affordable }: HomeViewProps) {
           <span className="hidden md:inline">Temukan acara komunitas di sekitar Anda</span>
         </h1>
         <p className="max-w-[640px] text-[15px] leading-relaxed text-text-secondary md:text-lg">
-          <span className="md:hidden">Konser, lokakarya, lari malam, hingga temu komunitas di Yogyakarta.</span>
-          <span className="hidden md:inline">Konser kecil, workshop, lari malam, sampai meetup di Yogyakarta. Pesan tiket dalam semenit.</span>
+          <span className="md:hidden">Konser, lokakarya, lari malam, hingga temu komunitas{inCity(city)}.</span>
+          <span className="hidden md:inline">Konser kecil, workshop, lari malam, sampai meetup{inCity(city)}. Pesan tiket dalam semenit.</span>
         </p>
         <HomeSearch />
         <nav aria-label="Pilihan cepat" className="-mx-5 flex max-w-[100vw] gap-2 overflow-x-auto px-5 pt-1 [scrollbar-width:none] md:mx-0 md:px-0 [&::-webkit-scrollbar]:hidden">
@@ -141,9 +145,20 @@ export function HomeView({ featured, thisWeek, affordable }: HomeViewProps) {
         </nav>
       </section>
 
-      <PosterStrip events={featured} />
+      {featured.length === 0 && (
+        <StateView
+          layout="section"
+          illustration="no-events"
+          title={`Belum ada acara${inCity(city)}`}
+          description="Acara baru akan muncul di sini. Sementara itu, lihat acara di kota lain."
+          action={city ? <AllCitiesButton /> : undefined}
+        />
+      )}
 
-      {/* Kategori */}
+      {featured.length > 0 && <PosterStrip events={featured} />}
+
+      {/* Kategori, disembunyikan bila belum ada acara sama sekali. */}
+      {featured.length > 0 && (
       <nav
         aria-label="Kategori"
         className="mx-auto flex w-full max-w-[1440px] gap-2 overflow-x-auto px-5 pt-7 [scrollbar-width:none] md:px-6 md:pt-12 xl:px-10 [&::-webkit-scrollbar]:hidden"
@@ -161,10 +176,11 @@ export function HomeView({ featured, thisWeek, affordable }: HomeViewProps) {
           </Link>
         ))}
       </nav>
+      )}
 
       {thisWeek.length > 0 && (
         <Section>
-          <SectionHeader title="Minggu ini di Yogyakarta" sub="Diurutkan dari yang paling dekat" href="/events?date=week" />
+          <SectionHeader title={`Minggu ini${inCity(city)}`} sub="Diurutkan dari yang paling dekat" href="/events?date=week" />
           <CardGrid events={thisWeek} />
           <ul className="flex flex-col gap-4 px-5 md:hidden">
             {thisWeek.map((event) => (

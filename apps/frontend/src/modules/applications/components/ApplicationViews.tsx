@@ -214,7 +214,7 @@ function OpenForm({ onOpened }: { onOpened: (a: Application, email: string) => v
           },
         );
       })}
-      className="flex flex-col gap-5 rounded-xl border border-border-strong p-5 md:max-w-[680px] md:p-7"
+      className="flex flex-col gap-5 rounded-xl border border-border-strong p-5 md:p-7"
     >
       <div className="flex flex-col gap-1.5">
         <h2 className="text-xl font-extrabold">Buka pengajuan Anda</h2>

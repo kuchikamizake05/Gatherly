@@ -10,9 +10,12 @@ import { id as localeId } from "date-fns/locale";
 
 import { cn } from "@/lib/utils";
 import { useEventSuggestions } from "@/modules/events/hooks";
+import { ALL_CITIES } from "@/modules/events/city";
+import { ALL_CITY_VALUE, useCity, useCityOptions } from "@/modules/events/use-city";
 import { CATEGORIES } from "@/modules/events/categories";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Combobox } from "@/components/elements/Combobox";
 
 /**
  * Pencarian acara. Pita 03 baris B.
@@ -22,7 +25,25 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
  */
 
 const RECENT_KEY = "gatherly:recent-searches";
-const CITY = "Yogyakarta";
+
+/** Pilihan kota yang bisa dicari, lihat useCityOptions. */
+function CityMenu({ className }: { className?: string }) {
+  const { city, setCity } = useCity();
+  const options = useCityOptions(city);
+
+  return (
+    <Combobox
+      options={options}
+      value={city ?? ALL_CITY_VALUE}
+      onChange={(v) => setCity(v === ALL_CITY_VALUE ? undefined : v)}
+      placeholder={ALL_CITIES}
+      searchPlaceholder="Cari kota atau kabupaten"
+      emptyText="Kota atau kabupaten tidak ditemukan"
+      leading={<MapPin className="text-text-tertiary" aria-hidden />}
+      className={className}
+    />
+  );
+}
 
 function readRecent(): string[] {
   try {
@@ -233,10 +254,7 @@ export function SearchBar({ defaultValue = "", className }: { defaultValue?: str
           </button>
         )}
         <span className="hidden h-6 w-px bg-border md:block" aria-hidden />
-        <span className="hidden shrink-0 items-center gap-2.5 pr-2 text-[15px] font-semibold md:flex">
-          <MapPin className="size-5 text-text-tertiary" aria-hidden />
-          {CITY}
-        </span>
+        <CityMenu className="hidden h-11 w-auto max-w-[240px] shrink-0 rounded-full border-transparent px-3 font-semibold md:flex [@media(hover:hover)]:hover:bg-surface" />
         <Button type="submit" size="sm" className="h-11 px-5">
           Cari
         </Button>
@@ -257,7 +275,7 @@ export function SearchBar({ defaultValue = "", className }: { defaultValue?: str
 /** Pencarian di mobile. Tombol pil yang membuka layar cari penuh (pita 03 B2 mobile). */
 export function MobileSearch({
   value = "",
-  placeholder = `Cari acara di ${CITY}`,
+  placeholder = "Cari acara",
   className,
 }: {
   value?: string;
@@ -342,10 +360,7 @@ export function MobileSearch({
             </div>
           </form>
           <div className="px-4 pb-2">
-            <span className="inline-flex h-[34px] items-center gap-1.5 rounded-full bg-surface-2 px-3 text-[13px] font-bold">
-              <MapPin className="size-4" aria-hidden />
-              {CITY}
-            </span>
+            <CityMenu className="h-[34px] w-auto max-w-full gap-1.5 rounded-full border-transparent bg-surface-2 px-3 text-[13px] font-bold" />
           </div>
           <div className="flex flex-1 flex-col gap-1 overflow-y-auto border-t border-border px-3 py-3">
             <SuggestionList q={q} onNavigate={go} />

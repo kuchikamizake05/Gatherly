@@ -21,6 +21,7 @@ import {
   SortChip,
   useEventFilters,
 } from "@/components/elements/EventFilters";
+import { inCity } from "@/modules/events/city";
 
 /**
  * Hasil pencarian, hasil filter, dan daftar per kategori. Pita 03 baris B4, C, D2, E.
@@ -28,7 +29,6 @@ import {
  */
 
 const PAGE_SIZE = 8;
-const CITY = "Yogyakarta";
 
 export function EventSearchResults() {
   const { filters, set, update, activeCount } = useEventFilters();
@@ -41,10 +41,10 @@ export function EventSearchResults() {
   const total = events.data?.meta.total ?? 0;
   const category = categoryName(filters.category);
   const heading = filters.q
-    ? `${total} acara untuk “${filters.q}” di ${CITY}`
+    ? `${total} acara untuk “${filters.q}”${inCity(filters.city)}`
     : category
-      ? `${total} acara ${category} di ${CITY}`
-      : `${total} acara di ${CITY}`;
+      ? `${total} acara ${category}${inCity(filters.city)}`
+      : `${total} acara${inCity(filters.city)}`;
 
   const resetPages = <T,>(fn: (v: T) => void) => (v: T) => {
     setPages(1);
@@ -64,6 +64,14 @@ export function EventSearchResults() {
       <FilterPanel open={filterOpen} onOpenChange={setFilterOpen} filters={filters} onApply={apply} />
 
       {/* Tablet dan desktop: kolom cari dan bar filter */}
+      {/* Di mobile judul ini hanya untuk pembaca layar, karena header mobile sudah ringkas. */}
+      <header className="sr-only md:not-sr-only md:flex md:flex-col md:gap-1.5 md:pt-8 xl:pt-10">
+        <h1 className="text-[32px] leading-tight font-extrabold tracking-tight text-balance xl:text-[40px]">{category ?? "Jelajahi acara"}</h1>
+        <p className="text-base text-text-secondary">
+          {category ? `Acara ${category.toLowerCase()}` : "Konser, lokakarya, dan temu komunitas"}
+          {filters.city ? inCity(filters.city) : " dari berbagai kota"}. Pesan tiket dalam semenit.
+        </p>
+      </header>
       <div className="hidden w-full pt-6 md:block">
         <SearchBar defaultValue={filters.q ?? ""} />
       </div>
@@ -89,10 +97,10 @@ export function EventSearchResults() {
       <div className="flex flex-col gap-3 px-5 pt-1 md:flex-row md:items-center md:justify-between md:gap-6 md:px-0 md:pt-7">
         <ActiveFilters filters={filters} onChange={apply} className="order-1 md:order-2 md:justify-end" />
         {!events.isPending && !(events.isError && !events.data) && (
-          <h1 className="order-2 text-xl font-extrabold tracking-tight md:order-1 md:text-[22px]">
+          <h2 className="order-2 text-xl font-extrabold tracking-tight md:order-1 md:text-[22px]">
             <span className="md:hidden">{total} acara</span>
             <span className="hidden md:inline">{heading}</span>
-          </h1>
+          </h2>
         )}
       </div>
 

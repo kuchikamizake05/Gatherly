@@ -2,7 +2,7 @@ import { api, page, wrap, type Paginated } from "@/lib/api/client";
 import { FIX } from "@/modules/_mock/fixtures";
 
 import { CATEGORIES, categorySlug } from "./categories";
-import type { EventCard, EventDetail, EventQuery, EventSuggestions, OrganizerProfile, ReportInput } from "./types";
+import type { CityOption, EventCard, EventDetail, EventQuery, EventSuggestions, OrganizerProfile, ReportInput } from "./types";
 
 /**
  * Acara publik di gatherly.xyz. Pita desain 03, 04, 08, 09.
@@ -60,12 +60,27 @@ const festival: EventDetail = {
   },
 };
 
+/** Kota tiap acara contoh. Yang tidak tercantum ada di Kota Yogyakarta. */
+const MOCK_CITY: Record<string, string> = {
+  "festival-jazz-di-sawah": "Kabupaten Sleman",
+  "keroncong-di-pendopo": "Kabupaten Bantul",
+  "panggung-halaman-rumah-8": "Kabupaten Bantul",
+};
+const cityOf = (c: EventCard) => MOCK_CITY[c.slug] ?? "Kota Yogyakarta";
+
+function mockCities(): CityOption[] {
+  const counts = new Map<string, number>();
+  for (const c of cards) if (!PAST(c)) counts.set(cityOf(c), (counts.get(cityOf(c)) ?? 0) + 1);
+  return [...counts].map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+}
+
 /** Mock katalog: hanya acara yang belum lewat. Filter tanggal dan area diabaikan di mock. */
 function filterCards(query: EventQuery) {
   const list = cards.filter((c) => {
     if (PAST(c)) return false;
     if (query.q && !c.title.toLowerCase().includes(query.q.toLowerCase())) return false;
     if (query.category && categorySlug(c.category) !== query.category) return false;
+    if (query.city && cityOf(c).toLowerCase() !== query.city.toLowerCase()) return false;
     if (query.minPrice !== undefined && (c.startingPrice ?? 0) < query.minPrice) return false;
     if (query.maxPrice !== undefined && (c.startingPrice ?? Infinity) > query.maxPrice) return false;
     return true;
@@ -103,6 +118,8 @@ function mockSuggest(q: string): EventSuggestions {
 export const eventsApi = {
   list: (query: EventQuery = {}, cookie?: string) =>
     api.get<Paginated<EventCard>>("/events", { query, cookie, ...pending, mock: () => mockList(query) }),
+  /** Kota yang punya acara aktif, terbanyak lebih dulu. */
+  cities: () => api.get<{ data: CityOption[] }>("/events/cities", { ...pending, mock: () => wrap(mockCities()) }),
   /** Saran kata kunci, acara, dan kategori saat mengetik. */
   suggest: (q: string) =>
     api.get<{ data: EventSuggestions }>("/events/suggestions", { query: { q }, ...pending, mock: () => wrap(mockSuggest(q)) }),
