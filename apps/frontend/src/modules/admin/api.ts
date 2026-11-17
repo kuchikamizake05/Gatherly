@@ -16,6 +16,87 @@ import type { Application, FieldFlag } from "@/modules/applications/api";
  * login + 2FA (B30), pengajuan (B31), organizer (B32), pencairan (B39), laporan (B40).
  */
 
+/** Pengajuan pengembalian dana dari peserta (GET /admin/refunds). Backend belum mengirim judul acara dan kode pesanan. */
+export type AdminRefund = {
+  id: string;
+  orderId: string;
+  eventId: string;
+  ticketIds: string[];
+  reason: string;
+  kind?: string;
+  status:
+    | "requested"
+    | "approved"
+    | "processing"
+    | "manual_required"
+    | "refunded"
+    | "rejected";
+  amount: number;
+  baseAmount?: number;
+  decisionNote: string | null;
+  requestedAt: string;
+  decidedAt: string | null;
+  refundedAt: string | null;
+  transferReference: string | null;
+  eventTitle?: string;
+  orderCode?: string;
+};
+
+/** Pengajuan pembatalan acara dari organizer (GET /admin/cancellations). */
+export type AdminCancellation = {
+  id: string;
+  title: string;
+  organizerId: string;
+  organizerName?: string;
+  reason: string;
+  requestedAt: string;
+};
+
+const mockRefunds: AdminRefund[] = [
+  {
+    id: "rf_0001",
+    orderId: "ord_gs01",
+    eventId: FIX.festival.id,
+    ticketIds: ["tk_1"],
+    reason: "Bentrok dengan acara keluarga.",
+    status: "requested",
+    amount: 100000,
+    decisionNote: null,
+    requestedAt: "2026-10-02T03:12:00Z",
+    decidedAt: null,
+    refundedAt: null,
+    transferReference: null,
+    eventTitle: FIX.festival.title,
+    orderCode: "GTH-8B2M",
+  },
+  {
+    id: "rf_0002",
+    orderId: "ord_gs02",
+    eventId: FIX.festival.id,
+    ticketIds: ["tk_2"],
+    reason: "Sakit, tidak bisa hadir.",
+    status: "manual_required",
+    amount: 80000,
+    decisionNote: "Disetujui, transfer manual.",
+    requestedAt: "2026-09-28T03:12:00Z",
+    decidedAt: "2026-09-29T03:12:00Z",
+    refundedAt: null,
+    transferReference: null,
+    eventTitle: FIX.festival.title,
+    orderCode: "GTH-7Q4K",
+  },
+];
+const mockCancellations: AdminCancellation[] = [
+  {
+    id: "ev_cancel_demo",
+    title: "Lokakarya Risograph",
+    organizerId: FIX.organizer.id,
+    organizerName: FIX.organizer.name,
+    reason: "Pemateri berhalangan hadir dan belum ada pengganti.",
+    requestedAt: "2026-11-15T03:12:00Z",
+  },
+];
+
 const pending = {} as const;
 const base = "/admin";
 
@@ -480,6 +561,61 @@ export const adminApi = {
       ...pending,
       mock: () => undefined,
     }),
+
+  // Keuangan: pengembalian dana peserta dan pembatalan acara
+  refunds: (status?: AdminRefund["status"]) =>
+    api.get<Paginated<AdminRefund>>(`${base}/refunds`, {
+      query: status ? { status } : undefined,
+      mock: () =>
+        page(
+          (
+            rowsFor<AdminRefund>("refunds", mockRefunds) as AdminRefund[]
+          ).filter((r) => !status || r.status === status),
+        ),
+    }),
+  decideRefund: (id: string, approve: boolean, note: string) =>
+    api.post<{ data: AdminRefund }>(
+      `${base}/refunds/${id}/decision`,
+      { approve, note },
+      {
+        mock: () => {
+          mockChange("refunds", id, {
+            status: approve ? "manual_required" : "rejected",
+            decisionNote: note,
+            decidedAt: new Date().toISOString(),
+          });
+          return wrap(findRow<AdminRefund>("refunds", mockRefunds, id));
+        },
+      },
+    ),
+  refundTransferred: (id: string, reference: string, transferredAt: string) =>
+    api.post<void>(
+      `${base}/refunds/${id}/transferred`,
+      { transferReference: reference, transferredAt },
+      {
+        mock: () =>
+          mockChange("refunds", id, {
+            status: "refunded",
+            transferReference: reference,
+            refundedAt: transferredAt,
+          }),
+      },
+    ),
+  cancellations: () =>
+    api.get<{ data: AdminCancellation[] }>(`${base}/cancellations`, {
+      mock: () =>
+        wrap(
+          rowsFor<AdminCancellation>("cancellations", mockCancellations).filter(
+            (row) => !(row as { __removed?: boolean }).__removed,
+          ),
+        ),
+    }),
+  decideCancellation: (id: string, approve: boolean, note: string) =>
+    api.post<void>(
+      `${base}/cancellations/${id}/decision`,
+      { approve, note },
+      { mock: () => mockChange("cancellations", id, { __removed: true }) },
+    ),
 
   // B39
   payouts: (
