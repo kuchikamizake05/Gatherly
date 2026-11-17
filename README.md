@@ -36,7 +36,7 @@ Mode live selalu memakai HTTP asli ke backend. Data contoh hanya aktif dengan `N
 
 ## Nama dan Daftar Anggota
 
-**Kelompok 11 — Pengembangan Aplikasi Web**
+**Kelompok 11**
 
 | Nama | NIM | Peran |
 | --- | --- | --- |
