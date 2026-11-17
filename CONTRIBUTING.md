@@ -43,3 +43,21 @@
 - Semua request lewat modul di `apps/frontend/src/modules/<fitur>/`.
 - Endpoint yang belum dibuat backend ditandai `pending: true` dan memakai data contoh. Saat endpoint asli siap, hapus tanda itu di PR terpisah dan cek ulang halamannya.
 - Perubahan bentuk data dibahas bersama backend dan dicatat di `docs/api-contract.md`.
+
+### Kontrak untuk endpoint baru
+
+Setiap kali menambah endpoint `pending: true`, tulis kontraknya sebagai komentar di issue backend yang terkait, supaya backend tahu persis yang dipakai halaman. Satu komentar per issue, dalam bahasa Inggris, dengan format berikut.
+
+```
+Frontend contract used by <halaman> (band <nomor>), in `apps/frontend/src/modules/<fitur>/api.ts`. Mocked with `pending: true` until the endpoints exist. If you pick different names or shapes, tell me; the frontend only needs changes in that file.
+
+<Nama fitur>
+- `GET /path?query=...` → `{ data: { ... } }`
+- `POST /path` body `{ ... }` → `{ data: { ... } }`
+- 404 `NOT_FOUND` when ..., 409 `CODE` when ...
+- batasan yang dicek di halaman, misalnya panjang maksimal, jenis dan ukuran berkas, pilihan enum
+```
+
+- Bentuk respons diambil dari tipe dan data contoh di `api.ts`, kode error dari yang benar-benar ditangani halaman.
+- Kalau backend memilih nama atau bentuk lain, cukup ubah `api.ts` modul itu.
+- Setelah disepakati, kontraknya digabung ke `docs/api-contract.md`.
