@@ -28,6 +28,7 @@ import { initials } from "@/components/elements/AccountMenu";
 import { BirthDateInput } from "./BirthDateInput";
 import { CheckoutLayout, CheckoutMobileHeader, CheckoutProgress, ConfirmDialog, OrderSummary } from "./CheckoutChrome";
 import { CheckoutSkeleton } from "./OrderStates";
+import { estimateAmounts } from "../pricing";
 
 /**
  * Data peserta. Pita 05 A1, B (validasi), E1 dan E2 (meninggalkan halaman).
@@ -204,8 +205,7 @@ function AttendeeForm({ slug, qty, event, ticket, me, router }: FormProps) {
     },
   );
 
-  const subtotal = qty * ticket.price;
-  const total = subtotal + Math.round(subtotal * 0.05);
+  const { total } = estimateAmounts(qty, ticket.price);
   const submitLabel = create.isPending ? "Membuat pesanan…" : "Lanjut ke pembayaran";
 
   const main = (

@@ -70,7 +70,7 @@ Di dalam frame perangkat:
 - Tiket: Presale Rp80.000 (1–7 Oktober, kuota 50) dan Reguler Rp100.000 (8 Oktober–20 November, kuota 200). Terjual 168 dari 250. Maksimal 4 tiket per pesanan.
 - Pesanan Aulia: GTH-4A7N, 2 tiket Reguler, dibayar 14 Oktober 2026 (tiket GTH-4A7N-29XM Aulia, GTH-4A7N-31PL Rafi).
 - Pengajuan Kolektif Sawah: PNG-2609-0042, disetujui Senin, 14 September 2026.
-- Biaya layanan 5% dipotong dari pendapatan organizer. Pembeli tidak membayar biaya tambahan.
+- Biaya layanan 5% dibayar pembeli di atas harga tiket (diputuskan 17 November 2026, mengikuti backend). Organizer menerima harga tiket penuh. Detail acara menulis "Belum termasuk biaya layanan 5%", checkout dan bukti pembayaran menampilkan baris Biaya layanan.
 - Tiket ditahan 15 menit saat pembayaran. Pengingat acara dikirim satu hari sebelum acara.
 - Unggahan maksimal 1 MB per gambar, PDF legalitas maksimal 2 MB.
 - Domain: gatherly.xyz.
