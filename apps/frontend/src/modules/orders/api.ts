@@ -1,15 +1,22 @@
 import { api, page, wrap, type Paginated } from "@/lib/api/client";
 import { FIX } from "@/modules/_mock/fixtures";
 
+import { estimateAmounts } from "./pricing";
 import type { CreateOrderInput, Order, PaymentSession } from "./types";
 
 /**
  * Checkout dan pembayaran. Pita desain 04 (tombol Beli tiket), 05, dan 07 (kartu menunggu bayar).
  * Endpoint create, get, list, dan payment-session sudah ada di backend.
- * Pembatalan oleh pembeli belum ada (issue B34).
+ * Total pesanan sudah termasuk biaya layanan 5% (lihat pricing.ts).
  */
 
-const mockOrder = (overrides: Partial<Order> = {}): Order => ({
+/** Jumlah tiket, biaya layanan, dan total dihitung dari harga, sama seperti backend. */
+const withAmounts = (o: Order): Order => {
+  const { subtotal, fee, total } = estimateAmounts(o.quantity, o.ticketType.unitPrice);
+  return { ...o, subtotalAmount: subtotal, serviceFeeAmount: fee, totalAmount: total };
+};
+
+const mockOrder = (overrides: Partial<Order> = {}): Order => withAmounts({
   id: FIX.order.id,
   orderCode: FIX.order.orderCode,
   event: {
@@ -22,7 +29,7 @@ const mockOrder = (overrides: Partial<Order> = {}): Order => ({
   ticketType: { name: "Reguler", unitPrice: FIX.order.unitPrice },
   quantity: FIX.order.quantity,
   attendees: FIX.order.attendees,
-  totalAmount: FIX.order.totalAmount,
+  totalAmount: 0,
   currency: "IDR",
   paymentStatus: "pending",
   reservationStatus: "held",
@@ -50,7 +57,6 @@ const mockOrders: Order[] = [
     event: ev("pameran-foto-kampung-kota"),
     ticketType: { name: "Reguler", unitPrice: 0 },
     quantity: 1,
-    totalAmount: 0,
     expiresAt: new Date(Date.now() + 11 * 60_000).toISOString(),
   }),
   mockOrder({
@@ -59,7 +65,6 @@ const mockOrders: Order[] = [
     event: ev("meetup-desainer-produk-12"),
     ticketType: { name: "Reguler", unitPrice: 75000 },
     quantity: 1,
-    totalAmount: 75000,
     paymentStatus: "expired",
     reservationStatus: "released",
     canResumePayment: false,
@@ -71,7 +76,6 @@ const mockOrders: Order[] = [
     event: ev("jogja-night-run-5k"),
     ticketType: { name: "Reguler", unitPrice: 150000 },
     quantity: 1,
-    totalAmount: 150000,
     reservationStatus: "released",
     canResumePayment: false,
     cancelledBy: "buyer",
@@ -83,7 +87,6 @@ const mockOrders: Order[] = [
     event: ev("malam-eksperimen-gamelan-synth", { status: "cancelled", organizerUsername: FIX.organizer.username }),
     ticketType: { name: "VIP", unitPrice: 150000 },
     quantity: 2,
-    totalAmount: 300000,
     paymentStatus: "paid",
     reservationStatus: "converted",
     issuanceStatus: "issued",

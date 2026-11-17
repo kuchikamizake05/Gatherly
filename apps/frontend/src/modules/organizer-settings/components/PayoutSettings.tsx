@@ -144,8 +144,9 @@ export function PayoutSettings() {
       <section className="space-y-4 rounded-lg bg-background p-4 md:p-6">
         <h2 className="text-xl font-extrabold">Pendapatan per acara</h2>
         <p className="text-sm text-text-secondary">
-          Pendapatan bersih setelah biaya layanan 5%. Acara gratis tidak
-          memiliki pencairan.
+          Pendapatan dari harga tiket, sudah dikurangi pengembalian dana. Biaya
+          layanan dibayar pembeli sehingga tidak memotong pendapatan Anda. Acara
+          gratis tidak memiliki pencairan.
         </p>
         <DataList
           rows={payouts.data.rows}

@@ -10,6 +10,7 @@ import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
+import { estimateAmounts, type Amounts } from "../pricing";
 
 /**
  * Bagian bersama halaman checkout dan status pesanan (pita 05).
@@ -79,14 +80,13 @@ type SummaryProps = {
   ticketName: string;
   quantity: number;
   unitPrice: number;
-  serviceFeeAmount?: number;
+  /** Angka dari pesanan. Bila kosong, dihitung dari harga dan biaya layanan 5%. */
+  amounts?: Amounts;
   className?: string;
 };
 
-export function OrderSummary({ title, poster, startsAt, venue, ticketName, quantity, unitPrice, serviceFeeAmount, className }: SummaryProps) {
-  const subtotal = quantity * unitPrice;
-  const fee = serviceFeeAmount ?? Math.round(subtotal * 0.05);
-  const total = subtotal + fee;
+export function OrderSummary({ title, poster, startsAt, venue, ticketName, quantity, unitPrice, amounts, className }: SummaryProps) {
+  const { subtotal, fee, total } = amounts ?? estimateAmounts(quantity, unitPrice);
   return (
     <section aria-label="Ringkasan pesanan" className={cn("flex flex-col gap-4 rounded-xl border border-border-strong bg-background p-5 md:p-6", className)}>
       <div className="flex items-center gap-3.5">

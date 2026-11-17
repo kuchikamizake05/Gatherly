@@ -10,6 +10,7 @@ import { useOrder } from "@/modules/orders/hooks";
 import { paymentMethod } from "@/modules/orders/payment-methods";
 import { PrintDocument, PrintSheet, useAutoPrint } from "@/components/elements/PrintPage";
 import { StateView } from "@/components/elements/StateView";
+import { orderAmounts } from "../pricing";
 
 /** Bukti pembayaran. Pita 06 G3, satu halaman A4. */
 
@@ -45,7 +46,7 @@ export function ReceiptPrintView({ orderId }: { orderId: string }) {
     return <StateView layout="screen" illustration="waiting" title="Pesanan belum dibayar" description="Bukti pembayaran tersedia setelah pembayaran berhasil." />;
 
   const buyer = o.buyer ?? (me.data ? { name: me.data.user.name, email: me.data.user.email } : undefined);
-  const subtotal = o.quantity * o.ticketType.unitPrice;
+  const { subtotal, fee, total } = orderAmounts(o);
   const issued = o.paidAt ?? o.createdAt ?? new Date().toISOString();
 
   return (
@@ -106,15 +107,15 @@ export function ReceiptPrintView({ orderId }: { orderId: string }) {
             <tr className="border-t border-border">
               <td className="px-4 py-3">Biaya layanan</td>
               <td className="px-4 py-3 text-center">1</td>
-              <td className="px-4 py-3 text-right">{formatRupiah(o.serviceFeeAmount ?? Math.max(0, o.totalAmount - subtotal))}</td>
-              <td className="px-4 py-3 text-right">{formatRupiah(o.serviceFeeAmount ?? Math.max(0, o.totalAmount - subtotal))}</td>
+              <td className="px-4 py-3 text-right">{formatRupiah(fee)}</td>
+              <td className="px-4 py-3 text-right">{formatRupiah(fee)}</td>
             </tr>
           </tbody>
         </table>
 
         <div className="flex items-baseline justify-between border-b border-border px-1 pt-[8mm] pb-[5mm]">
           <span className="text-base font-extrabold">Total dibayar</span>
-          <span className="text-[26px] font-extrabold">{formatRupiah(o.totalAmount)}</span>
+          <span className="text-[26px] font-extrabold">{formatRupiah(total)}</span>
         </div>
 
         <p className="mt-auto pb-[6mm] text-[11px] leading-relaxed text-text-secondary">

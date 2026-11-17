@@ -23,6 +23,7 @@ import { initials } from "@/components/elements/AccountMenu";
 
 import { CheckoutLayout, CheckoutMobileHeader, CheckoutProgress, ConfirmDialog, OrderSummary } from "./CheckoutChrome";
 import { CheckoutSkeleton, OrderLoadError, OrderNotFound } from "./OrderStates";
+import { orderAmounts } from "../pricing";
 
 /**
  * Bayar pesanan. Pita 05 A2, A3 (Snap), C (ganti metode), E3 dan E4 (meninggalkan, membatalkan).
@@ -214,6 +215,7 @@ function PaymentForm({ order, router }: { order: Order; router: ReturnType<typeo
         ticketName={order.ticketType.name}
         quantity={order.quantity}
         unitPrice={order.ticketType.unitPrice}
+        amounts={orderAmounts(order)}
       />
 
       <section className="flex flex-col gap-4 rounded-lg border border-border-strong p-5 md:p-6">
@@ -267,6 +269,7 @@ function PaymentForm({ order, router }: { order: Order; router: ReturnType<typeo
               ticketName={order.ticketType.name}
               quantity={order.quantity}
               unitPrice={order.ticketType.unitPrice}
+              amounts={orderAmounts(order)}
             />
             {actions}
             <p className="px-1 text-xs text-text-tertiary">Dengan membayar, Anda setuju dengan Syarat & ketentuan Gatherly.</p>

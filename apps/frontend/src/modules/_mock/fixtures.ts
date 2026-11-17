@@ -87,7 +87,7 @@ export const FIX = {
     expiresAt: "2026-10-14T07:18:00Z",
     quantity: 2,
     unitPrice: 100000,
-    totalAmount: 200000,
+    totalAmount: 210000, // 2 × Rp100.000 + biaya layanan 5%
     attendees: [
       { name: "Aulia Nur Fajri", email: "aulia@mail.ugm.ac.id" },
       { name: "Rafi Pratama", email: "rafi@kolektifsawah.id" },

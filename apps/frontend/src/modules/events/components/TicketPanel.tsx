@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerTitle } from "@/components/ui/drawer";
 import { Alert } from "@/components/elements/Alert";
 import { TicketPicker, selectionTotal, type TicketSelection } from "@/components/elements/TicketPicker";
+import { SERVICE_FEE_LABEL } from "@/modules/orders/pricing";
 
 /**
  * Pembelian tiket di detail acara. Pita 04 baris B, C, E, F.
@@ -232,9 +233,12 @@ function PickerBody({ p, inSheet = false }: { p: Purchase; inSheet?: boolean }) 
       )}
       {state === "on_sale" ? (
         <>
-          <div className="flex items-center justify-between border-t border-border pt-4">
-            <span className="text-[15px] font-semibold text-text-secondary">Total untuk {p.quantity} tiket</span>
-            <span className="text-xl font-extrabold">{formatRupiah(p.amount)}</span>
+          <div className="flex flex-col gap-1 border-t border-border pt-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[15px] font-semibold text-text-secondary">Total untuk {p.quantity} tiket</span>
+              <span className="text-xl font-extrabold">{formatRupiah(p.amount)}</span>
+            </div>
+            {p.amount > 0 && <p className="text-[13px] text-text-tertiary">Belum termasuk biaya layanan {SERVICE_FEE_LABEL}</p>}
           </div>
           <Button size="lg" block onClick={p.buy} loading={p.processing} disabled={p.quantity === 0 || !p.online}>
             {p.processing ? "Memesan tiket…" : "Beli tiket"}

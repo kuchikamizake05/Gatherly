@@ -54,7 +54,7 @@ Laporan lama tersedia. Adapter pesanan menormalisasi `ticketType.name` menjadi `
 
 `GET/PUT /organizer/bank-account`: `{ bank, accountNumber, holderName }` atau null. Nomor 10–16 angka; list menampilkan 4 digit terakhir. Data rekening perlu dilindungi di server; masking UI bukan pengganti kontrol akses.
 
-`GET /organizer/payouts`: `{ data: { available, processing, transferred, rows } }`. Baris: `eventId, eventTitle, eventDate, net, status, requestedAt?, transferredAt?, transferReference?`. Status `waiting_event | available | requested | transferred`. Bersih setelah biaya 5%. `POST /organizer/payouts {eventId}` hanya acara selesai dengan saldo positif dan rekening tersedia; idempoten/atomik. Frontend tidak menetapkan status `transferred`.
+`GET /organizer/payouts`: `{ data: { available, processing, transferred, rows } }`. Baris: `eventId, eventTitle, eventDate, net, status, requestedAt?, transferredAt?, transferReference?`. Status `waiting_event | available | requested | transferred`. Nilai dasar tiket setelah pengembalian dana, tanpa potongan biaya layanan (dibayar pembeli). `POST /organizer/payouts {eventId}` hanya acara selesai dengan saldo positif dan rekening tersedia; idempoten/atomik. Frontend tidak menetapkan status `transferred`.
 
 ## B41: scanner
 
