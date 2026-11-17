@@ -75,6 +75,8 @@ src/
 
 ## Data dan mock
 
+Antarmuka admin untuk issue #70 sampai #74 memiliki [panduan verifikasi, data demo, dan batas integrasi backend](../../docs/frontend-admin-70-74.md).
+
 - Semua request lewat `api` di `src/lib/api/client.ts`. Cookie sesi dan header CSRF sudah diurus.
 - Endpoint yang belum dibuat backend ditandai `pending: true` di `api.ts` dan selalu memakai data contoh. Nomor issue backend ada di komentar tiap file (B28 sampai B42).
 - Begitu endpoint asli siap, hapus `pending: true`. Halaman tidak perlu diubah selama bentuk datanya sama.

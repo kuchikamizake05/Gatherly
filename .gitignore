@@ -12,6 +12,7 @@ node_modules/
 dist/
 coverage/
 *.tsbuildinfo
+test-results/
 
 # Editor and OS files
 .DS_Store

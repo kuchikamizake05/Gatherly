@@ -7,10 +7,16 @@ import { useMe } from "@/modules/auth/hooks";
 import { useWorkspaceMe } from "@/modules/organizer-auth/hooks";
 import { useAdminMe } from "@/modules/admin/hooks";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StateView } from "@/components/elements/StateView";
+import { Button } from "@/components/ui/button";
+import { useOnline } from "@/hooks/use-online";
 
 function GuardLoading() {
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-8 md:px-8" aria-busy>
+    <div
+      className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-8 md:px-8"
+      aria-busy
+    >
       <Skeleton className="h-8 w-56" />
       <Skeleton className="h-5 w-80" />
       <Skeleton className="h-48 w-full" />
@@ -29,7 +35,10 @@ function useRedirect(when: boolean, to: string) {
 export function RequireBuyer({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { data, isPending } = useMe();
-  useRedirect(!isPending && data === null, `/login?returnTo=${encodeURIComponent(pathname)}`);
+  useRedirect(
+    !isPending && data === null,
+    `/login?returnTo=${encodeURIComponent(pathname)}`,
+  );
   if (isPending || !data) return <GuardLoading />;
   return <>{children}</>;
 }
@@ -43,14 +52,18 @@ export function RequireBuyer({ children }: { children: ReactNode }) {
 export function RequireWorkspace({ children }: { children: ReactNode }) {
   const pathname = usePathname().replace(/^\/organizer/, "") || "/";
   const { data, isPending } = useWorkspaceMe();
-  const committeeAllowed = pathname === "/" || /^\/events\/[^/]+\/scan(\/.*)?$/.test(pathname);
+  const committeeAllowed =
+    pathname === "/" || /^\/events\/[^/]+\/scan(\/.*)?$/.test(pathname);
 
-  const target =
-    isPending ? null
-    : data === null ? `/login?returnTo=${encodeURIComponent(pathname)}`
-    : data?.mustChangePassword ? "/change-password"
-    : data?.role === "committee" && !committeeAllowed ? "/"
-    : null;
+  const target = isPending
+    ? null
+    : data === null
+      ? `/login?returnTo=${encodeURIComponent(pathname)}`
+      : data?.mustChangePassword
+        ? "/change-password"
+        : data?.role === "committee" && !committeeAllowed
+          ? "/"
+          : null;
 
   useRedirect(!!target, target ?? "/");
   if (isPending || !data || target) return <GuardLoading />;
@@ -60,8 +73,21 @@ export function RequireWorkspace({ children }: { children: ReactNode }) {
 /** Konsol admin.gatherly.xyz. */
 export function RequireAdmin({ children }: { children: ReactNode }) {
   const pathname = usePathname().replace(/^\/admin/, "") || "/";
-  const { data, isPending } = useAdminMe();
-  useRedirect(!isPending && data === null, `/login?returnTo=${encodeURIComponent(pathname)}`);
+  const { data, isPending, isError, refetch } = useAdminMe();
+  const online = useOnline();
+  useRedirect(
+    !isPending && data === null,
+    `/login?returnTo=${encodeURIComponent(pathname)}`,
+  );
+  if (!online || isError)
+    return (
+      <StateView
+        illustration="failed-load"
+        title={!online ? "Anda sedang luring" : "Sesi gagal diperiksa"}
+        description="Periksa koneksi Anda lalu coba lagi."
+        action={<Button onClick={() => void refetch()}>Coba lagi</Button>}
+      />
+    );
   if (isPending || !data) return <GuardLoading />;
   return <>{children}</>;
 }
