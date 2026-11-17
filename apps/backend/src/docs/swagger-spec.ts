@@ -1,4 +1,6 @@
-export const swaggerSpec = {
+import { currentPaths } from "./current-contract.js";
+
+const legacySpec = {
   openapi: "3.0.3",
   info: {
     title: "Gatherly API",
@@ -63,7 +65,7 @@ export const swaggerSpec = {
           },
           requestId: { type: "string", example: "3fa85f64-5717-4562-b3fc-2c963f66afa6" },
         },
-        required: ["error", "requestId"],
+        required: ["error"],
       },
       User: {
         type: "object",
@@ -1012,4 +1014,17 @@ export const swaggerSpec = {
       },
     },
   },
+};
+
+export const swaggerSpec = {
+  ...legacySpec,
+  info: { ...legacySpec.info, version: "2.0.0", description: "Kontrak HTTP implementasi M5. Inventaris route dari app.ts dan router; DTO rinci dan batas integrasi di docs/api-contract.md. Bukan bukti verifikasi deployment/provider." },
+  components: {
+    ...legacySpec.components,
+    securitySchemes: { ...legacySpec.components.securitySchemes,
+      workspaceCookie: { type: "apiKey", in: "cookie", name: "gatherly_workspace" },
+      adminCookie: { type: "apiKey", in: "cookie", name: "gatherly_admin" },
+    },
+  },
+  paths: currentPaths(legacySpec.paths),
 };

@@ -43,7 +43,7 @@ import { payoutRouter, adminPayoutRouter } from "./modules/payouts/payout.routes
 import { ticketDeliveryRouter } from "./modules/tickets/ticket.routes.js";
 import { mediaRouter } from "./modules/storage/storage.routes.js";
 import { realtimeRouter } from "./modules/realtime/auth.js";
-import multer from "multer";
+import { apiErrorHandler } from "./lib/api-error-handler.js";
 import { publicEventRouter } from "./modules/public-events/public-event.routes.js";
 import { organizerAssetsRouter } from "./modules/events/event-assets.routes.js";
 
@@ -158,53 +158,4 @@ app.use((_request, response) => {
 
 export default app;
 
-app.use((error: unknown, _request: Request, response: Response, _next: NextFunction) => {
-  if (error instanceof multer.MulterError) {
-    response
-      .status(400)
-      .json({
-        error: {
-          code: error.code === "LIMIT_FILE_SIZE" ? "FILE_TOO_LARGE" : "INVALID_UPLOAD",
-          message: "Upload exceeds the supported limits.",
-        },
-      });
-    return;
-  }
-  if ((error as { name?: string })?.name === "CastError") {
-    response.status(404).json({ error: { code: "NOT_FOUND", message: "Resource not found." } });
-    return;
-  }
-  if (error instanceof AppError) {
-    response.status(error.statusCode).json({
-      error: {
-        code: error.code,
-        message: error.message,
-        fields: error.fields,
-        details: error.details,
-      },
-      requestId: response.locals.requestId,
-    });
-    return;
-  }
-
-  if (typeof error === "object" && error !== null && "code" in error && error.code === 11000) {
-    response.status(409).json({
-      error: {
-        code: "CONFLICT",
-        message: "This record already exists.",
-        fields: {},
-      },
-      requestId: response.locals.requestId,
-    });
-    return;
-  }
-
-  console.error("Unhandled API error", error);
-  response.status(500).json({
-    error: {
-      code: "INTERNAL_ERROR",
-      message: "An unexpected error occurred.",
-    },
-    requestId: response.locals.requestId,
-  });
-});
+app.use(apiErrorHandler);
