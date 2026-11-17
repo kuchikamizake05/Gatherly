@@ -10,30 +10,47 @@ import { organizerAuthApi } from "./api";
 export function useWorkspaceMe() {
   return useQuery({
     queryKey: qk.orgMe,
-    queryFn: async () => {
+    queryFn: async ({ signal }) => {
       try {
-        return await organizerAuthApi.me();
+        return await organizerAuthApi.me(undefined, signal);
       } catch (error) {
         if (error instanceof ApiError && error.status === 401) return null;
         throw error;
       }
     },
-    staleTime: 60_000,
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   });
 }
 
 export function useWorkspaceLogin() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ username, password }: { username: string; password: string }) =>
-      organizerAuthApi.login(username, password),
-    onSuccess: (res) => { setCsrfToken(res.data.csrfToken); qc.setQueryData(qk.orgMe, res.data); },
+    gcTime: 0,
+    mutationFn: ({
+      username,
+      password,
+    }: {
+      username: string;
+      password: string;
+    }) => organizerAuthApi.login(username, password),
+    onSuccess: async (res) => {
+      await qc.cancelQueries();
+      setCsrfToken(res.data.csrfToken);
+      qc.removeQueries({
+        predicate: (query) =>
+          JSON.stringify(query.queryKey) !== JSON.stringify(qk.orgMe),
+      });
+      qc.setQueryData(qk.orgMe, res.data);
+    },
   });
 }
 
 export function useChangeTemporaryPassword() {
   const qc = useQueryClient();
   return useMutation({
+    gcTime: 0,
     mutationFn: organizerAuthApi.changeTemporaryPassword,
     onSuccess: () => qc.invalidateQueries({ queryKey: qk.orgMe }),
   });
@@ -54,6 +71,14 @@ export function useWorkspaceLogout() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: organizerAuthApi.logout,
-    onSuccess: () => qc.clear(),
+    onSuccess: async () => {
+      setCsrfToken(null);
+      await qc.cancelQueries();
+      qc.clear();
+      qc.setQueryData(qk.orgMe, null);
+      try {
+        localStorage.setItem("gatherly.workspace.logout", crypto.randomUUID());
+      } catch {}
+    },
   });
 }

@@ -1,10 +1,4 @@
-"use client";
-
-import { RouteStub } from "@/components/elements/RouteStub";
-import { useCreateEvent } from "@/modules/organizer-events/hooks";
-
+import { EventEditor } from "@/modules/organizer-events/components/EventEditor";
 export default function Page() {
-  // Lima langkah: info, waktu dan tempat, tiket, detail, tinjau dan terbitkan. Draf tersimpan otomatis.
-  const create = useCreateEvent();
-  return <RouteStub title="Buat acara" band="16" scenario="A. Membuat acara" queries={{ create: { status: create.status, data: create.data } }} />;
+  return <EventEditor />;
 }

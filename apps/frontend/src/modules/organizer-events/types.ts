@@ -3,7 +3,8 @@
  * cocokkan lagi dengan Swagger (apps/backend/src/docs/swagger-spec.ts) saat integrasi.
  */
 
-export type OrgEventStatus = "draft" | "scheduled" | "on_sale" | "ended" | "cancelled";
+export type OrgEventStatus =
+  "draft" | "scheduled" | "on_sale" | "ended" | "cancelled";
 
 export type OrgEventRow = {
   id: string;
@@ -46,7 +47,13 @@ export type OrgTicketType = TicketTypeInput & {
   salesStopped: boolean;
 };
 
-export type PerformerInput = { name: string; note: string; time: string; photoAssetId?: string | null; photoUrl?: string | null };
+export type PerformerInput = {
+  name: string;
+  note: string;
+  time: string;
+  photoAssetId?: string | null;
+  photoUrl?: string | null;
+};
 
 export type EventInput = {
   title: string;
@@ -91,7 +98,12 @@ export type OrgEventSummary = {
   grossPaidSales: number;
   netSales?: number;
   pendingOrders?: number;
-  perTicketType?: { id: string; name: string; sold: number; capacity: number }[];
+  perTicketType?: {
+    id: string;
+    name: string;
+    sold: number;
+    capacity: number;
+  }[];
 };
 
 export type OrgOrderRow = {
@@ -101,7 +113,13 @@ export type OrgOrderRow = {
   ticketTypeName: string;
   quantity: number;
   totalAmount: number;
-  paymentStatus: "pending" | "paid" | "failed" | "expired" | "refunded" | "partially_refunded";
+  paymentStatus:
+    | "pending"
+    | "paid"
+    | "failed"
+    | "expired"
+    | "refunded"
+    | "partially_refunded";
   createdAt: string;
 };
 
@@ -111,19 +129,35 @@ export type OrgOrderDetail = OrgOrderRow & {
   paidAt: string | null;
   paymentMethod?: string;
   timeline: { status: string; at: string }[];
-  tickets: { id: string; ticketCode: string; attendeeName: string; checkInStatus: "unused" | "used" | "cancelled"; checkedInAt: string | null }[];
+  tickets: {
+    id: string;
+    ticketCode: string;
+    attendeeName: string;
+    checkInStatus: "unused" | "used" | "cancelled";
+    checkedInAt: string | null;
+  }[];
 };
 
 export type AttendeeRow = {
   ticketId: string;
   attendeeName: string;
-  buyerEmail: string;
+  buyerEmail?: string;
   ticketTypeName: string;
   ticketCode: string;
   checkInStatus: "unused" | "used" | "cancelled";
   checkedInAt: string | null;
 };
 
-export type CommitteeAssignment = { userId: string; name: string; username: string; assignedAt: string };
+export type CommitteeAssignment = {
+  userId: string;
+  name: string;
+  username: string;
+  assignedAt: string;
+};
 
-export type RefundInput = { mode: "full" | "partial"; ticketIds?: string[]; amount?: number; reason: string };
+export type RefundInput = {
+  mode: "full" | "partial";
+  ticketIds?: string[];
+  amount?: number;
+  reason: string;
+};

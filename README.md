@@ -17,7 +17,7 @@
 
 Gatherly membantu peserta menemukan dan membeli tiket acara komunitas, organizer mengelola acara serta penjualan, dan panitia memvalidasi tiket di lokasi. Proyek ini dikembangkan oleh **Kelompok 11** untuk mata kuliah **Pengembangan Aplikasi Web**, topik **US3 — Tiket acara komunitas: kuota dan tiket elektronik berkode**.
 
-Backend telah menyediakan autentikasi, manajemen acara, reservasi atomik, integrasi Midtrans Sandbox, penerbitan tiket QR, check-in sekali pakai, dan laporan organizer. Antarmuka Next.js masih dikembangkan dan saat ini menyediakan shell aplikasi.
+Backend telah menyediakan autentikasi, manajemen acara, reservasi atomik, integrasi Midtrans Sandbox, penerbitan tiket QR, check-in sekali pakai, dan laporan organizer. Frontend menyediakan alur peserta serta workspace organizer/panitia. Kontrak workspace baru masih menunggu backend. Mode live selalu memakai HTTP asli; data contoh hanya aktif dengan NEXT_PUBLIC_API_MOCK=true. Demo mock tidak membuktikan integrasi transaksi.
 
 ## Nama dan Daftar Anggota
 
@@ -108,6 +108,10 @@ Dokumentasi proyek tersedia dalam folder [`docs`](docs/README.md).
 
 Preview backend di Vercel: [Swagger UI Gatherly](https://gatherly-api-demo.vercel.app/api/v1/docs/). Deployment berstatus Ready dan halaman Swagger sudah tampil. Alur database, OTP/SMTP, Google OAuth, webhook Midtrans, dan job terjadwal belum diverifikasi pada deployment. Lihat [panduan deployment](docs/deployment-vercel.md).
 
+Persiapan frontend dan verifikasi HTTPS/kamera tersedia di [panduan deployment frontend](docs/deployment-frontend.md). Link web frontend dan video final belum diverifikasi. [Alur demo dan pembagian presentasi](docs/implementation/workspace-demo.md) disiapkan untuk penyelesaian kelompok pada #23–24.
+
+Frontend kini menyediakan build release tanpa fallback mock dan tes kontrak HTTP pada build produksi. Hasil serta kebutuhan integrasi backend dijelaskan dalam [kesiapan frontend untuk API asli](docs/implementation/frontend-live-readiness.md).
+
 ## Menjalankan Secara Lokal
 
 Persyaratan:
@@ -141,10 +145,27 @@ pnpm dev
 ```
 
 - Frontend: `http://localhost:3000`
+- Workspace organizer/panitia: `http://organizer.localhost:3000`
+
+Untuk demo antarmuka tanpa backend, jalankan `NEXT_PUBLIC_API_MOCK=true pnpm dev` dari `apps/frontend`. Akun contoh organizer: `kolektifsawah` / `GatherlyDemo2026!`. Akun ini hanya fixture lokal. Lihat [panduan demo](docs/implementation/workspace-demo.md) dan [batas kontrak integrasi](docs/implementation/workspace-api-handoff.md).
 
 Jangan commit `.env`, MongoDB URI, Midtrans Server Key, cookie sesi, atau QR credential.
 
 ## Pemeriksaan Kualitas
+
+Frontend:
+
+```bash
+cd apps/frontend
+pnpm typecheck
+pnpm build
+pnpm exec playwright install chromium
+pnpm test:e2e
+```
+
+E2E mencakup organizer/panitia pada lebar 390, 834, dan 1440 px dengan data contoh. Kamera perangkat fisik dan alur transaksi backend perlu pemeriksaan integrasi terpisah.
+
+Backend:
 
 ```bash
 cd apps/backend

@@ -85,8 +85,8 @@ type SummaryProps = {
 
 export function OrderSummary({ title, poster, startsAt, venue, ticketName, quantity, unitPrice, serviceFeeAmount, className }: SummaryProps) {
   const subtotal = quantity * unitPrice;
-  const fee=serviceFeeAmount ?? Math.round(subtotal*0.05);
-  const total=subtotal+fee;
+  const fee = serviceFeeAmount ?? Math.round(subtotal * 0.05);
+  const total = subtotal + fee;
   return (
     <section aria-label="Ringkasan pesanan" className={cn("flex flex-col gap-4 rounded-xl border border-border-strong bg-background p-5 md:p-6", className)}>
       <div className="flex items-center gap-3.5">

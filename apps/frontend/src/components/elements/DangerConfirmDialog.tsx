@@ -4,8 +4,18 @@ import { useEffect, useId, useState, type ReactNode } from "react";
 
 import { useIsDesktop } from "@/hooks/use-media-query";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from "@/components/ui/drawer";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
@@ -69,8 +79,11 @@ export function DangerConfirmDialog({
     if (!open) setTyped("");
   }, [open]);
 
-  const matches = !confirmText || typed.trim() === confirmText.trim();
+  const matches = !confirmText || typed === confirmText;
   const enabled = matches && canConfirm && !loading;
+  const changeOpen = (value: boolean) => {
+    if (!loading) onOpenChange(value);
+  };
   const Title = desktop ? DialogTitle : DrawerTitle;
   const Description = desktop ? DialogDescription : DrawerDescription;
 
@@ -84,11 +97,16 @@ export function DangerConfirmDialog({
     >
       <div className="flex flex-col gap-2">
         <Title className="text-[22px]">{title}</Title>
-        <Description className="text-[15px] font-medium">{description}</Description>
+        <Description className="text-[15px] font-medium">
+          {description}
+        </Description>
       </div>
       {children}
       {confirmText && (
-        <Field label={<>Ketik “{confirmText}” untuk melanjutkan</>} htmlFor={inputId}>
+        <Field
+          label={<>Ketik “{confirmText}” untuk melanjutkan</>}
+          htmlFor={inputId}
+        >
           <Input
             id={inputId}
             value={typed}
@@ -100,13 +118,27 @@ export function DangerConfirmDialog({
           />
         </Field>
       )}
-      {error && <p className="text-[13px] text-danger-ink" role="alert">{error}</p>}
+      {error && (
+        <p className="text-[13px] text-danger-ink" role="alert">
+          {error}
+        </p>
+      )}
       <div className="flex flex-col-reverse gap-2.5 md:flex-row md:justify-end">
-        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={loading}
+          onClick={() => changeOpen(false)}
+        >
           {cancelLabel}
         </Button>
-        <Button type="submit" variant={confirmVariant} disabled={!enabled} loading={loading}>
-          {confirmLabel}
+        <Button
+          type="submit"
+          variant={confirmVariant}
+          disabled={!enabled}
+          loading={loading}
+        >
+          {loading ? "Memproses…" : confirmLabel}
         </Button>
       </div>
     </form>
@@ -114,7 +146,7 @@ export function DangerConfirmDialog({
 
   if (desktop) {
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open} onOpenChange={changeOpen}>
         <DialogContent showCloseButton={false} className="p-7 sm:max-w-[520px]">
           {body}
         </DialogContent>
@@ -122,9 +154,11 @@ export function DangerConfirmDialog({
     );
   }
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    <Drawer open={open} onOpenChange={changeOpen} dismissible={!loading}>
       <DrawerContent className="max-h-[92dvh]">
-        <div className="overflow-y-auto px-5 pt-2 pb-[max(20px,env(safe-area-inset-bottom))]">{body}</div>
+        <div className="overflow-y-auto px-5 pt-2 pb-[max(20px,env(safe-area-inset-bottom))]">
+          {body}
+        </div>
       </DrawerContent>
     </Drawer>
   );

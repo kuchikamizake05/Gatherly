@@ -16,7 +16,7 @@ const isTerminal = (o?: Order) =>
  * berhenti saat dibayar dan e-tiket terbit, gagal, atau kedaluwarsa.
  */
 export function useOrder(id: string, { poll = false } = {}) {
-  const connected=useRealtime("order",id,poll);
+  const connected = useRealtime("order", id, poll);
   return useQuery({
     queryKey: qk.order(id),
     queryFn: async () => (await ordersApi.get(id)).data,

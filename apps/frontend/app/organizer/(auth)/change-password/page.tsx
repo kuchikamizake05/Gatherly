@@ -1,9 +1,2 @@
-"use client";
-
-import { RouteStub } from "@/components/elements/RouteStub";
-import { useChangeTemporaryPassword } from "@/modules/organizer-auth/hooks";
-
-export default function Page() {
-  const change = useChangeTemporaryPassword();
-  return <RouteStub title="Ganti password sementara" band="14" scenario="B. Masuk pertama kali" pendingIssue="B28" queries={{ change: { status: change.status } }} />;
-}
+import { ChangePasswordForm } from "@/modules/organizer-auth/components/ChangePasswordForm";
+export default function Page() { return <ChangePasswordForm />; }

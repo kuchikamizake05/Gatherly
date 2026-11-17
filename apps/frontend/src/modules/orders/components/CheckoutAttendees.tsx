@@ -204,8 +204,8 @@ function AttendeeForm({ slug, qty, event, ticket, me, router }: FormProps) {
     },
   );
 
-  const subtotal=qty*ticket.price;
-  const total = subtotal+Math.round(subtotal*0.05);
+  const subtotal = qty * ticket.price;
+  const total = subtotal + Math.round(subtotal * 0.05);
   const submitLabel = create.isPending ? "Membuat pesanan…" : "Lanjut ke pembayaran";
 
   const main = (

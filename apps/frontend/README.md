@@ -75,10 +75,30 @@ src/
 
 ## Data dan mock
 
+Antarmuka admin untuk issue #70 sampai #74 memiliki [panduan verifikasi, data demo, dan batas integrasi backend](../../docs/frontend-admin-70-74.md).
+
 - Semua request lewat `api` di `src/lib/api/client.ts`. Cookie sesi dan header CSRF sudah diurus.
-- Endpoint yang belum dibuat backend ditandai `pending: true` di `api.ts` dan selalu memakai data contoh. Nomor issue backend ada di komentar tiap file (B28 sampai B42).
-- Begitu endpoint asli siap, hapus `pending: true`. Halaman tidak perlu diubah selama bentuk datanya sama.
+- Mock hanya aktif dengan `NEXT_PUBLIC_API_MOCK=true`. Jika false/tidak diisi, semua request memakai HTTP asli, termasuk endpoint yang ditandai pending.
+- `pending: true` hanya metadata kontrak backend. Tidak ada fallback dari error API ke fixture atau sukses lokal. Nomor issue backend ada di komentar tiap file (B28 sampai B42).
+- Begitu endpoint asli siap, hapus `pending: true` setelah verifikasi kontrak. Respons workspace penting diperiksa saat runtime; data yang tidak lengkap menjadi keadaan gagal yang dapat dicoba ulang.
 - Bentuk data untuk endpoint yang sudah ada mengikuti `docs/api-contract.md`. Cocokkan dengan Swagger saat integrasi.
+
+## Build produksi dan tes HTTP
+
+Isi `API_INTERNAL_URL` dengan origin HTTPS backend (tanpa path `/api/v1`) sebelum build. Biarkan `NEXT_PUBLIC_API_URL` kosong agar browser memakai proxy satu origin.
+
+```sh
+pnpm test:config
+pnpm build:production
+pnpm typecheck
+pnpm test:live
+```
+
+`build:production` memaksa mock mati dan menolak origin backend HTTP/localhost, URL dengan credential, path, query, atau fragment. `vercel.json` memakai command ini; root proyek hosting harus `apps/frontend`.
+
+`test:live` menjalankan hasil build melalui `next start` pada port 3102, lalu mengintersep HTTP dengan respons kontrak terkontrol. Ini memeriksa transport, cookie, CSRF, penolakan respons rusak, expiry sesi, dan retry idempoten; belum membuktikan backend tim atau provider pembayaran beroperasi. Jangan menjalankan `next dev` bersamaan dengan pembuatan build produksi.
+
+Suite demo terpisah: `pnpm test:e2e --workers=3`, memakai port 3101 dan mock eksplisit. [Kebutuhan integrasi backend](../../docs/implementation/workspace-api-handoff.md) dan [panduan deployment](../../docs/deployment-frontend.md) menjelaskan pekerjaan yang masih diperlukan.
 
 ## Komponen dasar yang sudah sesuai desain
 
