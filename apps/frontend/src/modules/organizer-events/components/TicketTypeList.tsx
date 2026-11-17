@@ -10,7 +10,8 @@ import { DangerConfirmDialog } from "@/components/elements/DangerConfirmDialog";
 import { useOnline } from "@/hooks/use-online";
 import { useWorkspaceMe } from "@/modules/organizer-auth/hooks";
 import { formatRupiah } from "@/lib/format";
-import { useOrgEvent, useSetTicketSales } from "../hooks";
+import { Trash2 } from "lucide-react";
+import { useOrgEvent, useRemoveTicketType, useSetTicketSales } from "../hooks";
 import type { OrgTicketType } from "../types";
 export function TicketTypeList() {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +20,8 @@ export function TicketTypeList() {
   const online = useOnline();
   const me = useWorkspaceMe();
   const [selected, setSelected] = useState<OrgTicketType | null>(null);
+  const remove = useRemoveTicketType(id);
+  const [deleting, setDeleting] = useState<OrgTicketType | null>(null);
   if (event.isPending || event.isError)
     return (
       <QueryState
@@ -32,17 +35,34 @@ export function TicketTypeList() {
     !!me.data?.organizer.frozen ||
     ["cancelled", "ended"].includes(event.data.status);
   const action = (t: OrgTicketType) => (
-    <Button
-      variant="outline"
-      size="sm"
-      disabled={disabled}
-      onClick={() => {
-        setSales.reset();
-        setSelected(t);
-      }}
-    >
-      {t.salesStopped ? "Lanjutkan penjualan" : "Hentikan penjualan"}
-    </Button>
+    <div className="flex items-center justify-end gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={disabled}
+        onClick={() => {
+          setSales.reset();
+          setSelected(t);
+        }}
+      >
+        {t.salesStopped ? "Lanjutkan penjualan" : "Hentikan penjualan"}
+      </Button>
+      {/* Jenis tiket hanya bisa dihapus bila belum ada yang terjual atau sedang dipesan. */}
+      {t.sold + t.reserved === 0 && (
+        <Button
+          variant="ghost"
+          size="icon"
+          disabled={disabled}
+          aria-label={`Hapus ${t.name}`}
+          onClick={() => {
+            remove.reset();
+            setDeleting(t);
+          }}
+        >
+          <Trash2 className="size-4" />
+        </Button>
+      )}
+    </div>
   );
   return (
     <section className="space-y-4 rounded-lg bg-background p-4 md:p-6">
@@ -90,7 +110,7 @@ export function TicketTypeList() {
             <Badge tone={t.salesStopped ? "warning" : "success"}>
               {t.salesStopped ? "Dihentikan" : "Aktif"}
             </Badge>
-            <div>{action(t)}</div>
+            <div className="flex justify-start">{action(t)}</div>
           </div>
         )}
       />
@@ -122,6 +142,25 @@ export function TicketTypeList() {
               },
             },
           )
+        }
+      />
+      <DangerConfirmDialog
+        open={!!deleting}
+        onOpenChange={(open) => !open && !remove.isPending && setDeleting(null)}
+        title="Hapus jenis tiket?"
+        description={`${deleting?.name ?? "Jenis tiket"} dihapus dari acara dan tidak bisa dibeli lagi. Tindakan ini tidak dapat dibatalkan.`}
+        confirmLabel="Hapus jenis tiket"
+        canConfirm={!disabled}
+        loading={remove.isPending}
+        error={remove.error?.message}
+        onConfirm={() =>
+          deleting &&
+          remove.mutate(deleting.id, {
+            onSuccess: () => {
+              setDeleting(null);
+              toast.success("Jenis tiket dihapus");
+            },
+          })
         }
       />
     </section>
