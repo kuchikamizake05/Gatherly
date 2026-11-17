@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import imageCompression from "browser-image-compression";
 import { FileImage, FileText, Upload, X } from "lucide-react";
 
@@ -22,9 +22,18 @@ import { cn } from "@/lib/utils";
  * />
  */
 
-export type UploadedFile = { id: string; name: string; size: number; type: string; url?: string };
+export type UploadedFile = {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  url?: string;
+};
 
-export type UploadFn = (file: File, opts: { onProgress: (percent: number) => void; signal: AbortSignal }) => Promise<UploadedFile>;
+export type UploadFn = (
+  file: File,
+  opts: { onProgress: (percent: number) => void; signal: AbortSignal },
+) => Promise<UploadedFile>;
 
 type FileUploadProps = {
   label: ReactNode;
@@ -43,7 +52,12 @@ type FileUploadProps = {
 };
 
 const MB = 1024 * 1024;
-const DEFAULT_ACCEPT = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+const DEFAULT_ACCEPT = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "application/pdf",
+];
 const LABEL: Record<string, string> = {
   "image/jpeg": "JPG",
   "image/png": "PNG",
@@ -61,7 +75,9 @@ const extension = (name: string) => name.split(".").pop()?.toUpperCase() ?? "";
 
 const formatList = (types: string[]) => {
   const names = [...new Set(types.map((t) => LABEL[t] ?? t))];
-  return names.length > 1 ? `${names.slice(0, -1).join(", ")}, atau ${names[names.length - 1]}` : names[0];
+  return names.length > 1
+    ? `${names.slice(0, -1).join(", ")}, atau ${names[names.length - 1]}`
+    : names[0];
 };
 
 type Status =
@@ -89,11 +105,18 @@ export function FileRow({
 }) {
   const Icon = isPdf ? FileText : FileImage;
   return (
-    <div className={cn("flex items-center gap-3 rounded-lg border border-border-strong px-3.5 py-3", className)}>
+    <div
+      className={cn(
+        "flex items-center gap-3 rounded-lg border border-border-strong px-3.5 py-3",
+        className,
+      )}
+    >
       <span
         className={cn(
           "flex size-10 shrink-0 items-center justify-center rounded-md",
-          tone === "danger" ? "bg-danger-tint text-danger" : "bg-surface-2 text-foreground",
+          tone === "danger"
+            ? "bg-danger-tint text-danger"
+            : "bg-surface-2 text-foreground",
         )}
         aria-hidden
       >
@@ -102,11 +125,29 @@ export function FileRow({
       <span className="flex min-w-0 flex-1 flex-col gap-1.5">
         <span className="truncate text-sm font-bold">{name}</span>
         {progress !== undefined ? (
-          <span className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
-            <span className="block h-full rounded-full bg-foreground transition-[width] duration-200" style={{ width: `${progress}%` }} />
+          <span
+            className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2"
+            role="progressbar"
+            aria-valuenow={progress}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <span
+              className="block h-full rounded-full bg-foreground transition-[width] duration-200"
+              style={{ width: `${progress}%` }}
+            />
           </span>
         ) : (
-          note && <span className={cn("text-[13px] font-medium", tone === "danger" ? "text-danger-ink" : "text-text-secondary")}>{note}</span>
+          note && (
+            <span
+              className={cn(
+                "text-[13px] font-medium",
+                tone === "danger" ? "text-danger-ink" : "text-text-secondary",
+              )}
+            >
+              {note}
+            </span>
+          )
         )}
       </span>
       {action}
@@ -131,6 +172,7 @@ export function FileUpload({
   const inputId = id ?? autoId;
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  useEffect(() => () => abortRef.current?.abort(), []);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [dragging, setDragging] = useState(false);
 
@@ -138,7 +180,11 @@ export function FileUpload({
     const isPdf = raw.type === "application/pdf";
     if (!accept.includes(raw.type)) {
       const ext = extension(raw.name) || "ini";
-      setStatus({ kind: "error", name: raw.name, message: `Format ${ext} belum didukung. Gunakan ${formatList(accept)}.` });
+      setStatus({
+        kind: "error",
+        name: raw.name,
+        message: `Format ${ext} belum didukung. Gunakan ${formatList(accept)}.`,
+      });
       return;
     }
 
@@ -155,7 +201,12 @@ export function FileUpload({
           maxWidthOrHeight: 2400,
           useWebWorker: true,
           signal: controller.signal,
-          onProgress: (p) => setStatus({ kind: "uploading", name: raw.name, percent: Math.round(p * 0.3) }),
+          onProgress: (p) =>
+            setStatus({
+              kind: "uploading",
+              name: raw.name,
+              percent: Math.round(p * 0.3),
+            }),
         });
         file = new File([blob], raw.name, { type: blob.type || raw.type });
       } catch {
@@ -165,20 +216,34 @@ export function FileUpload({
 
     const limit = isPdf ? maxPdfBytes : maxImageBytes;
     if (file.size > limit) {
-      setStatus({ kind: "error", name: raw.name, message: `Ukuran berkas ${formatBytes(raw.size)}. Maksimal ${formatBytes(limit)}.` });
+      setStatus({
+        kind: "error",
+        name: raw.name,
+        message: `Ukuran berkas ${formatBytes(raw.size)}. Maksimal ${formatBytes(limit)}.`,
+      });
       return;
     }
 
     try {
       const done = await upload(file, {
         signal: controller.signal,
-        onProgress: (p) => setStatus({ kind: "uploading", name: raw.name, percent: isPdf ? p : 30 + Math.round(p * 0.7) }),
+        onProgress: (p) =>
+          setStatus({
+            kind: "uploading",
+            name: raw.name,
+            percent: isPdf ? p : 30 + Math.round(p * 0.7),
+          }),
       });
+      if (controller.signal.aborted) return;
       setStatus({ kind: "idle" });
       onChange(done);
     } catch {
       if (controller.signal.aborted) return;
-      setStatus({ kind: "error", name: raw.name, message: "Berkas gagal diunggah. Periksa koneksi Anda, lalu coba lagi." });
+      setStatus({
+        kind: "error",
+        name: raw.name,
+        message: "Berkas gagal diunggah. Periksa koneksi Anda, lalu coba lagi.",
+      });
     }
   };
 
@@ -207,7 +272,14 @@ export function FileUpload({
 
   let content: ReactNode;
   if (status.kind === "uploading") {
-    content = <FileRow name={status.name} progress={status.percent} isPdf={status.name.toLowerCase().endsWith(".pdf")} action={removeButton(cancel, "Batalkan unggahan")} />;
+    content = (
+      <FileRow
+        name={status.name}
+        progress={status.percent}
+        isPdf={status.name.toLowerCase().endsWith(".pdf")}
+        action={removeButton(cancel, "Batalkan unggahan")}
+      />
+    );
   } else if (status.kind === "error") {
     content = (
       <FileRow
@@ -242,13 +314,23 @@ export function FileUpload({
         }}
         className={cn(
           "flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed px-4 py-6 text-center transition-colors",
-          dragging ? "border-foreground bg-primary-tint" : error ? "border-danger bg-surface" : "border-border-strong bg-surface [@media(hover:hover)]:hover:border-foreground",
+          dragging
+            ? "border-foreground bg-primary-tint"
+            : error
+              ? "border-danger bg-surface"
+              : "border-border-strong bg-surface [@media(hover:hover)]:hover:border-foreground",
           disabled && "cursor-not-allowed opacity-60",
         )}
       >
         <Upload className="size-5" aria-hidden />
-        <span className="text-sm font-bold">Seret berkas ke sini atau pilih berkas</span>
-        {hint && <span className="text-[13px] font-medium text-text-tertiary">{hint}</span>}
+        <span className="text-sm font-bold">
+          Seret berkas ke sini atau pilih berkas
+        </span>
+        {hint && (
+          <span className="text-[13px] font-medium text-text-tertiary">
+            {hint}
+          </span>
+        )}
       </label>
     );
   }
@@ -269,7 +351,11 @@ export function FileUpload({
         onChange={(e) => pick(e.target.files)}
         className="sr-only"
       />
-      {error && status.kind === "idle" && <p className="text-[13px] text-danger-ink" role="alert">{error}</p>}
+      {error && status.kind === "idle" && (
+        <p className="text-[13px] text-danger-ink" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
