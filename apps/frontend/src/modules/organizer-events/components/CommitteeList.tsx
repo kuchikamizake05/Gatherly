@@ -142,6 +142,7 @@ export function CommitteeList({ eventId }: { eventId: string }) {
           if (!busy) setOpen(value);
         }}
         title="Tugaskan panitia"
+        form
         description="Pilih anggota tim yang akan memindai tiket acara ini."
       >
         <div className="max-h-80 space-y-2 overflow-y-auto">

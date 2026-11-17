@@ -889,6 +889,7 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
               <Button
                 type="button"
                 variant="outline"
+                className="w-full md:w-auto"
                 onClick={() => form.setValue("terms", [...values.terms, ""])}
               >
                 <Plus className="size-4" />
@@ -1021,6 +1022,7 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
                     <Button
                       variant="outline"
                       type="button"
+                      className="w-full md:w-auto"
                       onClick={() =>
                         form.setValue("performers", [
                           ...values.performers,

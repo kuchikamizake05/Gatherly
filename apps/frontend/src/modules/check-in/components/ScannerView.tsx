@@ -49,6 +49,49 @@ function sound(valid: boolean) {
     oscillator.onended = () => void audio.close();
   } catch {}
 }
+/** Penyebab kamera gagal menyala. qr-scanner meneruskan error getUserMedia, atau teks "Camera not found." */
+function cameraProblem(error: unknown) {
+  const name = error instanceof Error ? error.name : "";
+  const text = String(error instanceof Error ? error.message : error);
+  if (typeof window !== "undefined" && !window.isSecureContext)
+    return "insecure" as const;
+  if (name === "NotAllowedError" || name === "SecurityError")
+    return "denied" as const;
+  if (name === "NotReadableError" || name === "AbortError")
+    return "busy" as const;
+  if (
+    name === "NotFoundError" ||
+    name === "OverconstrainedError" ||
+    /not found/i.test(text)
+  )
+    return "missing" as const;
+  return "denied" as const;
+}
+
+const CAMERA_COPY = {
+  loading: {
+    title: "Mengaktifkan kamera…",
+    body: "Izinkan kamera untuk mulai memindai tiket.",
+  },
+  ready: { title: "", body: "" },
+  denied: {
+    title: "Akses kamera ditolak",
+    body: "Browser tidak lagi menampilkan permintaan izin setelah ditolak. Klik ikon gembok di kolom alamat, izinkan Kamera, lalu coba lagi. Anda juga bisa memakai pencarian manual.",
+  },
+  missing: {
+    title: "Kamera tidak ditemukan",
+    body: "Perangkat ini tidak memiliki kamera yang bisa dipakai. Gunakan HP untuk memindai, atau pakai pencarian manual.",
+  },
+  busy: {
+    title: "Kamera sedang dipakai",
+    body: "Tutup aplikasi lain yang memakai kamera (misalnya Zoom atau Meet), lalu coba lagi.",
+  },
+  insecure: {
+    title: "Kamera tidak tersedia di alamat ini",
+    body: "Kamera hanya bisa dipakai di alamat https. Buka halaman ini lewat alamat resmi Gatherlyy.",
+  },
+} as const;
+
 export function ScannerView({ eventId }: { eventId: string }) {
   const me = useWorkspaceMe();
   const account = me.data?.username ?? "";
@@ -64,9 +107,9 @@ export function ScannerView({ eventId }: { eventId: string }) {
   const video = useRef<HTMLVideoElement>(null);
   const locked = useRef(false);
   const mounted = useRef(true);
-  const [camera, setCamera] = useState<"loading" | "ready" | "denied">(
-    "loading",
-  );
+  const [camera, setCamera] = useState<
+    "loading" | "ready" | "denied" | "missing" | "busy" | "insecure"
+  >("loading");
   const [cameraAttempt, setCameraAttempt] = useState(0);
   const [feedback, setFeedback] = useState<ScanFeedback | null>(null);
   const [muted, setMuted] = useState(false);
@@ -174,12 +217,12 @@ export function ScannerView({ eventId }: { eventId: string }) {
           await camera.start();
           if (stopped) camera.destroy();
           else setCamera("ready");
-        } catch {
-          if (!stopped) setCamera("denied");
+        } catch (error) {
+          if (!stopped) setCamera(cameraProblem(error));
         }
       })
-      .catch(() => {
-        if (!stopped) setCamera("denied");
+      .catch((error) => {
+        if (!stopped) setCamera(cameraProblem(error));
       });
     return () => {
       stopped = true;
@@ -242,17 +285,11 @@ export function ScannerView({ eventId }: { eventId: string }) {
               ) : (
                 <CameraOff className="size-6" />
               )}
-              <h2 className="text-lg font-bold">
-                {camera === "loading"
-                  ? "Mengaktifkan kamera…"
-                  : "Akses kamera belum diizinkan"}
-              </h2>
+              <h2 className="text-lg font-bold">{CAMERA_COPY[camera].title}</h2>
               <p className="max-w-sm text-sm leading-relaxed">
-                {camera === "loading"
-                  ? "Izinkan kamera untuk mulai memindai tiket."
-                  : "Izinkan kamera di pengaturan browser, atau gunakan pencarian manual."}
+                {CAMERA_COPY[camera].body}
               </p>
-              {camera === "denied" && (
+              {camera !== "loading" && (
                 <Button
                   variant="outline"
                   onClick={() => setCameraAttempt((value) => value + 1)}
