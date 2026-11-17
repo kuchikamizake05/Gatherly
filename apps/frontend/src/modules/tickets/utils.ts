@@ -50,7 +50,7 @@ export function googleCalendarUrl(e: TicketEvent, detailsUrl: string) {
     text: e.title,
     dates: `${icsDate(e.startsAt)}/${icsDate(e.endsAt)}`,
     location: location(e),
-    details: `E-tiket Gatherly: ${detailsUrl}`,
+    details: `E-tiket Gatherlyy: ${detailsUrl}`,
   });
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
@@ -62,7 +62,7 @@ export function downloadIcs(e: TicketEvent, detailsUrl: string, uid: string) {
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Gatherly//E-tiket//ID",
+    "PRODID:-//Gatherlyy//E-tiket//ID",
     "CALSCALE:GREGORIAN",
     "BEGIN:VEVENT",
     `UID:${uid}@${SITE_DOMAIN}`,
@@ -71,7 +71,7 @@ export function downloadIcs(e: TicketEvent, detailsUrl: string, uid: string) {
     `DTEND:${icsDate(e.endsAt)}`,
     `SUMMARY:${escapeIcs(e.title)}`,
     `LOCATION:${escapeIcs(location(e))}`,
-    `DESCRIPTION:${escapeIcs(`E-tiket Gatherly: ${detailsUrl}`)}`,
+    `DESCRIPTION:${escapeIcs(`E-tiket Gatherlyy: ${detailsUrl}`)}`,
     "END:VEVENT",
     "END:VCALENDAR",
   ];

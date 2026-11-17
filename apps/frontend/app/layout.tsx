@@ -13,7 +13,7 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Gatherly", template: "%s | Gatherly" },
+  title: { default: "Gatherlyy", template: "%s | Gatherlyy" },
   description: "Temukan acara komunitas di sekitar Anda dan pesan tiketnya dalam semenit.",
   icons: {
     icon: [

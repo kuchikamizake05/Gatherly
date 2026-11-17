@@ -28,7 +28,7 @@ export function AdminAuthShell({ children }: { children: ReactNode }) {
         <div className="flex items-center gap-2">
           <Image
             src="/gatherly-horizontal-ink.svg"
-            alt="Gatherly"
+            alt="Gatherlyy"
             width={120}
             height={30}
             priority
@@ -61,7 +61,7 @@ export function AdminAuthShell({ children }: { children: ReactNode }) {
         ))}
         <div className="absolute bottom-20 left-12 right-12">
           <p className="text-3xl font-extrabold tracking-tight">
-            Pusat kendali tim Gatherly.
+            Pusat kendali tim Gatherlyy.
           </p>
           <p className="mt-2 text-base text-inverse-foreground/70">
             Tinjau pengajuan organizer, kelola akun, dan jaga kualitas acara.

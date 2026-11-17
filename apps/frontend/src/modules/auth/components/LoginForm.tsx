@@ -78,7 +78,7 @@ export function LoginForm({ heading, returnTo: returnToProp, embedded = false }:
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-1 flex-col gap-5">
       {heading ?? (
-        <AuthHeading title="Masuk ke Gatherly">Selamat datang kembali. Masuk untuk melihat tiket dan melanjutkan pembelian.</AuthHeading>
+        <AuthHeading title="Masuk ke Gatherlyy">Selamat datang kembali. Masuk untuk melihat tiket dan melanjutkan pembelian.</AuthHeading>
       )}
 
       {!online && (

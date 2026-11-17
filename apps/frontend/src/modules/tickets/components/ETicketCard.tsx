@@ -71,7 +71,7 @@ export function ETicketCard({ ticket, showStatus = true, className }: { ticket: 
     >
       <div className="flex flex-col gap-3.5 bg-primary px-[22px] pt-[22px] pb-5">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-bold">E-tiket Gatherly</span>
+          <span className="text-sm font-bold">E-tiket Gatherlyy</span>
           <Ticket className="size-[18px]" aria-hidden />
         </div>
         <h2 className="text-2xl leading-tight font-extrabold tracking-tight">{ticket.event.title}</h2>

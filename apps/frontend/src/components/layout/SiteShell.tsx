@@ -42,7 +42,7 @@ const HIDE_MOBILE_HEADER = [/^\/saved$/, /^\/organizers\/[^/]+$/, /^\/events$/, 
 
 function Logo({ size = 28 }: { size?: number }) {
   return (
-    <Link href="/" aria-label="Gatherly, ke beranda" className="flex shrink-0 items-center gap-2">
+    <Link href="/" aria-label="Gatherlyy, ke beranda" className="flex shrink-0 items-center gap-2">
       <Image src="/gatherly-symbol-ink.svg" alt="" width={size} height={size} priority />
       <span className="text-[20px] font-extrabold tracking-tight md:text-[22px]">gatherly</span>
     </Link>
@@ -165,7 +165,7 @@ const FOOTER_COLUMNS: { title: string; desktopOnly?: boolean; links: { label: st
     ],
   },
   {
-    title: "Gatherly",
+    title: "Gatherlyy",
     links: [
       { label: "Tentang kami", href: "/#tentang" },
       { label: "Pusat bantuan", href: `mailto:${MAIL.halo}` },
@@ -189,13 +189,13 @@ function Footer({ guest }: { guest: boolean }) {
               Titik kumpul acara komunitas. Temukan acara, pesan tiket, dan masuk cukup dengan kode QR.
             </p>
             <div className="flex gap-4 text-neutral-400">
-              <a href="https://instagram.com" aria-label="Instagram Gatherly" className="press">
+              <a href="https://instagram.com" aria-label="Instagram Gatherlyy" className="press">
                 <InstagramIcon />
               </a>
-              <a href="https://tiktok.com" aria-label="TikTok Gatherly" className="press">
+              <a href="https://tiktok.com" aria-label="TikTok Gatherlyy" className="press">
                 <TikTokIcon />
               </a>
-              <a href="https://x.com" aria-label="X Gatherly" className="press">
+              <a href="https://x.com" aria-label="X Gatherlyy" className="press">
                 <XIcon />
               </a>
             </div>
@@ -218,7 +218,7 @@ function Footer({ guest }: { guest: boolean }) {
           </div>
         </div>
         <div className="flex items-center justify-between gap-5 border-t border-white/10 pt-6">
-          <p className="text-sm text-neutral-500">© 2026 Gatherly</p>
+          <p className="text-sm text-neutral-500">© 2026 Gatherlyy</p>
           <div className="flex items-center gap-6">
             {guest && (
               <Link href="/login" className="hidden text-sm font-medium text-neutral-400 md:inline [@media(hover:hover)]:hover:text-white">
@@ -229,7 +229,7 @@ function Footer({ guest }: { guest: boolean }) {
               <Link href="/become-organizer">
                 <Ticket aria-hidden />
                 <span className="md:hidden">Jual tiket</span>
-                <span className="hidden md:inline">Jual tiket di Gatherly</span>
+                <span className="hidden md:inline">Jual tiket di Gatherlyy</span>
               </Link>
             </Button>
           </div>

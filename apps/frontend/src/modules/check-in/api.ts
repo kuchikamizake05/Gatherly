@@ -119,7 +119,7 @@ const getHistory = (id: string) =>
       checkedInAt: "2026-11-21T11:58:00Z",
       checkedInBy: { id: "c_nisa", name: "Nisa Rahmawati" },
       outcome: "rejected",
-      reason: "Bukan e-tiket Gatherly",
+      reason: "Bukan e-tiket Gatherlyy",
       method: "scan",
     },
   ]);

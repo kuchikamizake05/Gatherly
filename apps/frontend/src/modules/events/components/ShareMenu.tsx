@@ -14,7 +14,7 @@ import { TelegramIcon, WhatsAppIcon, XIcon } from "@/components/elements/BrandIc
 export function ShareMenu({ title, children }: { title: string; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const url = typeof window === "undefined" ? "" : window.location.href.split("?")[0];
-  const text = `${title} di Gatherly`;
+  const text = `${title} di Gatherlyy`;
 
   const copy = async () => {
     setOpen(false);

@@ -50,7 +50,7 @@ export function AuthShell({ children }: { children: ReactNode }) {
         <OfflineBanner />
         <div className="flex flex-1 flex-col px-5 pt-3 md:px-20 md:pt-10">
           <div className="hidden md:block">
-            <Link href="/" aria-label="Gatherly, ke beranda" className="flex w-fit items-center gap-2">
+            <Link href="/" aria-label="Gatherlyy, ke beranda" className="flex w-fit items-center gap-2">
               <Image src="/gatherly-symbol-ink.svg" alt="" width={28} height={28} priority />
               <span className="text-[22px] font-extrabold">gatherly</span>
             </Link>

@@ -243,7 +243,7 @@ class AdminJourneys(unittest.TestCase):
         page.goto(self.base + "/login", wait_until="networkidle")
         page.get_by_label("Email kerja").fill("nadia@gmail.com")
         page.get_by_label("Password", exact=True).focus()
-        page.get_by_text("Gunakan email kerja Gatherly.", exact=True).wait_for()
+        page.get_by_text("Gunakan email kerja Gatherlyy.", exact=True).wait_for()
         page.get_by_role("button", name="Lupa password?", exact=True).click()
         page.get_by_role("heading", name="Hubungi admin utama", exact=True).wait_for()
         page.get_by_role("button", name="Kembali ke masuk", exact=True).click()

@@ -37,7 +37,7 @@ function Heading({ sub }: { sub?: ReactNode }) {
     <div className="flex flex-col gap-2">
       <h1 className="text-[30px] leading-tight font-extrabold tracking-tight md:text-[40px]">Pengajuan organizer</h1>
       <p className="text-[15px] font-medium text-text-secondary md:text-base">
-        {sub ?? "Ajukan diri Anda untuk menjual tiket di Gatherly. Tim kami meninjau setiap pengajuan paling lambat 3 hari kerja."}
+        {sub ?? "Ajukan diri Anda untuk menjual tiket di Gatherlyy. Tim kami meninjau setiap pengajuan paling lambat 3 hari kerja."}
       </p>
     </div>
   );
@@ -47,7 +47,7 @@ function Heading({ sub }: { sub?: ReactNode }) {
 function TypeSwitch({ current }: { current: "new" | "fix" }) {
   const items = [
     { key: "new", href: "/become-organizer", title: "Daftar baru", desc: "Belum pernah mengajukan sebagai organizer.", icon: UserPlus },
-    { key: "fix", href: "/become-organizer/fix", title: "Perbaiki pengajuan", desc: "Gunakan nomor pengajuan dari email tim Gatherly.", icon: FilePen },
+    { key: "fix", href: "/become-organizer/fix", title: "Perbaiki pengajuan", desc: "Gunakan nomor pengajuan dari email tim Gatherlyy.", icon: FilePen },
   ] as const;
   return (
     <div role="radiogroup" aria-label="Jenis pengajuan" className="grid gap-3 md:grid-cols-2 md:gap-4">
@@ -206,7 +206,7 @@ function OpenForm({ onOpened }: { onOpened: (a: Application, email: string) => v
             onError: (e) => {
               const status = e instanceof ApiError ? e.status : 0;
               const code = e instanceof ApiError ? e.code : "";
-              if (status === 404) setError("number", { message: "Nomor pengajuan dan email tidak cocok. Periksa kembali email dari tim Gatherly." });
+              if (status === 404) setError("number", { message: "Nomor pengajuan dan email tidak cocok. Periksa kembali email dari tim Gatherlyy." });
               else if (code === "NOT_NEEDS_FIX") setNotice({ kind: "reviewing", number });
               else if (status === 410 || code === "FIX_EXPIRED") setNotice({ kind: "expired", number });
               else toast.error("Pengajuan gagal dibuka. Periksa koneksi Anda, lalu coba lagi.");
@@ -218,7 +218,7 @@ function OpenForm({ onOpened }: { onOpened: (a: Application, email: string) => v
     >
       <div className="flex flex-col gap-1.5">
         <h2 className="text-xl font-extrabold">Buka pengajuan Anda</h2>
-        <p className="text-sm font-medium text-text-secondary">Masukkan nomor pengajuan dan email yang tercantum pada email dari tim Gatherly.</p>
+        <p className="text-sm font-medium text-text-secondary">Masukkan nomor pengajuan dan email yang tercantum pada email dari tim Gatherlyy.</p>
       </div>
       {notice?.kind === "reviewing" && (
         <Alert tone="info" title="Pengajuan sedang ditinjau">
