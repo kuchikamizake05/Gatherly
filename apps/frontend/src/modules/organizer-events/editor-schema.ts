@@ -30,6 +30,10 @@ export const editorSchema = z
     performerLabel: z.string(),
     showPerformers: z.boolean(),
     showRemaining: z.boolean(),
+    /** Waktu check-in diatur sendiri. Bila tidak, check-in dibuka 2 jam sebelum mulai sampai acara selesai. */
+    customCheckIn: z.boolean(),
+    checkInOpensAt: z.string(),
+    checkInClosesAt: z.string(),
     performers: z.array(
       z.object({
         name: z.string().trim(),
@@ -72,6 +76,34 @@ export const editorSchema = z
         path: ["venueName"],
         message: "Gunakan tautan acara berawalan https://",
       });
+    if (data.customCheckIn) {
+      const opens = Date.parse(data.checkInOpensAt);
+      const closes = Date.parse(data.checkInClosesAt);
+      if (!Number.isFinite(opens))
+        ctx.addIssue({
+          code: "custom",
+          path: ["checkInOpensAt"],
+          message: "Waktu buka check-in wajib diisi",
+        });
+      if (!Number.isFinite(closes))
+        ctx.addIssue({
+          code: "custom",
+          path: ["checkInClosesAt"],
+          message: "Waktu tutup check-in wajib diisi",
+        });
+      else if (Number.isFinite(opens) && closes <= opens)
+        ctx.addIssue({
+          code: "custom",
+          path: ["checkInClosesAt"],
+          message: "Waktu tutup harus setelah waktu buka",
+        });
+      else if (data.endsAt && closes > Date.parse(data.endsAt))
+        ctx.addIssue({
+          code: "custom",
+          path: ["checkInClosesAt"],
+          message: "Check-in harus ditutup paling lambat saat acara selesai",
+        });
+    }
     if (data.showPerformers)
       data.performers.forEach((performer, index) => {
         if (!performer.name)
@@ -102,11 +134,22 @@ export const emptyEditor: EditorValues = {
   performerLabel: "Penampil",
   showPerformers: false,
   showRemaining: true,
+  customCheckIn: false,
+  checkInOpensAt: "",
+  checkInClosesAt: "",
   performers: [],
 };
 export const stepFields = [
   ["title", "category", "description", "posterAssetId"],
-  ["startsAt", "endsAt", "venueName", "address", "city"],
+  [
+    "startsAt",
+    "endsAt",
+    "venueName",
+    "address",
+    "city",
+    "checkInOpensAt",
+    "checkInClosesAt",
+  ],
   [],
   ["terms", "performers"],
   [],

@@ -91,11 +91,31 @@ function serverReady(values: EditorValues) {
  */
 function payload(values: EditorValues): EventInput {
   const filled = (v?: string) => (v && v.trim() ? v : undefined);
+  const { customCheckIn, checkInOpensAt, checkInClosesAt, ...rest } = values;
+  const startsAt = fromLocalInput(values.startsAt, values.timezone);
+  const endsAt = fromLocalInput(values.endsAt, values.timezone);
+  // Backend menyimpan waktu check-in apa adanya dan tidak bisa dikosongkan lagi. Jadi selalu dikirim:
+  // waktu yang diatur sendiri, atau bawaan (2 jam sebelum mulai sampai selesai) dari jadwal terbaru.
+  const window =
+    customCheckIn && checkInOpensAt && checkInClosesAt
+      ? {
+          checkInOpensAt: fromLocalInput(checkInOpensAt, values.timezone),
+          checkInClosesAt: fromLocalInput(checkInClosesAt, values.timezone),
+        }
+      : startsAt && endsAt && Number.isFinite(Date.parse(startsAt))
+        ? {
+            checkInOpensAt: new Date(
+              Date.parse(startsAt) - 2 * 3600_000,
+            ).toISOString(),
+            checkInClosesAt: endsAt,
+          }
+        : {};
   return {
-    ...values,
+    ...rest,
+    ...window,
     posterAssetId: filled(values.posterAssetId),
-    startsAt: fromLocalInput(values.startsAt, values.timezone),
-    endsAt: fromLocalInput(values.endsAt, values.timezone),
+    startsAt,
+    endsAt,
     terms: values.terms.filter((term) => term.trim()),
     performers: values.showPerformers
       ? values.performers
@@ -111,6 +131,30 @@ function payload(values: EditorValues): EventInput {
                 : undefined,
           }))
       : [],
+  };
+}
+
+/** Waktu check-in dari backend. Dianggap diatur sendiri bila berbeda dari bawaan (2 jam sebelum mulai, sampai selesai). */
+function initialCheckIn(initial: OrgEvent) {
+  const opens = initial.checkInOpensAt
+    ? Date.parse(initial.checkInOpensAt)
+    : NaN;
+  const closes = initial.checkInClosesAt
+    ? Date.parse(initial.checkInClosesAt)
+    : NaN;
+  const custom =
+    Number.isFinite(opens) &&
+    Number.isFinite(closes) &&
+    (opens !== Date.parse(initial.startsAt) - 2 * 3600_000 ||
+      closes !== Date.parse(initial.endsAt));
+  return {
+    customCheckIn: custom,
+    checkInOpensAt: custom
+      ? toLocalInput(initial.checkInOpensAt!, initial.timezone)
+      : "",
+    checkInClosesAt: custom
+      ? toLocalInput(initial.checkInClosesAt!, initial.timezone)
+      : "",
   };
 }
 
@@ -184,6 +228,7 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
         posterAssetId: initial.posterAssetId ?? "",
         startsAt: toLocalInput(initial.startsAt, initial.timezone),
         endsAt: toLocalInput(initial.endsAt, initial.timezone),
+        ...initialCheckIn(initial),
         showPerformers: !!initial.performers?.length,
         performers: (initial.performers ?? []).map((p) => ({
           ...p,
@@ -744,6 +789,55 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
                   </SelectContent>
                 </Select>
               </Field>
+              <div className="space-y-3">
+                <h3 className="font-bold">Check-in</h3>
+                <label className="flex cursor-pointer items-start gap-3">
+                  <Checkbox
+                    className="mt-0.5"
+                    checked={values.customCheckIn}
+                    onCheckedChange={(checked) => {
+                      form.setValue("customCheckIn", checked === true, {
+                        shouldDirty: true,
+                      });
+                      // Isi awal dengan bawaan supaya tinggal disesuaikan.
+                      if (checked === true && !values.checkInOpensAt) {
+                        const start = new Date(values.startsAt);
+                        if (Number.isFinite(start.getTime())) {
+                          const opens = new Date(
+                            start.getTime() - 2 * 3600_000,
+                          );
+                          const pad = (n: number) => String(n).padStart(2, "0");
+                          form.setValue(
+                            "checkInOpensAt",
+                            `${opens.getFullYear()}-${pad(opens.getMonth() + 1)}-${pad(opens.getDate())}T${pad(opens.getHours())}:${pad(opens.getMinutes())}`,
+                          );
+                        }
+                        if (values.endsAt)
+                          form.setValue("checkInClosesAt", values.endsAt);
+                      }
+                      form.clearErrors(["checkInOpensAt", "checkInClosesAt"]);
+                    }}
+                  />
+                  <span className="flex flex-col gap-0.5">
+                    <span>Atur waktu check-in sendiri</span>
+                    <span className="text-sm text-text-secondary">
+                      {values.customCheckIn
+                        ? "Panitia hanya bisa memindai tiket di antara waktu ini."
+                        : "Bawaan: dibuka 2 jam sebelum acara mulai dan ditutup saat acara selesai."}
+                    </span>
+                  </span>
+                </label>
+                {values.customCheckIn && (
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {input("checkInOpensAt", "Buka check-in", "datetime-local")}
+                    {input(
+                      "checkInClosesAt",
+                      "Tutup check-in",
+                      "datetime-local",
+                    )}
+                  </div>
+                )}
+              </div>
               <h3 className="font-bold">Lokasi</h3>
               <fieldset>
                 <legend className="mb-2 text-sm font-semibold">

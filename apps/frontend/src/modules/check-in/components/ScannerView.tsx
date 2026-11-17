@@ -1,5 +1,6 @@
 "use client";
 
+import { Alert } from "@/components/elements/Alert";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -32,7 +33,7 @@ import {
 import { type LookupTicket } from "../api";
 import { scanError, type ScanFeedback } from "../result";
 import { cn } from "@/lib/utils";
-import { formatTime } from "@/lib/format";
+import { formatDateTimeCompact, formatTime } from "@/lib/format";
 
 function sound(valid: boolean) {
   try {
@@ -91,6 +92,39 @@ const CAMERA_COPY = {
     body: "Kamera hanya bisa dipakai di alamat https. Buka halaman ini lewat alamat resmi Gatherlyy.",
   },
 } as const;
+
+/** Pemberitahuan bila check-in belum dibuka atau sudah ditutup, supaya tidak perlu memindai dulu untuk tahu. */
+function CheckInWindow({
+  opensAt,
+  closesAt,
+}: {
+  opensAt: string;
+  closesAt: string;
+}) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(timer);
+  }, []);
+  const opens = Date.parse(opensAt);
+  const closes = Date.parse(closesAt);
+  if (!Number.isFinite(opens) || !Number.isFinite(closes)) return null;
+  if (now < opens)
+    return (
+      <Alert tone="warning" title="Check-in belum dibuka">
+        Pemindaian dibuka {formatDateTimeCompact(opensAt)} WIB dan ditutup{" "}
+        {formatDateTimeCompact(closesAt)} WIB. Waktunya bisa diubah di Ubah
+        acara, langkah Waktu &amp; tempat.
+      </Alert>
+    );
+  if (now > closes)
+    return (
+      <Alert tone="warning" title="Check-in sudah ditutup">
+        Pemindaian ditutup {formatDateTimeCompact(closesAt)} WIB.
+      </Alert>
+    );
+  return null;
+}
 
 export function ScannerView({ eventId }: { eventId: string }) {
   const me = useWorkspaceMe();
@@ -269,6 +303,12 @@ export function ScannerView({ eventId }: { eventId: string }) {
             : "Memuat hitungan"}
         </Badge>
       </header>
+      {event && (
+        <CheckInWindow
+          opensAt={event.scanOpensAt}
+          closesAt={event.scanClosesAt}
+        />
+      )}
       <div className="flex flex-1 flex-col gap-4 xl:grid xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="relative min-h-64 flex-1 overflow-hidden xl:aspect-video xl:min-h-96 xl:rounded-lg">
           <video
