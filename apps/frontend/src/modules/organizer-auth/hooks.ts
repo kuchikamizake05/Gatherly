@@ -2,26 +2,29 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { useUntilHydrated } from "@/hooks/use-hydrated";
 import { ApiError, setCsrfToken } from "@/lib/api/client";
 import { qk } from "@/lib/api/query-keys";
 
 import { organizerAuthApi } from "./api";
 
 export function useWorkspaceMe() {
-  return useQuery({
-    queryKey: qk.orgMe,
-    queryFn: async ({ signal }) => {
-      try {
-        return await organizerAuthApi.me(undefined, signal);
-      } catch (error) {
-        if (error instanceof ApiError && error.status === 401) return null;
-        throw error;
-      }
-    },
-    staleTime: 30_000,
-    refetchInterval: 30_000,
-    refetchOnWindowFocus: true,
-  });
+  return useUntilHydrated(
+    useQuery({
+      queryKey: qk.orgMe,
+      queryFn: async ({ signal }) => {
+        try {
+          return await organizerAuthApi.me(undefined, signal);
+        } catch (error) {
+          if (error instanceof ApiError && error.status === 401) return null;
+          throw error;
+        }
+      },
+      staleTime: 30_000,
+      refetchInterval: 30_000,
+      refetchOnWindowFocus: true,
+    }),
+  );
 }
 
 export function useWorkspaceLogin() {

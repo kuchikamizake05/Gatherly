@@ -7,6 +7,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 
+import { useUntilHydrated } from "@/hooks/use-hydrated";
 import { ApiError, setCsrfToken } from "@/lib/api/client";
 import { qk } from "@/lib/api/query-keys";
 import type { FieldFlag } from "@/modules/applications/api";
@@ -14,22 +15,24 @@ import type { FieldFlag } from "@/modules/applications/api";
 import { adminApi as a, type ApplicationTab, type OrganizerTab } from "./api";
 
 export function useAdminMe() {
-  return useQuery({
-    queryKey: qk.adminMe,
-    queryFn: async () => {
-      try {
-        return await a.me();
-      } catch (error) {
-        if (error instanceof ApiError && error.status === 401) {
-          if (error.code === "SESSION_EXPIRED")
-            sessionStorage.setItem("gatherly_admin_session_expired", "true");
-          setCsrfToken(null);
-          return null;
+  return useUntilHydrated(
+    useQuery({
+      queryKey: qk.adminMe,
+      queryFn: async () => {
+        try {
+          return await a.me();
+        } catch (error) {
+          if (error instanceof ApiError && error.status === 401) {
+            if (error.code === "SESSION_EXPIRED")
+              sessionStorage.setItem("gatherly_admin_session_expired", "true");
+            setCsrfToken(null);
+            return null;
+          }
+          throw error;
         }
-        throw error;
-      }
-    },
-  });
+      },
+    }),
+  );
 }
 
 export const useAdminLogin = () =>

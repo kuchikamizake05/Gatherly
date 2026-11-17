@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { useUntilHydrated } from "@/hooks/use-hydrated";
 import { ApiError } from "@/lib/api/client";
 import { qk } from "@/lib/api/query-keys";
 
@@ -9,7 +10,7 @@ import { authApi } from "./api";
 
 /** Data pengguna yang sedang masuk. null bila tamu. */
 export function useMe() {
-  return useQuery({
+  return useUntilHydrated(useQuery({
     queryKey: qk.me,
     queryFn: async () => {
       try {
@@ -20,7 +21,7 @@ export function useMe() {
       }
     },
     staleTime: 60_000,
-  });
+  }));
 }
 
 export function useRegister() {
