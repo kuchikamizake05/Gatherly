@@ -1,5 +1,6 @@
 "use client";
 
+import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
 import { useState } from "react";
 import { UserPlus } from "lucide-react";
@@ -161,18 +162,16 @@ export function CommitteeList({ eventId }: { eventId: string }) {
                     key={member.id}
                     className={`flex min-h-16 items-center gap-3 rounded-md border border-border p-3 ${assigned || inactive ? "text-text-disabled" : ""}`}
                   >
-                    <input
-                      type="checkbox"
+                    <Checkbox
                       disabled={assigned || inactive || busy}
                       checked={assigned || selected.includes(member.id)}
-                      onChange={(e) =>
+                      onCheckedChange={(checked) =>
                         setSelected((list) =>
-                          e.target.checked
+                          checked === true
                             ? [...list, member.id]
                             : list.filter((id) => id !== member.id),
                         )
                       }
-                      className="size-5 accent-foreground"
                     />
                     <span className="min-w-0">
                       <span className="block text-sm font-bold">

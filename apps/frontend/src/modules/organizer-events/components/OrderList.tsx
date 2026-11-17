@@ -1,4 +1,5 @@
 "use client";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -462,13 +463,11 @@ export function OrderList() {
                 key={t.id}
                 className="flex min-h-11 cursor-pointer items-center gap-3 text-sm"
               >
-                <input
-                  type="checkbox"
-                  className="size-5"
+                <Checkbox
                   checked={tickets.includes(t.id)}
-                  onChange={(e) =>
+                  onCheckedChange={(checked) =>
                     setTickets((ids) =>
-                      e.target.checked
+                      checked === true
                         ? [...ids, t.id]
                         : ids.filter((value) => value !== t.id),
                     )

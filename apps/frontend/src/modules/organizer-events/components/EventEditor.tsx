@@ -1,5 +1,6 @@
 "use client";
 
+import { Checkbox } from "@/components/ui/checkbox";
 import { DateTimePicker } from "@/components/elements/DateTimePicker";
 import {
   Select,
@@ -720,20 +721,30 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
               />
               <section className="space-y-3 border-t border-border pt-5">
                 <h3 className="font-bold">Pengaturan pembelian</h3>
-                <p className="text-sm text-text-secondary">
-                  Batas tiket per pesanan, 4 tiket
-                </p>
-                <label className="flex min-h-11 items-center gap-3">
-                  <input
-                    type="checkbox"
-                    {...form.register("showRemaining")}
-                    className="size-5 accent-foreground"
+                <label className="flex cursor-pointer items-start gap-3">
+                  <Checkbox
+                    className="mt-0.5"
+                    checked={values.showRemaining}
+                    onCheckedChange={(checked) =>
+                      form.setValue("showRemaining", checked === true, {
+                        shouldDirty: true,
+                      })
+                    }
                   />
-                  Tampilkan sisa tiket di halaman acara
+                  <span className="flex flex-col gap-0.5">
+                    <span>Tampilkan sisa tiket di halaman acara</span>
+                    <span className="text-sm text-text-secondary">
+                      Pembeli melihat jumlah tiket yang masih tersedia.
+                    </span>
+                  </span>
                 </label>
-                <p className="text-sm">
-                  Nama setiap peserta wajib diisi pada e-tiket.
-                </p>
+                <ul className="list-disc space-y-1 pl-5 text-sm text-text-secondary">
+                  <li>Setiap pesanan berisi maksimal 4 tiket.</li>
+                  <li>
+                    Pembeli wajib mengisi nama setiap peserta, dan nama itu
+                    tercetak di e-tiket.
+                  </li>
+                </ul>
               </section>
             </>
           )}
@@ -811,11 +822,14 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
                 <h2 className="text-xl font-extrabold">
                   {values.performerLabel}
                 </h2>
-                <label className="flex min-h-11 items-center gap-3">
-                  <input
-                    type="checkbox"
-                    {...form.register("showPerformers")}
-                    className="size-5 accent-foreground"
+                <label className="flex min-h-11 cursor-pointer items-center gap-3">
+                  <Checkbox
+                    checked={values.showPerformers}
+                    onCheckedChange={(checked) =>
+                      form.setValue("showPerformers", checked === true, {
+                        shouldDirty: true,
+                      })
+                    }
                   />
                   Tampilkan bagian ini di halaman acara
                 </label>
