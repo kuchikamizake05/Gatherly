@@ -39,12 +39,20 @@ export const authApi = {
   },
   register: (input: RegisterInput) =>
     api.post<{ data: OtpChallenge }>("/auth/register", input, { mock: () => wrap(mockChallenge()) }),
-  verifyRegister: (input: VerifyInput) =>
-    api.post<{ data: Me }>("/auth/register/verify", input, { mock: () => wrap(mockMe) }),
+  // Sesi baru membawa token CSRF baru. Tanpa ini, aksi pertama setelah masuk (misalnya Keluar) ditolak sampai halaman dimuat ulang.
+  async verifyRegister(input: VerifyInput) {
+    const res = await api.post<{ data: Me }>("/auth/register/verify", input, { mock: () => wrap(mockMe) });
+    setCsrfToken(res.data.csrfToken);
+    return res;
+  },
   login: (input: LoginInput) =>
     api.post<{ data: OtpChallenge }>("/auth/login", input, { mock: () => wrap(mockChallenge()) }),
-  verifyLogin: (input: VerifyInput) =>
-    api.post<{ data: Me }>("/auth/login/verify", input, { mock: () => wrap(mockMe) }),
+  // Sesi baru membawa token CSRF baru. Tanpa ini, aksi pertama setelah masuk (misalnya Keluar) ditolak sampai halaman dimuat ulang.
+  async verifyLogin(input: VerifyInput) {
+    const res = await api.post<{ data: Me }>("/auth/login/verify", input, { mock: () => wrap(mockMe) });
+    setCsrfToken(res.data.csrfToken);
+    return res;
+  },
   resendOtp: (challengeId: string) =>
     api.post<{ data: OtpChallenge }>("/auth/otp/resend", { challengeId }, { mock: () => wrap(mockChallenge()) }),
   logout: () => api.post<void>("/auth/logout", undefined, { mock: () => undefined }),
