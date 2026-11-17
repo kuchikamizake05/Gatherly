@@ -348,22 +348,32 @@ export async function resendOtp(
   return { expiresAt, resendAt };
 }
 
-export async function createOAuthState(now = new Date()) {
+export async function createOAuthState(
+  now = new Date(),
+  context: { origin?: string; returnTo?: string } = {},
+) {
   const state = createToken();
   await OAuthState.create({
     stateHash: hashToken(state),
+    origin: context.origin,
+    returnTo: context.returnTo,
     expiresAt: new Date(now.getTime() + oauthStateLifetimeMs),
   });
   return state;
 }
 
-export async function consumeOAuthState(state: string, cookieState: string, now = new Date()) {
-  if (!state || state !== cookieState) return false;
+/** Marks the state used and returns where the login started, or null when invalid. */
+export async function consumeOAuthContext(state: string, cookieState: string, now = new Date()) {
+  if (!state || state !== cookieState) return null;
   const consumed = await OAuthState.findOneAndUpdate(
     { stateHash: hashToken(state), usedAt: { $exists: false }, expiresAt: { $gt: now } },
     { $set: { usedAt: now } },
-  );
-  return Boolean(consumed);
+  ).lean();
+  return consumed ? { origin: consumed.origin, returnTo: consumed.returnTo } : null;
+}
+
+export async function consumeOAuthState(state: string, cookieState: string, now = new Date()) {
+  return Boolean(await consumeOAuthContext(state, cookieState, now));
 }
 
 export async function resolveGoogleUser(profile: {

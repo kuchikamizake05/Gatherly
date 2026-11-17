@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 
 import { env } from "../../config/env.js";
+import { isAllowedOrigin } from "../../lib/origins.js";
 import { AppError } from "../../lib/app-error.js";
 import { hashToken } from "../../lib/crypto.js";
 import { Session, User, type UserDocument } from "./auth.models.js";
@@ -107,13 +108,7 @@ export function requireCsrf(
 
 export function validateAllowedOrigin(request: Request, _response: Response, next: NextFunction) {
   const origin = request.get("Origin");
-  if (
-    origin &&
-    !(env.WEB_ORIGINS ?? env.WEB_ORIGIN)
-      .split(",")
-      .map((s) => s.trim())
-      .includes(origin)
-  ) {
+  if (origin && !isAllowedOrigin(origin)) {
     next(new AppError(403, "FORBIDDEN", "Request origin is not allowed."));
     return;
   }

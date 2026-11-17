@@ -129,7 +129,7 @@ workspaceAuthRouter.post(
         key: `workspace-reset:${account.id}:${account.resetTokenHash}`,
         to: account.email,
         subject: "Atur ulang password Gatherly",
-        text: `Buka ${process.env.ORGANIZER_ORIGIN ?? process.env.WEB_ORIGIN ?? "http://localhost:3000"}/organizer/reset-password?token=${encodeURIComponent(token)}. Tautan berlaku 30 menit.`,
+        text: `Buka ${process.env.ORGANIZER_ORIGIN ?? "http://organizer.localhost:3000"}/reset-password?token=${encodeURIComponent(token)}. Tautan berlaku 30 menit.`,
       });
     }
     res.json({ data: { isCommittee: false } });

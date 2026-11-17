@@ -1,7 +1,7 @@
 import type { Server } from "node:http";
 import { WebSocketServer, WebSocket } from "ws";
 import { Types } from "mongoose";
-import { env } from "../../config/env.js";
+import { isAllowedOrigin } from "../../lib/origins.js";
 import { hashToken } from "../../lib/crypto.js";
 import { SocketGrant, socketIdentity } from "./auth.js";
 import { Order } from "../orders/order.model.js";
@@ -21,8 +21,7 @@ export function attachRealtime(server: Server) {
       socket.destroy();
       return;
     }
-    const allowed = (env.WEB_ORIGINS ?? env.WEB_ORIGIN).split(",").map((s) => s.trim());
-    if (!req.headers.origin || !allowed.includes(req.headers.origin)) {
+    if (!isAllowedOrigin(req.headers.origin)) {
       socket.write("HTTP/1.1 403 Forbidden\r\n\r\n");
       socket.destroy();
       return;
