@@ -1,6 +1,6 @@
 # Deployment backend ke VPS
 
-Status per 17 November 2026: backend berjalan di `https://api.gatherlyy.fun` (VPS `tinjau-vps`, IP `15.235.146.33`). Frontend belum dideploy dan untuk sementara berjalan di `http://localhost:3000`.
+Status per 17 November 2026: backend berjalan di `https://api.gatherlyy.fun` (VPS `tinjau-vps`, IP `15.235.146.33`). Frontend berjalan di `https://gatherlyy.fun`, `https://organizer.gatherlyy.fun`, dan `https://admin.gatherlyy.fun` (Vercel).
 
 Dokumen ini menggantikan `deployment-vercel.md` untuk backend. Backend tidak lagi memakai Vercel karena butuh WebSocket dan worker yang berjalan terus.
 
@@ -38,5 +38,4 @@ curl https://api.gatherlyy.fun/api/v1/health
 - `ADMIN_ENCRYPTION_KEY` di VPS dibuat acak saat setup pertama dan dipakai untuk mengenkripsi secret 2FA admin. Jangan diganti, karena 2FA admin yang sudah ada tidak akan bisa dibaca lagi.
 - Login Google memakai callback `http://localhost:3000/api/v1/auth/google/callback` selama frontend berjalan lokal, supaya cookie sesi jatuh di domain frontend. URL ini harus terdaftar di Google Cloud Console. Ganti nilainya saat frontend sudah punya domain.
 - URL notifikasi Midtrans sandbox adalah `https://api.gatherlyy.fun/api/v1/payments/midtrans/notifications`. URL ini diatur di dashboard Midtrans.
-- Domain lama `api.gatherly.scientivan.dev` masih dilayani sebagai alias selama masa transisi. Hapus dari blok Caddy setelah frontend, Midtrans, dan semua anggota tim memakai `api.gatherlyy.fun`.
 - VPS yang sama juga menjalankan Kalis dan Simpleart. Selalu jalankan `caddy validate` sebelum `systemctl reload caddy`. Cadangan sebelum blok Gatherly ditambahkan ada di `/etc/caddy/Caddyfile.bak-gatherly`.
