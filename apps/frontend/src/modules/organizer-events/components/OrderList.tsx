@@ -279,11 +279,7 @@ export function OrderList() {
             setPage(1);
           }}
         >
-          <SelectTrigger
-            aria-label="Status pembayaran"
-            size="sm"
-            className="md:w-52"
-          >
+          <SelectTrigger aria-label="Status pembayaran" className="md:w-52">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
