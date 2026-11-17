@@ -5,7 +5,7 @@ import { CATEGORIES, categorySlug } from "./categories";
 import type { CityOption, EventCard, EventDetail, EventQuery, EventSuggestions, OrganizerProfile, ReportInput } from "./types";
 
 /**
- * Acara publik di gatherly.xyz. Pita desain 03, 04, 08, 09.
+ * Acara publik di situs utama. Pita desain 03, 04, 08, 09.
  * Semua masih pending: katalog publik (issue #3 B10), disimpan dan profil (B37), laporan (B40).
  */
 

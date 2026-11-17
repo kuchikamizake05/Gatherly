@@ -11,6 +11,7 @@ import { paymentMethod } from "@/modules/orders/payment-methods";
 import { PrintDocument, PrintSheet, useAutoPrint } from "@/components/elements/PrintPage";
 import { StateView } from "@/components/elements/StateView";
 import { orderAmounts } from "../pricing";
+import { MAIL } from "@/lib/site";
 
 /** Bukti pembayaran. Pita 06 G3, satu halaman A4. */
 
@@ -53,7 +54,7 @@ export function ReceiptPrintView({ orderId }: { orderId: string }) {
     <PrintDocument title="Bukti pembayaran">
       <PrintSheet
         label="Bukti pembayaran"
-        footerLeft="Gatherly, halo@gatherly.xyz"
+        footerLeft={`Gatherly, ${MAIL.halo}`}
         footerRight={`Diterbitkan ${format(new Date(issued), "d MMM yyyy", { locale: localeId })}`}
       >
         <div className="flex items-start justify-between gap-6">

@@ -3,7 +3,7 @@ import { FIX } from "@/modules/_mock/fixtures";
 import type { UploadedFile } from "@/components/elements/FileUpload";
 
 /**
- * Pengajuan organizer di gatherly.xyz. Pita desain 13. Semua pending (issue B29).
+ * Pengajuan organizer di situs utama. Pita desain 13. Semua pending (issue B29).
  * Dokumen diunggah satu per satu saat dipilih (dengan progres), lalu pengajuan dikirim sebagai JSON
  * berisi id dokumennya. Review oleh admin ada di modules/admin.
  */

@@ -27,7 +27,7 @@ before(async () => {
   await mongoose.connect(process.env.MONGODB_URI!, { dbName: database });
   const admin = await seedAdmin({
     name: "Payout Admin",
-    email: "payout@gatherly.xyz",
+    email: "payout@gatherlyy.fun",
     password: "IntegrationPassword123!",
     totpSecret: "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
     backupCodes: ["payout-backup-code"],

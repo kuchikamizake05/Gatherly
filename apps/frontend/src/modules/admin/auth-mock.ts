@@ -5,7 +5,7 @@ const challengeKey = "gatherly_admin_demo_challenge";
 const demoUser = {
   id: "adm_nadia",
   name: "Nadia",
-  email: "nadia@gatherly.xyz",
+  email: "nadia@gatherlyy.fun",
   csrfToken: "mock-csrf",
 };
 
@@ -14,11 +14,11 @@ export const adminAuthMock = {
   login(email: string, password: string) {
     if (!navigator.onLine)
       throw new ApiError(0, "NETWORK_ERROR", "Koneksi terputus.");
-    if (email === "locked@gatherly.xyz")
+    if (email === "locked@gatherlyy.fun")
       throw new ApiError(423, "ACCOUNT_LOCKED", "Akun dikunci.");
-    if (email === "disabled@gatherly.xyz")
+    if (email === "disabled@gatherlyy.fun")
       throw new ApiError(403, "ACCOUNT_DISABLED", "Akun dinonaktifkan.");
-    if (email === "limited@gatherly.xyz")
+    if (email === "limited@gatherlyy.fun")
       throw new ApiError(429, "RATE_LIMITED", "Terlalu banyak percobaan.");
     if (email !== demoUser.email || password !== "GatherlyDemo123!")
       throw new ApiError(

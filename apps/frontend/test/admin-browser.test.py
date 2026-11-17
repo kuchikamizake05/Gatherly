@@ -30,7 +30,7 @@ class AdminJourneys(unittest.TestCase):
         folder = os.path.join("apps", "frontend", "test-results", str(self.width))
         os.makedirs(folder, exist_ok=True)
         page.screenshot(path=os.path.join(folder, "login.png"), full_page=True)
-        page.get_by_label("Email kerja").fill("nadia@gatherly.xyz")
+        page.get_by_label("Email kerja").fill("nadia@gatherlyy.fun")
         page.get_by_label("Password", exact=True).fill("GatherlyDemo123!")
         page.get_by_role("button", name="Masuk", exact=True).click()
         page.wait_for_url("**/verify")
@@ -247,12 +247,12 @@ class AdminJourneys(unittest.TestCase):
         page.get_by_role("button", name="Lupa password?", exact=True).click()
         page.get_by_role("heading", name="Hubungi admin utama", exact=True).wait_for()
         page.get_by_role("button", name="Kembali ke masuk", exact=True).click()
-        for email, error in [("locked@gatherly.xyz", "Akun dikunci sementara."), ("disabled@gatherly.xyz", "Akun dinonaktifkan."), ("bad@gatherly.xyz", "Tidak dapat masuk.")]:
+        for email, error in [("locked@gatherlyy.fun", "Akun dikunci sementara."), ("disabled@gatherlyy.fun", "Akun dinonaktifkan."), ("bad@gatherlyy.fun", "Tidak dapat masuk.")]:
             page.get_by_label("Email kerja").fill(email)
             page.get_by_label("Password", exact=True).fill("wrong")
             page.get_by_role("button", name="Masuk", exact=True).click()
             page.get_by_text(error, exact=False).wait_for()
-        page.get_by_label("Email kerja").fill("nadia@gatherly.xyz")
+        page.get_by_label("Email kerja").fill("nadia@gatherlyy.fun")
         page.get_by_label("Password", exact=True).fill("GatherlyDemo123!")
         page.get_by_role("button", name="Masuk", exact=True).click()
         page.wait_for_url("**/verify")
@@ -329,7 +329,7 @@ class AdminJourneys(unittest.TestCase):
     def test_remember_device_and_logout(self):
         page = self.page
         page.goto(self.base + "/login", wait_until="networkidle")
-        page.get_by_label("Email kerja").fill("nadia@gatherly.xyz")
+        page.get_by_label("Email kerja").fill("nadia@gatherlyy.fun")
         page.get_by_label("Password", exact=True).fill("GatherlyDemo123!")
         page.get_by_role("button", name="Masuk", exact=True).click()
         page.wait_for_url("**/verify")

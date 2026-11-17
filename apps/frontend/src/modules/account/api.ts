@@ -1,7 +1,7 @@
 import { api, wrap } from "@/lib/api/client";
 import { FIX } from "@/modules/_mock/fixtures";
 
-/** Akun saya di gatherly.xyz. Pita desain 12. Endpoint akun peserta terhubung ke backend B36. */
+/** Akun saya di situs utama. Pita desain 12. Endpoint akun peserta terhubung ke backend B36. */
 
 export type Account = {
   name: string;

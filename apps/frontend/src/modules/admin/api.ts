@@ -12,7 +12,7 @@ import { FIX } from "@/modules/_mock/fixtures";
 import type { Application, FieldFlag } from "@/modules/applications/api";
 
 /**
- * admin.gatherly.xyz. Pita desain 20, 21, 22, 24. Semua memakai API nyata:
+ * Konsol admin (admin.<domain>). Pita desain 20, 21, 22, 24. Semua memakai API nyata:
  * login + 2FA (B30), pengajuan (B31), organizer (B32), pencairan (B39), laporan (B40).
  */
 

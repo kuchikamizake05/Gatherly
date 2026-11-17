@@ -22,6 +22,7 @@ import {
   useWorkspaceLogout,
   useWorkspaceMe,
 } from "@/modules/organizer-auth/hooks";
+import { MAIL, SITE_URL } from "@/lib/site";
 
 export function OrganizerShell({ children }: { children: ReactNode }) {
   const { data: me } = useWorkspaceMe();
@@ -43,14 +44,14 @@ export function OrganizerShell({ children }: { children: ReactNode }) {
       ? []
       : [
           {
-            href: `https://gatherly.xyz/organizers/${me.organizer.username}`,
+            href: `${SITE_URL}/organizers/${me.organizer.username}`,
             label: "Halaman publik",
             icon: ExternalLink,
             external: true,
           },
         ]),
     {
-      href: "mailto:mitra@gatherly.xyz",
+      href: `mailto:${MAIL.mitra}`,
       label: "Bantuan",
       icon: CircleHelp,
       external: true,

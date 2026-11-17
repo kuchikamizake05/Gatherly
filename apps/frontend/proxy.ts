@@ -1,10 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Satu app untuk tiga domain.
- * - organizer.gatherly.xyz (lokal: organizer.localhost:3000) → app/organizer
- * - admin.gatherly.xyz (lokal: admin.localhost:3000) → app/admin
- * - gatherly.xyz (lokal: localhost:3000) → app/(main)
+ * Satu app untuk tiga host. Dibedakan dari awalannya, jadi berlaku untuk domain apa pun (src/lib/site.ts).
+ * - organizer.gatherlyy.fun (lokal: organizer.localhost:3000) → app/organizer
+ * - admin.gatherlyy.fun (lokal: admin.localhost:3000) → app/admin
+ * - gatherlyy.fun (lokal: localhost:3000) → app/(main)
  *
  * Folder organizer dan admin tidak bisa dibuka langsung lewat domain utama.
  */
