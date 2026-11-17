@@ -34,6 +34,7 @@ import {
   processMidtransNotification,
 } from "../src/modules/payments/payment-notification.service.js";
 import { reconcileDuePayments } from "../src/modules/payments/payment-reconciliation.service.js";
+import { RealtimeEvent } from "../src/modules/realtime/events.js";
 import { Ticket } from "../src/modules/tickets/ticket.model.js";
 import { issueDueTickets } from "../src/modules/tickets/ticket-issuance.service.js";
 import {
@@ -666,6 +667,27 @@ test("keeps inventory nonnegative when paid races with expiry", async () => {
   assert.equal(
     (inventory?.reserved ?? 0) + (inventory?.sold ?? 0),
     updatedOrder?.reservationStatus === "released" ? 0 : 1,
+  );
+});
+
+test("publishes order updates when payment succeeds and tickets are issued", async () => {
+  const { buyerA, ticketType } = await fixture(2);
+  const { order } = await createOrder(
+    buyerA._id.toString(),
+    randomUUID(),
+    input(ticketType._id.toString(), 1),
+  );
+  await RealtimeEvent.deleteMany({});
+  await applyPaymentStatus(order._id.toString(), "paid", new Date());
+  await applyPaymentStatus(order._id.toString(), "paid", new Date());
+  assert.equal(await issueDueTickets(), 1);
+
+  const updates = await RealtimeEvent.find({ topic: "order", resourceId: order._id.toString() })
+    .sort({ _id: 1 })
+    .lean();
+  assert.deepEqual(
+    updates.map((update) => update.type),
+    ["payment.paid", "tickets.issued"],
   );
 });
 

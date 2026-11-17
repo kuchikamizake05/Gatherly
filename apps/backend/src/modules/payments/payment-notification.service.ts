@@ -6,26 +6,33 @@ import { env } from "../../config/env.js";
 import { AppError } from "../../lib/app-error.js";
 import { TicketType } from "../events/event.models.js";
 import { Order } from "../orders/order.model.js";
+import { publishUpdate } from "../realtime/events.js";
 import { PaymentEvent, type NormalizedPaymentStatus } from "./payment-event.model.js";
 
-export const notificationSchema = z.object({
-  order_id: z.string().min(1).max(50),
-  status_code: z.string().min(1).max(10),
-  gross_amount: z.string().regex(/^\d+(?:\.\d{1,2})?$/),
-  signature_key: z.string().regex(/^[a-f\d]{128}$/i),
-  transaction_status: z.string().min(1).max(50),
-  transaction_id: z.string().min(1).max(100).optional(),
-  fraud_status: z.string().max(30).optional(),
-  currency: z.string().max(10).optional(),
-  transaction_time: z.string().max(40).optional(),
-  settlement_time: z.string().max(40).optional(),
-}).passthrough();
+export const notificationSchema = z
+  .object({
+    order_id: z.string().min(1).max(50),
+    status_code: z.string().min(1).max(10),
+    gross_amount: z.string().regex(/^\d+(?:\.\d{1,2})?$/),
+    signature_key: z.string().regex(/^[a-f\d]{128}$/i),
+    transaction_status: z.string().min(1).max(50),
+    transaction_id: z.string().min(1).max(100).optional(),
+    fraud_status: z.string().max(30).optional(),
+    currency: z.string().max(10).optional(),
+    transaction_time: z.string().max(40).optional(),
+    settlement_time: z.string().max(40).optional(),
+  })
+  .passthrough();
 
 export type MidtransNotification = z.infer<typeof notificationSchema>;
 
-export function midtransSignature(payload: Pick<MidtransNotification, "order_id" | "status_code" | "gross_amount">) {
+export function midtransSignature(
+  payload: Pick<MidtransNotification, "order_id" | "status_code" | "gross_amount">,
+) {
   return createHash("sha512")
-    .update(`${payload.order_id}${payload.status_code}${payload.gross_amount}${env.MIDTRANS_SERVER_KEY}`)
+    .update(
+      `${payload.order_id}${payload.status_code}${payload.gross_amount}${env.MIDTRANS_SERVER_KEY}`,
+    )
     .digest("hex");
 }
 
@@ -51,8 +58,10 @@ export function normalizeStatus(payload: {
   if (
     payload.status_code === "200" &&
     (status === "settlement" ||
-      (status === "capture" && (!payload.fraud_status || payload.fraud_status.toLowerCase() === "accept")))
-  ) return "paid";
+      (status === "capture" &&
+        (!payload.fraud_status || payload.fraud_status.toLowerCase() === "accept")))
+  )
+    return "paid";
   if (status === "pending") return "pending";
   if (status === "expire") return "expired";
   if (status === "deny" || status === "cancel") return "failed";
@@ -67,16 +76,20 @@ function verifiedTime(payload: MidtransNotification, fallback: Date) {
 }
 
 function fingerprint(payload: MidtransNotification) {
-  return createHash("sha256").update(JSON.stringify({
-    orderId: payload.order_id,
-    transactionId: payload.transaction_id ?? null,
-    status: payload.transaction_status,
-    statusCode: payload.status_code,
-    grossAmount: payload.gross_amount,
-    fraudStatus: payload.fraud_status ?? null,
-    transactionTime: payload.transaction_time ?? null,
-    settlementTime: payload.settlement_time ?? null,
-  })).digest("hex");
+  return createHash("sha256")
+    .update(
+      JSON.stringify({
+        orderId: payload.order_id,
+        transactionId: payload.transaction_id ?? null,
+        status: payload.transaction_status,
+        statusCode: payload.status_code,
+        grossAmount: payload.gross_amount,
+        fraudStatus: payload.fraud_status ?? null,
+        transactionTime: payload.transaction_time ?? null,
+        settlementTime: payload.settlement_time ?? null,
+      }),
+    )
+    .digest("hex");
 }
 
 export async function applyPaymentStatus(
@@ -89,7 +102,8 @@ export async function applyPaymentStatus(
   try {
     await session.withTransaction(async () => {
       const order = await Order.findById(orderId).session(session);
-      if (!order) throw new AppError(400, "INVALID_NOTIFICATION", "Payment notification is invalid.");
+      if (!order)
+        throw new AppError(400, "INVALID_NOTIFICATION", "Payment notification is invalid.");
       let transition: string | undefined;
 
       if (normalizedStatus === "paid") {
@@ -148,11 +162,20 @@ export async function applyPaymentStatus(
       }
       order.leaseUntil = undefined;
       await order.save({ session });
+      if (transition) {
+        await publishUpdate(
+          { topic: "order", id: order.id, type: `payment.${transition}` },
+          session,
+        );
+      }
 
       if (paymentEventId) {
         await PaymentEvent.updateOne(
           { _id: paymentEventId },
-          { $set: { processingStatus: "processed", processedAt: new Date() }, $unset: { errorCode: 1 } },
+          {
+            $set: { processingStatus: "processed", processedAt: new Date() },
+            $unset: { errorCode: 1 },
+          },
           { session },
         );
       }
@@ -194,11 +217,17 @@ export async function processMidtransNotification(input: unknown) {
       } else throw error;
     }
   }
-  if (!event) throw new AppError(503, "SERVICE_UNAVAILABLE", "Notification processing is unavailable.");
+  if (!event)
+    throw new AppError(503, "SERVICE_UNAVAILABLE", "Notification processing is unavailable.");
   if (event.processingStatus === "processed") return { duplicate: true };
 
   try {
-    await applyPaymentStatus(order._id.toString(), normalizedStatus, verifiedTime(payload, new Date()), event._id.toString());
+    await applyPaymentStatus(
+      order._id.toString(),
+      normalizedStatus,
+      verifiedTime(payload, new Date()),
+      event._id.toString(),
+    );
   } catch (error) {
     await PaymentEvent.updateOne(
       { _id: event._id },
