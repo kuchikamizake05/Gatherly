@@ -1,4 +1,6 @@
-<h1 align="center">Gatherlyy</h1>
+<p align="center">
+  <img src="design/brand/logo/gatherly-stacked-ink.svg" alt="Gatherlyy" width="220">
+</p>
 
 <p align="center">
   <strong>Discover events. Book your spot. Be there.</strong><br>
@@ -6,6 +8,9 @@
 </p>
 
 <p align="center">
+  <a href="https://gatherlyy.fun">Website</a> ·
+  <a href="https://bit.ly/VideoDemo_Kel11_PAW">Video Demo</a> ·
+  <a href="https://bit.ly/PPT_Kel11_PAW">Presentasi</a> ·
   <a href="docs/README.md">Dokumentasi</a> ·
   <a href="docs/requirements.md">Analisis Kebutuhan</a> ·
   <a href="docs/api-contract.md">Kontrak API</a> ·
@@ -122,7 +127,8 @@ Dokumentasi proyek tersedia dalam folder [`docs`](docs/README.md).
 | --- | --- | --- |
 | Backend | [api.gatherlyy.fun](https://api.gatherlyy.fun/api/v1/health) · [Swagger](https://api.gatherlyy.fun/api/v1/docs/) | VPS dengan Caddy, service API dan worker terpisah. Lihat [panduan deployment VPS](docs/deployment-vps.md) |
 | Frontend | [gatherlyy.fun](https://gatherlyy.fun) · [organizer.gatherlyy.fun](https://organizer.gatherlyy.fun) · [admin.gatherlyy.fun](https://admin.gatherlyy.fun) | Lihat [panduan deployment frontend](docs/deployment-frontend.md) |
-| Video demo | Menyusul | Disiapkan pada #24 |
+| Video demo | [Video presentasi dan demonstrasi](https://bit.ly/VideoDemo_Kel11_PAW) | Presentasi kelompok dan demo aplikasi |
+| Presentasi | [PPT Kelompok 11](https://bit.ly/PPT_Kel11_PAW) | Materi presentasi akhir |
 
 Domain frontend diatur lewat `NEXT_PUBLIC_SITE_DOMAIN`, dan domain email admin lewat `ADMIN_EMAIL_DOMAIN` di backend.
 
