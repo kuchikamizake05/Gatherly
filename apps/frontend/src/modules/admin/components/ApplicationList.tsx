@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -24,6 +23,8 @@ import {
   AdminOnline,
   AdminQueue,
 } from "./AdminPage";
+import { IconInput } from "@/components/elements/IconInput";
+import { Search } from "lucide-react";
 
 const tabs = [
   { value: "new", label: "Perlu ditinjau" },
@@ -114,18 +115,19 @@ export function ApplicationList() {
           counts={query.data.counts}
         />
         <AdminCard>
-          <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-end">
-            <label className="min-w-0 flex-1 text-sm font-semibold">
-              Cari pengajuan
-              <Input
+          <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center">
+            <label className="min-w-0 flex-1 md:max-w-md">
+              <span className="sr-only">Cari pengajuan</span>
+              <IconInput
                 type="search"
+                leading={<Search aria-hidden />}
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Nama organizer atau nomor pengajuan"
+                placeholder="Cari nama organizer atau nomor pengajuan"
               />
             </label>
-            <div className="text-sm font-semibold">
-              <label htmlFor="application-type" className="mb-1 block">
+            <div>
+              <label htmlFor="application-type" className="sr-only">
                 Jenis organizer
               </label>
               <Select value={type} onValueChange={setType}>
