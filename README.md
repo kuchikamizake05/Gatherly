@@ -1,6 +1,8 @@
 <p align="center">
-  <img src="design/brand/logo/gatherly-stacked-ink.svg" alt="Gatherlyy" width="220">
+  <img src="design/brand/logo/gatherly-app-icon.svg" alt="Logo Gatherly" width="120">
 </p>
+
+<h1 align="center">Gatherly</h1>
 
 <p align="center">
   <strong>Discover events. Book your spot. Be there.</strong><br>
