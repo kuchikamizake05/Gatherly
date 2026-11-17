@@ -90,8 +90,19 @@ export async function checkInTicket(
         throw new AppError(409, "WRONG_EVENT", "Ticket belongs to another event.");
       }
 
-      if (ticket.checkInStatus === "cancelled")
-        throw new AppError(409, "TICKET_CANCELLED", "Ticket has been cancelled.");
+      if (ticket.checkInStatus === "cancelled") {
+        const cancelledOrder = await Order.findById(ticket.orderId)
+          .select("orderCode")
+          .session(session)
+          .lean();
+        throw new AppError(
+          409,
+          "TICKET_CANCELLED",
+          "Ticket has been cancelled.",
+          {},
+          { orderCode: cancelledOrder?.orderCode ?? null },
+        );
+      }
       const validOrder = await Order.exists({
         _id: ticket.orderId,
         eventId: parsedEventId,
@@ -167,6 +178,13 @@ export async function findCommitteeTickets(
       { attendeeEmail: pattern },
       { checkInStatus: pattern },
     ];
+    const buyerOrderIds = await Order.find({
+      eventId: parsedEventId,
+      "buyerSnapshot.email": pattern,
+    })
+      .limit(50)
+      .distinct("_id");
+    if (buyerOrderIds.length) (filter.$or as unknown[]).push({ orderId: { $in: buyerOrderIds } });
   }
   const [tickets, total] = await Promise.all([
     Ticket.find(filter)

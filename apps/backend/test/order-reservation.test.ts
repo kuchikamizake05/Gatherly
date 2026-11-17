@@ -978,6 +978,31 @@ test("revokes committee access for check-in, lookup, and history", async () => {
   assert.equal((await Ticket.findById(tickets[0]!._id).lean())?.checkInStatus, "unused");
 });
 
+test("committee lookup matches the buyer email and cancelled tickets report the order code", async () => {
+  const { buyerB, event, order, tickets, now } = await prepareCheckInFixture(2);
+
+  const byBuyer = await findCommitteeTickets(event._id.toString(), buyerB._id.toString(), {
+    q: "a@example.test",
+    page: 1,
+    limit: 10,
+  });
+  assert.equal(byBuyer.meta.total, 2);
+
+  await Ticket.updateOne({ _id: tickets[1]!._id }, { $set: { checkInStatus: "cancelled" } });
+  await assert.rejects(
+    checkInTicket(
+      event._id.toString(),
+      buyerB._id.toString(),
+      { ticketCode: tickets[1]!.ticketCode },
+      now,
+    ),
+    (error: unknown) =>
+      error instanceof AppError &&
+      error.code === "TICKET_CANCELLED" &&
+      error.details?.orderCode === order.orderCode,
+  );
+});
+
 test("returns safe paginated committee lookup and check-in history", async () => {
   const { buyerB, event, tickets, now } = await prepareCheckInFixture(2);
   await checkInTicket(
