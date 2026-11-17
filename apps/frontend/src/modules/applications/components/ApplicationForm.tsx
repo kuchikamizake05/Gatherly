@@ -30,6 +30,7 @@ import { Chip } from "@/components/elements/FilterChips";
 import { RegionFields } from "@/components/elements/RegionFields";
 
 import { USERNAME_RE, UsernameField, type UsernameState } from "./UsernameField";
+import { MAIL, ORGANIZER_HOST } from "@/lib/site";
 
 /**
  * Formulir pengajuan organizer. Pita 13 A2, B, C3, E, F, G.
@@ -415,7 +416,7 @@ export function ApplicationForm({
       <Card
         n={3}
         title="Akun organizer"
-        description="Username dipakai untuk masuk ke organizer.gatherly.xyz dan tidak dapat diubah setelah disetujui."
+        description={`Username dipakai untuk masuk ke ${ORGANIZER_HOST} dan tidak dapat diubah setelah disetujui.`}
       >
         <Controller
           control={control}
@@ -513,8 +514,8 @@ export function ApplicationForm({
         </Button>
         <p className="text-sm">
           <span className="font-bold">Butuh bantuan?</span>{" "}
-          <a href="mailto:mitra@gatherly.xyz" className="text-text-secondary underline-offset-4 hover:underline">
-            Hubungi mitra@gatherly.xyz
+          <a href={`mailto:${MAIL.mitra}`} className="text-text-secondary underline-offset-4 hover:underline">
+            Hubungi {MAIL.mitra}
           </a>
         </p>
       </div>

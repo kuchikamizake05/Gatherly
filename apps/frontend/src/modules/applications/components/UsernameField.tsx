@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useUsernameCheck } from "@/modules/applications/hooks";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ORGANIZER_HOST } from "@/lib/site";
 
 /**
  * Username akun organizer dengan cek ketersediaan 0,5 detik setelah berhenti mengetik. Pita 13 E.
@@ -99,7 +100,7 @@ export function UsernameField({
             ? "Memeriksa ketersediaan…"
             : state === "available"
               ? "Username tersedia"
-              : "Dipakai untuk masuk ke organizer.gatherly.xyz.")}
+              : `Dipakai untuk masuk ke ${ORGANIZER_HOST}.`)}
       </p>
     </div>
   );

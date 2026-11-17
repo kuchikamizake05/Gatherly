@@ -50,6 +50,7 @@ import { StateView } from "@/components/elements/StateView";
 import { initials } from "@/components/elements/AccountMenu";
 
 import { PasswordDialog } from "./PasswordDialog";
+import { MAIL } from "@/lib/site";
 
 /**
  * Akun saya. Pita 12.
@@ -652,7 +653,7 @@ export function AccountView() {
                   {
                     label: "Pusat bantuan",
                     icon: CircleHelp,
-                    href: "mailto:halo@gatherly.xyz",
+                    href: `mailto:${MAIL.halo}`,
                   },
                 ].map((l) => (
                   <Link

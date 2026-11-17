@@ -4,7 +4,7 @@ import { FIX } from "@/modules/_mock/fixtures";
 import type { LoginInput, Me, OtpChallenge, RegisterInput, VerifyInput } from "./types";
 
 /**
- * Auth peserta di gatherly.xyz. Pita desain 10 dan 11.
+ * Auth peserta di situs utama. Pita desain 10 dan 11.
  * Endpoint register, login, verify, resend, me, dan logout sudah ada di backend.
  * Lupa password belum ada (issue B36), jadi masih pending.
  */

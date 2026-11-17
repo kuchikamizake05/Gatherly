@@ -23,10 +23,10 @@ import { Alert } from "@/components/elements/Alert";
 import { StateView } from "@/components/elements/StateView";
 
 import { ApplicationForm, toInput } from "./ApplicationForm";
+import { ORGANIZER_URL } from "@/lib/site";
 
 /** Pengajuan organizer. Pita 13: daftar baru (A, B) dan perbaiki pengajuan (C). */
 
-const ORGANIZER_URL = process.env.NEXT_PUBLIC_ORGANIZER_URL ?? "https://organizer.gatherly.xyz";
 
 function Shell({ children }: { children: ReactNode }) {
   return <div className="mx-auto flex w-full max-w-[1120px] flex-1 flex-col gap-6 px-4 pt-6 pb-24 md:gap-8 md:px-6 md:pt-10 xl:px-0">{children}</div>;

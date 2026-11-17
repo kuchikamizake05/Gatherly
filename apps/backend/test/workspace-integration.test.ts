@@ -34,7 +34,7 @@ before(async () => {
   ]);
   const admin = await seedAdmin({
     name: "Integration Admin",
-    email: "integration@gatherly.xyz",
+    email: "integration@gatherlyy.fun",
     password: "IntegrationPassword123!",
     totpSecret: "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ",
     backupCodes: ["one-use-backup-code"],
@@ -175,8 +175,8 @@ test("correction requires lookup-issued capability and rejects unflagged fields"
 test("backup code is single-use across concurrent login challenges", async () => {
   const password = "IntegrationPassword123!";
   const logins = await Promise.all([
-    post("/admin/auth/login", { email: "integration@gatherly.xyz", password }, "", ""),
-    post("/admin/auth/login", { email: "integration@gatherly.xyz", password }, "", ""),
+    post("/admin/auth/login", { email: "integration@gatherlyy.fun", password }, "", ""),
+    post("/admin/auth/login", { email: "integration@gatherlyy.fun", password }, "", ""),
   ]);
   const challenges = await Promise.all(logins.map((response) => response.json()));
   const responses = await Promise.all(

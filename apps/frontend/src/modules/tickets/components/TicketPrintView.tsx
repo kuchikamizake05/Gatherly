@@ -10,6 +10,7 @@ import { PrintDocument, PrintSheet, useAutoPrint } from "@/components/elements/P
 import { StateView } from "@/components/elements/StateView";
 
 import { ETicketCard } from "./ETicketCard";
+import { SITE_DOMAIN } from "@/lib/site";
 
 /** PDF e-tiket. Pita 06 G1 dan G2: satu tiket per halaman A4. */
 export function TicketPrintView({ orderId }: { orderId: string }) {
@@ -34,7 +35,7 @@ export function TicketPrintView({ orderId }: { orderId: string }) {
           key={t.id}
           label={`E-tiket, Pesanan #${t.orderCode}`}
           footerLeft={`Tiket ${i + 1} dari ${tickets.length}, tunjukkan QR di pintu masuk${t.event.minAge ? `, bawa identitas (${t.event.minAge}+)` : ""}`}
-          footerRight="gatherly.xyz"
+          footerRight={SITE_DOMAIN}
         >
           <div className="flex flex-col gap-1.5">
             <h1 className="text-[26px] leading-tight font-extrabold">{t.event.title}</h1>

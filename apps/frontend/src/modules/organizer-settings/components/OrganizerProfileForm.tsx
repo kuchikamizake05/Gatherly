@@ -20,6 +20,7 @@ import { useOnline } from "@/hooks/use-online";
 import { useWorkspaceMe } from "@/modules/organizer-auth/hooks";
 import { useOrgProfile, useUpdateOrgProfile } from "../hooks";
 import type { OrganizerProfileSettings } from "../api";
+import { SITE_URL } from "@/lib/site";
 
 const schema = z.object({
   name: z.string().trim().min(1, "Nama organizer wajib diisi").max(100),
@@ -118,7 +119,7 @@ function ProfileForm({ profile }: { profile: OrganizerProfileSettings }) {
         actions={
           <Button variant="outline" asChild>
             <a
-              href={`https://gatherly.xyz/organizers/${profile.username}`}
+              href={`${SITE_URL}/organizers/${profile.username}`}
               target="_blank"
               rel="noopener noreferrer"
             >

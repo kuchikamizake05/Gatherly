@@ -1,4 +1,5 @@
 import type { TicketEvent, TicketSummary } from "./types";
+import { SITE_DOMAIN } from "@/lib/site";
 
 /**
  * Logika bersama Tiketku dan e-tiket (pita 06, 07): status tiket, pengelompokan per pesanan,
@@ -64,7 +65,7 @@ export function downloadIcs(e: TicketEvent, detailsUrl: string, uid: string) {
     "PRODID:-//Gatherly//E-tiket//ID",
     "CALSCALE:GREGORIAN",
     "BEGIN:VEVENT",
-    `UID:${uid}@gatherly.xyz`,
+    `UID:${uid}@${SITE_DOMAIN}`,
     `DTSTAMP:${icsDate(new Date().toISOString())}`,
     `DTSTART:${icsDate(e.startsAt)}`,
     `DTEND:${icsDate(e.endsAt)}`,

@@ -11,7 +11,7 @@ import {
 } from "./mock-session";
 
 /**
- * Login organizer dan panitia di organizer.gatherly.xyz. Pita desain 14.
+ * Login organizer dan panitia di organizer.<domain>. Pita desain 14.
  * Semua pending (issue B28): akun username + password, terpisah dari akun peserta.
  */
 

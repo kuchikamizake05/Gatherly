@@ -13,6 +13,7 @@ import { StateView } from "@/components/elements/StateView";
 import { useOnline } from "@/hooks/use-online";
 import { ApiError } from "@/lib/api/client";
 import { useAdminLogin } from "@/modules/admin/hooks";
+import { ADMIN_EMAIL_DOMAIN, MAIL } from "@/lib/site";
 const schema = z.object({
   email: z
     .string()
@@ -20,7 +21,7 @@ const schema = z.object({
     .toLowerCase()
     .email("Masukkan alamat email yang valid.")
     .refine(
-      (value) => /^[^@\s]+@gatherly\.xyz$/i.test(value),
+      (value) => value.endsWith(`@${ADMIN_EMAIL_DOMAIN}`) && !value.slice(0, -ADMIN_EMAIL_DOMAIN.length - 1).includes("@"),
       "Gunakan email kerja Gatherly.",
     ),
   password: z.string().min(1, "Masukkan password Anda."),
@@ -87,7 +88,7 @@ export function AdminLoginForm() {
       <StateView
         illustration="waiting"
         title="Hubungi admin utama"
-        description="Demi keamanan, password akun admin hanya dapat diatur ulang oleh admin utama. Kirim permintaan ke it@gatherly.xyz dari email kerja Anda."
+        description={`Demi keamanan, password akun admin hanya dapat diatur ulang oleh admin utama. Kirim permintaan ke ${MAIL.it} dari email kerja Anda.`}
         action={
           <Button onClick={() => setHelp(false)}>Kembali ke masuk</Button>
         }

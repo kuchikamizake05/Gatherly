@@ -9,6 +9,9 @@ import { AdminAccount, AdminChallenge, AdminSession, AuditLog } from "./admin.mo
 import { adminCookie, requireAdmin, type AdminRequest } from "./admin.middleware.js";
 import { decryptTotpSecret, encryptTotpSecret, verifyTotp } from "./totp.js";
 
+/** Email admin wajib memakai domain ini. Sama dengan NEXT_PUBLIC_SITE_DOMAIN di frontend. */
+const adminEmailDomain = () => (process.env.ADMIN_EMAIL_DOMAIN || "gatherlyy.fun").toLowerCase();
+
 export const adminAuthRouter = Router();
 adminAuthRouter.post(
   "/login",
@@ -19,7 +22,7 @@ adminAuthRouter.post(
           .string()
           .email()
           .toLowerCase()
-          .refine((v) => v.endsWith("@gatherly.xyz"), "Work email is required"),
+          .refine((v) => v.endsWith(`@${adminEmailDomain()}`), "Work email is required"),
         password: z.string().min(1).max(128),
       })
       .parse(req.body);
@@ -177,7 +180,7 @@ export async function seedAdmin(input: {
 }) {
   z.string()
     .email()
-    .refine((v) => v.endsWith("@gatherly.xyz"))
+    .refine((v) => v.endsWith(`@${adminEmailDomain()}`))
     .parse(input.email);
   z.string().min(12).max(128).parse(input.password);
   if (await AdminAccount.exists({ email: input.email.toLowerCase() }))

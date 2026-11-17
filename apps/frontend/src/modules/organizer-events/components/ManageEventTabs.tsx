@@ -23,6 +23,7 @@ import {
 import { organizerEventsApi } from "../api";
 import { cn } from "@/lib/utils";
 import { formatDateLong } from "@/lib/format";
+import { SITE_URL } from "@/lib/site";
 
 export function ManageEventTabs({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -84,7 +85,7 @@ function ManageWorkspace({ children }: { children: ReactNode }) {
                   onSelect={async () => {
                     try {
                       await navigator.clipboard.writeText(
-                        `https://gatherly.xyz/events/${event.data.slug}`,
+                        `${SITE_URL}/events/${event.data.slug}`,
                       );
                       toast.success("Tautan acara disalin");
                     } catch {

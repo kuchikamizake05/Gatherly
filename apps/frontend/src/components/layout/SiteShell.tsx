@@ -13,9 +13,10 @@ import { OfflineBanner } from "@/components/elements/OfflineBanner";
 import { AccountMenu } from "@/components/elements/AccountMenu";
 import { InstagramIcon, TikTokIcon, XIcon } from "@/components/elements/BrandIcons";
 import { ProgressiveBlur } from "@/components/elements/ProgressiveBlur";
+import { MAIL } from "@/lib/site";
 
 /**
- * Kerangka gatherly.xyz. Sesuai layar di pita 03 A1 (desktop, tablet, mobile).
+ * Kerangka situs utama Gatherly. Sesuai layar di pita 03 A1 (desktop, tablet, mobile).
  * - Tablet dan desktop: navbar dengan logo, kapsul Jelajahi dan Tiketku, lalu Masuk + Daftar atau menu akun.
  * - Mobile: header logo + Masuk, tab bar mengambang di bawah (Jelajahi, Tiketku, Disimpan, Akun).
  * Kapsul dan tab bar tanpa titik atau badge.
@@ -167,7 +168,7 @@ const FOOTER_COLUMNS: { title: string; desktopOnly?: boolean; links: { label: st
     title: "Gatherly",
     links: [
       { label: "Tentang kami", href: "/#tentang" },
-      { label: "Pusat bantuan", href: "mailto:halo@gatherly.xyz" },
+      { label: "Pusat bantuan", href: `mailto:${MAIL.halo}` },
       { label: "Syarat & ketentuan", href: "/#syarat" },
       { label: "Kebijakan privasi", href: "/#privasi" },
     ],

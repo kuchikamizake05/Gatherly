@@ -43,7 +43,7 @@ export function RequireBuyer({ children }: { children: ReactNode }) {
 }
 
 /**
- * Ruang kerja organizer.gatherly.xyz.
+ * Ruang kerja organizer (organizer.<domain>).
  * - Belum masuk → /login
  * - Masih password sementara → /change-password
  * - Panitia hanya boleh membuka daftar acara ditugaskan dan halaman scan.
@@ -70,7 +70,7 @@ export function RequireWorkspace({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
-/** Konsol admin.gatherly.xyz. */
+/** Konsol admin (admin.<domain>). */
 export function RequireAdmin({ children }: { children: ReactNode }) {
   const pathname = usePathname().replace(/^\/admin/, "") || "/";
   const { data, isPending, isError, error, refetch } = useAdminMe();
