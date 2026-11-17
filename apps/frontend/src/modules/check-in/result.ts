@@ -6,8 +6,7 @@ export type ScanOutcome =
   | "cancelled"
   | "closed"
   | "forbidden"
-  | "network"
-  | "queued";
+  | "network";
 export type ScanFeedback = {
   kind: ScanOutcome;
   title: string;
