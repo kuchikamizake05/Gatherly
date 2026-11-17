@@ -61,7 +61,7 @@ export const historyResponse = pageResponse(
 ).extend({
   meta: z.object({
     page: z.number().int().positive(),
-    limit: z.number().int().positive(),
+    limit: z.number().int().nonnegative(),
     total: z.number().int().nonnegative(),
     paidTickets: z.number().int().nonnegative(),
     generatedAt: date,
