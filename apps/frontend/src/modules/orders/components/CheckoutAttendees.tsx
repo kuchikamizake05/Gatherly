@@ -128,7 +128,9 @@ function AttendeeForm({ slug, qty, event, ticket, me, router }: FormProps) {
   /** Satu kunci per percobaan checkout. Dipakai ulang saat mencoba lagi supaya tidak membuat pesanan ganda. */
   const idempotencyKey = useRef<string>(crypto.randomUUID());
   const [leaveOpen, setLeaveOpen] = useState(false);
-  const [submitError, setSubmitError] = useState<"quota" | "generic" | null>(null);
+  /** Jumlah tiket bisa turun bila kuota berubah saat checkout ("Lanjutkan dengan N tiket"). */
+  const [quantity, setQuantity] = useState(qty);
+  const [submitError, setSubmitError] = useState<{ kind: "quota"; available: number } | { kind: "sold_out" } | { kind: "generic" } | null>(null);
   const alertRef = useRef<HTMLDivElement>(null);
   const minAge = event.minAge;
 
@@ -144,7 +146,7 @@ function AttendeeForm({ slug, qty, event, ticket, me, router }: FormProps) {
     },
   });
   const { control, register, handleSubmit, setValue, watch, formState } = form;
-  const { fields } = useFieldArray({ control, name: "attendees" });
+  const { fields, remove } = useFieldArray({ control, name: "attendees" });
   const attendees = watch("attendees");
   const dirty = formState.isDirty;
   const { n: errorCount, tickets: errorTickets } = countErrors(formState.errors);
@@ -183,7 +185,7 @@ function AttendeeForm({ slug, qty, event, ticket, me, router }: FormProps) {
           idempotencyKey: idempotencyKey.current,
           input: {
             ticketTypeId: ticket.id,
-            quantity: qty,
+            quantity,
             contactPhone: values.contactPhone.replace(/[\s-]/g, ""),
             attendees: values.attendees.map((a) => ({ name: a.name.trim(), email: a.email.trim(), birthDate: minAge ? a.birthDate : undefined })),
           },
@@ -191,7 +193,16 @@ function AttendeeForm({ slug, qty, event, ticket, me, router }: FormProps) {
         {
           onSuccess: ({ data }) => router.replace(`/checkout/${data.id}`),
           onError: (e) => {
-            setSubmitError(e instanceof ApiError && (e.code === "INSUFFICIENT_QUOTA" || e.code === "SOLD_OUT") ? "quota" : "generic");
+            const available = e instanceof ApiError ? Number(e.details?.available) : NaN;
+            setSubmitError(
+              e instanceof ApiError && e.code === "SOLD_OUT"
+                ? { kind: "sold_out" }
+                : e instanceof ApiError && e.code === "INSUFFICIENT_QUOTA"
+                  ? available > 0 && available < quantity
+                    ? { kind: "quota", available }
+                    : { kind: "sold_out" }
+                  : { kind: "generic" },
+            );
             alertRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
           },
         },
@@ -205,7 +216,16 @@ function AttendeeForm({ slug, qty, event, ticket, me, router }: FormProps) {
     },
   );
 
-  const { total } = estimateAmounts(qty, ticket.price);
+  const { total } = estimateAmounts(quantity, ticket.price);
+
+  /** Kurangi jumlah ke sisa kuota. Isian peserta pertama sampai ke-N tetap tersimpan. */
+  const continueWith = (n: number) => {
+    remove(Array.from({ length: quantity - n }, (_, i) => n + i));
+    setQuantity(n);
+    setSubmitError(null);
+    // Jumlah berubah berarti permintaan baru, jadi kunci idempoten juga baru.
+    idempotencyKey.current = crypto.randomUUID();
+  };
   const submitLabel = create.isPending ? "Membuat pesanan…" : "Lanjut ke pembayaran";
 
   const main = (
@@ -226,7 +246,7 @@ function AttendeeForm({ slug, qty, event, ticket, me, router }: FormProps) {
       <div className="flex flex-col gap-0.5 md:hidden">
         <span className="text-[15px] font-extrabold">{event.title}</span>
         <span className="text-[13px] text-text-secondary">
-          {new Date(event.startsAt).toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "short" })}, {ticket.name} × {qty}
+          {new Date(event.startsAt).toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "short" })}, {ticket.name} × {quantity}
         </span>
       </div>
 
@@ -241,19 +261,36 @@ function AttendeeForm({ slug, qty, event, ticket, me, router }: FormProps) {
             {errorTickets.length ? `Periksa data Tiket ${errorTickets.join(", ")} di bawah.` : "Periksa kontak pemesan di bawah."}
           </Alert>
         )}
-        {submitError === "quota" && (
+        {submitError?.kind === "quota" && (
           <Alert
-            title="Sisa tiket tidak cukup"
+            title={`Sisa tiket ${ticket.name} tinggal ${submitError.available}`}
+            action={
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" onClick={() => continueWith(submitError.available)}>
+                  Lanjutkan dengan {submitError.available} tiket
+                </Button>
+                <Button asChild size="sm" variant="outline">
+                  <Link href={`/events/${slug}`}>Pilih ulang tiket</Link>
+                </Button>
+              </div>
+            }
+          >
+            Sebagian tiket baru saja dibeli orang lain. Lanjutkan dengan {submitError.available} tiket, data peserta 1 sampai {submitError.available} tetap tersimpan.
+          </Alert>
+        )}
+        {submitError?.kind === "sold_out" && (
+          <Alert
+            title={`Tiket ${ticket.name} habis`}
             action={
               <Button asChild size="sm" variant="outline">
-                <Link href={`/events/${slug}`}>Pilih ulang tiket</Link>
+                <Link href={`/events/${slug}`}>Pilih tiket lain</Link>
               </Button>
             }
           >
-            Tiket {ticket.name} baru saja dibeli orang lain. Pilih jumlah atau jenis tiket lain.
+            Tiket ini baru saja terjual habis. Pilih jenis tiket lain di halaman acara.
           </Alert>
         )}
-        {submitError === "generic" && <Alert title="Pesanan gagal dibuat">Periksa koneksi internet Anda, lalu coba lagi. Isian Anda tetap tersimpan.</Alert>}
+        {submitError?.kind === "generic" && <Alert title="Pesanan gagal dibuat">Periksa koneksi internet Anda, lalu coba lagi. Isian Anda tetap tersimpan.</Alert>}
       </div>
 
       {/* Kontak pemesan */}
@@ -272,7 +309,7 @@ function AttendeeForm({ slug, qty, event, ticket, me, router }: FormProps) {
             className="press shrink-0 text-sm font-bold underline-offset-4 [@media(hover:hover)]:hover:underline"
             onClick={() =>
               logout.mutate(undefined, {
-                onSuccess: () => router.push(`/login?returnTo=${encodeURIComponent(`/checkout?${search(slug, ticket.id, qty)}`)}`),
+                onSuccess: () => router.push(`/login?returnTo=${encodeURIComponent(`/checkout?${search(slug, ticket.id, quantity)}`)}`),
               })
             }
           >
@@ -376,7 +413,7 @@ function AttendeeForm({ slug, qty, event, ticket, me, router }: FormProps) {
       startsAt={event.startsAt}
       venue={`${event.venueName}, ${event.city}`}
       ticketName={ticket.name}
-      quantity={qty}
+      quantity={quantity}
       unitPrice={ticket.price}
     />
   );
@@ -401,7 +438,7 @@ function AttendeeForm({ slug, qty, event, ticket, me, router }: FormProps) {
         bottomBar={
           <>
             <div className="flex items-baseline justify-between">
-              <span className="text-[15px] font-semibold text-text-secondary">Total untuk {qty} tiket</span>
+              <span className="text-[15px] font-semibold text-text-secondary">Total untuk {quantity} tiket</span>
               <span className="text-xl font-extrabold">{formatRupiah(total)}</span>
             </div>
             <Button form="attendee-form" type="submit" size="lg" block loading={create.isPending} disabled={!online}>

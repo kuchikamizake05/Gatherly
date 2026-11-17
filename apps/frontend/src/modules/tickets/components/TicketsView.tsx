@@ -14,6 +14,7 @@ import { useOnline } from "@/hooks/use-online";
 import { useCancelOrder, useOrders } from "@/modules/orders/hooks";
 import type { Order } from "@/modules/orders/types";
 import { useTickets } from "@/modules/tickets/hooks";
+import { useRefunds } from "@/modules/refunds/hooks";
 import { eventEnded, groupByOrder, ticketState, type TicketGroup } from "@/modules/tickets/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -93,7 +94,7 @@ function GroupRow({
   meta: string;
   status: { label: string; tone: "success" | "neutral" | "warning" | "danger" };
   action: { label: string; href: string };
-  mobileNote: { text: string; tone: "success" | "neutral" | "danger" };
+  mobileNote: { text: string; tone: "success" | "neutral" | "warning" | "danger" };
 }) {
   const e = group.event;
   const count = "tickets" in group ? group.tickets.length : group.count;
@@ -112,7 +113,7 @@ function GroupRow({
           <span
             className={cn(
               "flex items-center gap-1.5 text-xs font-bold",
-              mobileNote.tone === "success" ? "text-success-ink" : mobileNote.tone === "danger" ? "text-danger-ink" : "text-text-tertiary",
+              mobileNote.tone === "success" ? "text-success-ink" : mobileNote.tone === "danger" ? "text-danger-ink" : mobileNote.tone === "warning" ? "text-warning-ink" : "text-text-tertiary",
             )}
           >
             <Ticket className="size-3.5" aria-hidden />
@@ -202,6 +203,12 @@ function cancelledInfo(o: Order) {
       status: "Acara dibatalkan",
       action: { label: "Hubungi penyelenggara", href: o.event.organizerUsername ? `/organizers/${o.event.organizerUsername}` : "/" },
     };
+  if (o.refundStatus === "full")
+    return {
+      note: `Pengembalian dana selesai${o.refundedAmount ? `, ${formatRupiah(o.refundedAmount)}` : ""} kembali ke metode bayar asal`,
+      status: "Dana dikembalikan",
+      action: { label: "Lihat acara", href: o.event.slug ? `/events/${o.event.slug}` : "/" },
+    };
   if (o.cancelledBy === "buyer")
     return {
       note: `Anda membatalkan ${when(o.cancelledAt)}`,
@@ -222,16 +229,23 @@ export function TicketsView() {
   const cancel = useCancelOrder();
   const [tab, setTab] = useState<Tab>("upcoming");
   const [cancelling, setCancelling] = useState<Order | null>(null);
+  const refunds = useRefunds();
+  /** Pesanan dengan pengajuan pengembalian dana yang masih berjalan. */
+  const refunding = useMemo(
+    () => new Set((refunds.data ?? []).filter((r) => ["requested", "approved", "processing", "manual_required"].includes(r.status)).map((r) => r.orderId)),
+    [refunds.data],
+  );
 
   const data = useMemo(() => {
     const groups = groupByOrder(tickets.data?.data ?? []);
-    const live = groups.filter((g) => g.event.status !== "cancelled");
+    // Tiket yang dananya sudah dikembalikan berstatus "cancelled". Pesanan tanpa tiket aktif tampil di tab Dibatalkan.
+    const live = groups.filter((g) => g.event.status !== "cancelled" && g.tickets.some((t) => t.checkInStatus !== "cancelled"));
     const upcoming = live.filter((g) => !eventEnded(g.event)).sort((a, b) => a.event.startsAt.localeCompare(b.event.startsAt));
     const done = live.filter((g) => eventEnded(g.event)).sort((a, b) => b.event.startsAt.localeCompare(a.event.startsAt));
     const all = orders.data?.data ?? [];
     const pending = all.filter((o) => o.paymentStatus === "pending" && o.reservationStatus === "held" && new Date(o.expiresAt).getTime() > Date.now());
     const cancelled = all
-      .filter((o) => o.reservationStatus === "released" || o.paymentStatus === "expired" || o.event.status === "cancelled" || !!o.cancelledBy)
+      .filter((o) => o.reservationStatus === "released" || o.paymentStatus === "expired" || o.event.status === "cancelled" || !!o.cancelledBy || o.refundStatus === "full")
       .sort((a, b) => b.event.startsAt.localeCompare(a.event.startsAt));
     return { upcoming, done, pending, cancelled };
   }, [tickets.data, orders.data]);
@@ -348,14 +362,27 @@ export function TicketsView() {
             items={data.upcoming}
             dateOf={(g) => g.event.startsAt}
             render={(g) => {
-              const unused = g.tickets.filter((t) => ticketState(t) === "unused").length;
+              const active = g.tickets.filter((t) => t.checkInStatus !== "cancelled");
+              const unused = active.filter((t) => ticketState(t) === "unused").length;
+              const returned = g.tickets.length - active.length;
+              const inProgress = refunding.has(g.orderId);
               return (
                 <GroupRow
                   group={g}
-                  meta={`${formatTime(g.event.startsAt)}, ${g.ticketTypeName}`}
-                  status={unused ? { label: "Belum dipakai", tone: "success" } : { label: "Sudah dipakai", tone: "neutral" }}
+                  meta={`${formatTime(g.event.startsAt)}, ${g.ticketTypeName}${returned ? `, ${returned} tiket dikembalikan` : ""}`}
+                  status={
+                    inProgress
+                      ? { label: "Pengembalian diproses", tone: "warning" }
+                      : unused
+                        ? { label: "Belum dipakai", tone: "success" }
+                        : { label: "Sudah dipakai", tone: "neutral" }
+                  }
                   action={{ label: "Lihat e-tiket", href: `/tickets/${g.orderId}` }}
-                  mobileNote={{ text: `${g.tickets.length} tiket, ${unused ? "belum dipakai" : "sudah dipakai"}`, tone: unused ? "success" : "neutral" }}
+                  mobileNote={
+                    inProgress
+                      ? { text: `${active.length} tiket, pengembalian diproses`, tone: "warning" }
+                      : { text: `${active.length} tiket, ${unused ? "belum dipakai" : "sudah dipakai"}`, tone: unused ? "success" : "neutral" }
+                  }
                 />
               );
             }}

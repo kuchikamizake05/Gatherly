@@ -1,4 +1,4 @@
-import { api, page, wrap, type Paginated } from "@/lib/api/client";
+import { ApiError, api, page, wrap, type Paginated } from "@/lib/api/client";
 import { FIX } from "@/modules/_mock/fixtures";
 import { refundDemoEvent } from "@/modules/tickets/api";
 
@@ -116,6 +116,23 @@ const refundDemoOrder = () =>
     ticketIds: ["tk_gs00", "tk_gs01"],
   });
 
+/** Pesanan contoh yang dananya sudah kembali penuh (tab Dibatalkan di Tiketku). */
+mockOrders.push(
+  mockOrder({
+    id: "ord_bt01",
+    orderCode: "GTH-BT01",
+    event: ev("kelas-membatik-tulis"),
+    ticketType: { name: "Reguler", unitPrice: 45000 },
+    quantity: 1,
+    paymentStatus: "paid",
+    reservationStatus: "converted",
+    issuanceStatus: "issued",
+    canResumePayment: false,
+    refundStatus: "full",
+    refundedAmount: 45000,
+  }),
+);
+
 /** Pesanan yang sudah dibayar (dipakai e-tiket dan bukti pembayaran). */
 const paidOrder = () =>
   mockOrder({
@@ -147,7 +164,14 @@ export const ordersApi = {
   create: (input: CreateOrderInput, idempotencyKey: string) =>
     api.post<{ data: Order }>("/orders", input, {
       headers: { "Idempotency-Key": idempotencyKey },
-      mock: () => wrap(mockOrder({ id: "ord_new", quantity: input.quantity, attendees: input.attendees })),
+      // Mock: nama peserta pertama "Tes kuota" (lebih dari 2 tiket) menyisakan 2 tiket, "Tes habis" memicu tiket habis.
+      mock: () => {
+        const first = input.attendees[0]?.name.trim().toLowerCase();
+        if (first === "tes kuota" && input.quantity > 2)
+          throw new ApiError(409, "INSUFFICIENT_QUOTA", "Sisa tiket tidak cukup.", undefined, { available: 2 });
+        if (first === "tes habis") throw new ApiError(409, "SOLD_OUT", "Tiket habis.");
+        return wrap(mockOrder({ id: "ord_new", quantity: input.quantity, attendees: input.attendees }));
+      },
     }),
   /** Mock: ord_4a7n sudah dibayar (e-tiket, bukti bayar), pesanan lain menunggu bayar (checkout). */
   get: (id: string) =>
