@@ -63,6 +63,8 @@ export type EventInput = {
   startsAt: string;
   endsAt: string;
   timezone: string;
+  checkInOpensAt?: string;
+  checkInClosesAt?: string;
   locationType: "offline" | "online";
   venueName: string;
   address: string;
@@ -77,7 +79,9 @@ export type EventInput = {
 export type OrgEvent = EventInput & {
   id: string;
   slug: string;
-  publicationStatus: "draft" | "published";
+  publicationStatus: "draft" | "published" | "cancelled";
+  cancellationStatus?: "requested" | "approved" | "rejected" | null;
+  cancellationReason?: string | null;
   status: OrgEventStatus;
   salesClosed: boolean;
   posterUrl?: string | null;

@@ -5,7 +5,7 @@ import { FIX } from "@/modules/_mock/fixtures";
 
 /**
  * Profil organizer dan Pengaturan (Rekening pencairan, Keamanan). Pita desain 23.
- * Semua pending: profil dan password (B38), rekening dan pencairan (B39).
+ * Profil dan password (B38), rekening dan pencairan (B39) memakai API nyata.
  */
 
 export type OrganizerProfileSettings = {
@@ -30,7 +30,7 @@ export type PayoutRow = {
   eventId: string;
   eventTitle: string;
   eventDate: string;
-  /** Pendapatan bersih setelah biaya layanan 5%. */
+  /** Nilai dasar tiket setelah pengembalian dana. Biaya layanan 5% dibayar pembeli, tidak dipotong dari organizer. */
   net: number;
   status: PayoutStatus;
   requestedAt?: string | null;
@@ -45,7 +45,17 @@ export type PayoutOverview = {
   rows: PayoutRow[];
 };
 
-const pending = { pending: true } as const;
+/** Backend menerima logo pada field `file`. */
+function normalizeLogo(form: FormData) {
+  const logo = form.get("logo");
+  if (logo instanceof File) {
+    form.delete("logo");
+    form.set("file", logo);
+  }
+  return form;
+}
+
+const pending = {} as const;
 
 const mockOverview: PayoutOverview = {
   available: 14962500,
@@ -72,11 +82,11 @@ export const organizerSettingsApi = {
     }),
   /** FormData: name, city, description, links (JSON), logo (gambar maks 1 MB, opsional). */
   updateProfile: (form: FormData) =>
-    api.patch<void>("/organizer/profile", form, {
+    api.patch<void>("/organizer/profile", normalizeLogo(form), {
       ...pending,
       mock: async () => {
         const previous = (await organizerSettingsApi.profile()).data;
-        const file = form.get("logo");
+        const file = form.get("file") ?? form.get("logo");
         let logoUrl =
           form.get("removeLogo") === "true" ? null : previous.logoUrl;
         if (file instanceof Blob && file.size) {

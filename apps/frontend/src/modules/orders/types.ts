@@ -26,6 +26,10 @@ export type Order = {
   quantity: number;
   attendees: Attendee[];
   totalAmount: number;
+  subtotalAmount?: number;
+  serviceFeeAmount?: number;
+  refundedAmount?: number;
+  refundStatus?: "none" | "partial" | "full";
   currency: "IDR";
   paymentStatus: PaymentStatus;
   reservationStatus: ReservationStatus;

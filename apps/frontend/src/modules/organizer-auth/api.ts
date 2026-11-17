@@ -33,7 +33,7 @@ const workspaceMeResponse = z.object({
 });
 export type WorkspaceMe = z.infer<typeof workspaceMeResponse>;
 
-const pending = { pending: true } as const;
+const pending = {} as const;
 
 export const organizerAuthApi = {
   async me(cookie?: string, signal?: AbortSignal) {

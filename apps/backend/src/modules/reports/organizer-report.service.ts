@@ -36,6 +36,11 @@ function orderListDto(order: OrderDocument & { _id: Types.ObjectId }) {
     ticketType: order.ticketTypeSnapshot,
     quantity: order.quantity,
     totalAmount: order.totalAmount,
+    ticketTypeName: order.ticketTypeSnapshot.name,
+    subtotalAmount: order.subtotalAmount ?? order.unitPrice * order.quantity,
+    serviceFeeAmount: order.serviceFeeAmount ?? 0,
+    refundedAmount: order.refundedAmount ?? 0,
+    refundStatus: order.refundStatus ?? "none",
     currency: order.currency,
     paymentStatus: order.paymentStatus,
     reservationStatus: order.reservationStatus,
@@ -46,10 +51,7 @@ function orderListDto(order: OrderDocument & { _id: Types.ObjectId }) {
   };
 }
 
-export async function getOrganizerSummary(
-  organizerId: string,
-  query: OrganizerSummaryQuery,
-) {
+export async function getOrganizerSummary(organizerId: string, query: OrganizerSummaryQuery) {
   const organizerObjectId = new Types.ObjectId(organizerId);
   const eventIds = await Event.distinct("_id", { organizerId: organizerObjectId });
   const paidAt: Record<string, Date> = {};
@@ -69,7 +71,14 @@ export async function getOrganizerSummary(
         $group: {
           _id: null,
           paidTickets: { $sum: "$quantity" },
-          grossPaidSales: { $sum: "$totalAmount" },
+          grossPaidSales: {
+            $sum: {
+              $subtract: [
+                { $ifNull: ["$subtotalAmount", { $multiply: ["$unitPrice", "$quantity"] }] },
+                { $ifNull: ["$refundedBaseAmount", 0] },
+              ],
+            },
+          },
         },
       },
     ]),
@@ -100,7 +109,19 @@ export async function getOrganizerEventSummary(eventId: string, organizerId: str
     Ticket.countDocuments({ eventId: event._id, checkInStatus: "used" }),
     Order.aggregate<{ grossPaidSales: number }>([
       { $match: { eventId: event._id, paymentStatus: "paid" } },
-      { $group: { _id: null, grossPaidSales: { $sum: "$totalAmount" } } },
+      {
+        $group: {
+          _id: null,
+          grossPaidSales: {
+            $sum: {
+              $subtract: [
+                { $ifNull: ["$subtotalAmount", { $multiply: ["$unitPrice", "$quantity"] }] },
+                { $ifNull: ["$refundedBaseAmount", 0] },
+              ],
+            },
+          },
+        },
+      },
     ]),
   ]);
   const totals = inventory[0] ?? { capacity: 0, reserved: 0, sold: 0 };
@@ -111,6 +132,7 @@ export async function getOrganizerEventSummary(eventId: string, organizerId: str
     available: totals.capacity - totals.reserved - totals.sold,
     checkedIn,
     grossPaidSales: sales[0]?.grossPaidSales ?? 0,
+    netSales: sales[0]?.grossPaidSales ?? 0,
     generatedAt: new Date(),
   };
 }
@@ -197,7 +219,9 @@ export async function listOrganizerAttendees(
   ]);
   return {
     data: tickets.map((ticket) => {
-      const actor = ticket.checkedInBy as unknown as { _id: Types.ObjectId; name: string } | undefined;
+      const actor = ticket.checkedInBy as unknown as
+        | { _id: Types.ObjectId; name: string }
+        | undefined;
       return {
         ticketId: ticket._id.toString(),
         ticketCode: ticket.ticketCode,

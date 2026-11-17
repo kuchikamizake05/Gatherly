@@ -12,11 +12,19 @@ export interface OrderDocument {
   orderCode: string;
   providerOrderId: string;
   quantity: number;
-  attendees: Array<{ name: string }>;
+  attendees: Array<{ name: string; email?: string; phone?: string; birthDate?: string }>;
   unitPrice: number;
   totalAmount: number;
+  subtotalAmount?: number;
+  serviceFeeAmount?: number;
+  refundedAmount: number;
+  refundedBaseAmount: number;
+  refundStatus?: "none" | "partial" | "full";
   currency: "IDR";
   eventSnapshot: {
+    slug?: string;
+    poster?: string;
+    endsAt?: Date;
     title: string;
     startsAt: Date;
     timezone: string;
@@ -32,6 +40,10 @@ export interface OrderDocument {
   paymentSessionState: PaymentSessionState;
   snapToken?: string;
   redirectUrl?: string;
+  paymentMethod?: string;
+  contactPhone?: string;
+  cancelledAt?: Date;
+  cancelledBy?: "buyer" | "organizer";
   paymentSessionAttempts: number;
   paymentSessionLastError?: string;
   expiresAt: Date;
@@ -61,13 +73,29 @@ const orderSchema = new Schema<OrderDocument>(
     providerOrderId: { type: String, required: true, unique: true },
     quantity: { type: Number, required: true, min: 1, max: 4 },
     attendees: {
-      type: [{ name: { type: String, required: true, trim: true }, _id: false }],
+      type: [
+        {
+          name: { type: String, required: true, trim: true },
+          email: String,
+          phone: String,
+          birthDate: String,
+          _id: false,
+        },
+      ],
       required: true,
     },
-    unitPrice: { type: Number, required: true, min: 1 },
-    totalAmount: { type: Number, required: true, min: 1 },
+    unitPrice: { type: Number, required: true, min: 0 },
+    totalAmount: { type: Number, required: true, min: 0 },
+    subtotalAmount: { type: Number, min: 0 },
+    serviceFeeAmount: { type: Number, min: 0 },
+    refundedAmount: { type: Number, default: 0, min: 0 },
+    refundedBaseAmount: { type: Number, default: 0, min: 0 },
+    refundStatus: { type: String, enum: ["none", "partial", "full"], default: "none" },
     currency: { type: String, enum: ["IDR"], default: "IDR", required: true },
     eventSnapshot: {
+      slug: String,
+      poster: String,
+      endsAt: Date,
       title: { type: String, required: true },
       startsAt: { type: Date, required: true },
       timezone: { type: String, required: true },
@@ -107,6 +135,10 @@ const orderSchema = new Schema<OrderDocument>(
       default: "not_started",
       required: true,
     },
+    paymentMethod: String,
+    contactPhone: String,
+    cancelledAt: Date,
+    cancelledBy: { type: String, enum: ["buyer", "organizer"] },
     snapToken: { type: String },
     redirectUrl: { type: String },
     paymentSessionAttempts: { type: Number, default: 0, min: 0, required: true },
@@ -115,7 +147,13 @@ const orderSchema = new Schema<OrderDocument>(
     idempotencyKey: { type: String, required: true },
     requestHash: { type: String, required: true },
     paymentTimeline: {
-      type: [{ status: { type: String, required: true }, at: { type: Date, required: true }, _id: false }],
+      type: [
+        {
+          status: { type: String, required: true },
+          at: { type: Date, required: true },
+          _id: false,
+        },
+      ],
       default: [],
     },
     nextReconcileAt: { type: Date, required: true },
@@ -136,6 +174,11 @@ orderSchema.index({ buyerId: 1, idempotencyKey: 1 }, { unique: true });
 orderSchema.index({ buyerId: 1, createdAt: -1, _id: -1 });
 orderSchema.index({ paymentStatus: 1, nextReconcileAt: 1 });
 orderSchema.index({ eventId: 1, paymentStatus: 1, paidAt: 1 });
-orderSchema.index({ paymentStatus: 1, reservationStatus: 1, issuanceStatus: 1, issuanceNextAttemptAt: 1 });
+orderSchema.index({
+  paymentStatus: 1,
+  reservationStatus: 1,
+  issuanceStatus: 1,
+  issuanceNextAttemptAt: 1,
+});
 
 export const Order = model<OrderDocument>("Order", orderSchema);

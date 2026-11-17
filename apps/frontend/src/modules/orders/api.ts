@@ -143,10 +143,7 @@ export const ordersApi = {
         }),
     }),
 
-  // Pending B34
+  /** Backend membalas 204. Hook memuat ulang pesanan setelahnya. */
   cancel: (id: string) =>
-    api.post<{ data: Order }>(`/orders/${id}/cancel`, undefined, {
-      pending: true,
-      mock: () => wrap(mockOrder({ id, reservationStatus: "released", canResumePayment: false })),
-    }),
+    api.post<void>(`/orders/${id}/cancel`, undefined, { mock: () => undefined }),
 };

@@ -51,9 +51,9 @@ export const authApi = {
   /** Arahkan browser ke sini untuk masuk dengan Google. */
   googleUrl: (returnTo = "/") => `/api/v1/auth/google?returnTo=${encodeURIComponent(returnTo)}`,
 
-  // Pending B36
+  // B36 password recovery
   forgotPassword: (email: string) =>
-    api.post<void>("/auth/password/forgot", { email }, { pending: true, mock: () => undefined }),
+    api.post<void>("/auth/password/forgot", { email }, { mock: () => undefined }),
   resetPassword: (token: string, password: string) =>
-    api.post<void>("/auth/password/reset", { token, password }, { pending: true, mock: () => undefined }),
+    api.post<void>("/auth/password/reset", { token, password }, { mock: () => undefined }),
 };

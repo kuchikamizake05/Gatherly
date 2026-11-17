@@ -2,7 +2,7 @@ import { Types, type HydratedDocument } from "mongoose";
 
 import type { TicketDocument } from "./ticket.model.js";
 
-type TicketLike = HydratedDocument<TicketDocument> | TicketDocument & { _id: Types.ObjectId };
+type TicketLike = HydratedDocument<TicketDocument> | (TicketDocument & { _id: Types.ObjectId });
 
 export function ticketListDto(ticket: TicketLike) {
   return {
@@ -11,6 +11,8 @@ export function ticketListDto(ticket: TicketLike) {
     event: ticket.eventSnapshot,
     ticketType: ticket.ticketTypeSnapshot,
     attendeeName: ticket.attendeeName,
+    attendeeEmail: ticket.attendeeEmail ?? null,
+    refundReason: ticket.cancellationReason ?? null,
     ticketCode: ticket.ticketCode,
     checkInStatus: ticket.checkInStatus,
     checkedInAt: ticket.checkedInAt ?? null,

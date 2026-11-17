@@ -79,11 +79,14 @@ type SummaryProps = {
   ticketName: string;
   quantity: number;
   unitPrice: number;
+  serviceFeeAmount?: number;
   className?: string;
 };
 
-export function OrderSummary({ title, poster, startsAt, venue, ticketName, quantity, unitPrice, className }: SummaryProps) {
-  const total = quantity * unitPrice;
+export function OrderSummary({ title, poster, startsAt, venue, ticketName, quantity, unitPrice, serviceFeeAmount, className }: SummaryProps) {
+  const subtotal = quantity * unitPrice;
+  const fee = serviceFeeAmount ?? Math.round(subtotal * 0.05);
+  const total = subtotal + fee;
   return (
     <section aria-label="Ringkasan pesanan" className={cn("flex flex-col gap-4 rounded-xl border border-border-strong bg-background p-5 md:p-6", className)}>
       <div className="flex items-center gap-3.5">
@@ -103,11 +106,11 @@ export function OrderSummary({ title, poster, startsAt, venue, ticketName, quant
           <span className="text-text-secondary">
             {ticketName} × {quantity}
           </span>
-          <span className="font-semibold">{formatRupiah(total)}</span>
+          <span className="font-semibold">{formatRupiah(subtotal)}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-text-secondary">Biaya layanan</span>
-          <span className="font-semibold">Rp0</span>
+          <span className="font-semibold">{formatRupiah(fee)}</span>
         </div>
       </div>
       <div className="flex items-baseline justify-between border-t border-border pt-3.5">

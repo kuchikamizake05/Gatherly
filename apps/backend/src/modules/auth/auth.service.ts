@@ -28,8 +28,24 @@ function otpHash(challengeId: string, code: string, secret?: string) {
   return createHmac("sha256", otpSecret(secret)).update(`${challengeId}:${code}`).digest("hex");
 }
 
-export function userResponse(user: { _id: { toString(): string }; name: string; emailNormalized: string }) {
-  return { id: user._id.toString(), name: user.name, email: user.emailNormalized };
+export function userResponse(user: {
+  _id: { toString(): string };
+  name: string;
+  emailNormalized: string;
+  phone?: string | null;
+  passwordHash?: string;
+  googleId?: string;
+  createdAt?: Date;
+}) {
+  return {
+    id: user._id.toString(),
+    name: user.name,
+    email: user.emailNormalized,
+    phone: user.phone ?? null,
+    hasPassword: Boolean(user.passwordHash),
+    googleLinked: Boolean(user.googleId),
+    createdAt: user.createdAt,
+  };
 }
 
 export async function createSession(userId: string, databaseSession?: mongoose.ClientSession) {
@@ -37,7 +53,14 @@ export async function createSession(userId: string, databaseSession?: mongoose.C
   const csrfToken = createToken();
   const expiresAt = new Date(Date.now() + env.SESSION_TTL_DAYS * 24 * 60 * 60 * 1000);
   const [session] = await Session.create(
-    [{ tokenHash: hashToken(sessionToken), csrfTokenHash: hashToken(csrfToken), userId, expiresAt }],
+    [
+      {
+        tokenHash: hashToken(sessionToken),
+        csrfTokenHash: hashToken(csrfToken),
+        userId,
+        expiresAt,
+      },
+    ],
     databaseSession ? { session: databaseSession } : undefined,
   );
   return { sessionToken, csrfToken, sessionId: session!._id.toString() };
@@ -60,7 +83,11 @@ async function createChallenge(
   const expiresAt = new Date(now.getTime() + otpLifetimeMs);
   const resendAt = new Date(now.getTime() + resendCooldownMs);
   await AuthChallenge.updateMany(
-    { emailNormalized: values.emailNormalized, purpose: values.purpose, usedAt: { $exists: false } },
+    {
+      emailNormalized: values.emailNormalized,
+      purpose: values.purpose,
+      usedAt: { $exists: false },
+    },
     { $set: { usedAt: now } },
   );
   const challenge = await AuthChallenge.create({
@@ -107,7 +134,7 @@ export async function beginLogin(
   options: { mailer?: OtpMailer; now?: Date; secret?: string } = {},
 ) {
   const emailNormalized = input.email.trim().toLowerCase();
-  const user = await User.findOne({ emailNormalized });
+  const user = await User.findOne({ emailNormalized, deletedAt: { $exists: false } });
   const valid = await bcrypt.compare(input.password, user?.passwordHash ?? dummyPasswordHash);
   if (!user || !user.passwordHash || !valid) {
     throw new AppError(401, "UNAUTHENTICATED", "Email or password is incorrect.");
@@ -126,9 +153,12 @@ async function getChallenge(challengeId: string, purpose: "register" | "login", 
   }
   const challenge = await AuthChallenge.findOne({ _id: challengeId, purpose });
   if (!challenge) throw new AppError(401, "UNAUTHENTICATED", "Verification challenge is invalid.");
-  if (challenge.usedAt) throw new AppError(409, "OTP_ALREADY_USED", "Verification code was already used.");
-  if (challenge.expiresAt <= now) throw new AppError(409, "OTP_EXPIRED", "Verification code has expired.");
-  if (challenge.attempts >= maxAttempts) throw new AppError(409, "OTP_LOCKED", "Verification challenge is locked.");
+  if (challenge.usedAt)
+    throw new AppError(409, "OTP_ALREADY_USED", "Verification code was already used.");
+  if (challenge.expiresAt <= now)
+    throw new AppError(409, "OTP_EXPIRED", "Verification code has expired.");
+  if (challenge.attempts >= maxAttempts)
+    throw new AppError(409, "OTP_LOCKED", "Verification challenge is locked.");
   return challenge;
 }
 
@@ -162,30 +192,57 @@ export async function verifyRegistration(
   const now = options.now ?? new Date();
   const challenge = await assertCode(challengeId, "register", code, now, options.secret);
   const databaseSession = await mongoose.startSession();
-  let result: { user: ReturnType<typeof userResponse>; sessionToken: string; csrfToken: string } | undefined;
+  let result:
+    | { user: ReturnType<typeof userResponse>; sessionToken: string; csrfToken: string }
+    | undefined;
   try {
     await databaseSession.withTransaction(async () => {
       const consumed = await AuthChallenge.findOneAndUpdate(
-        { _id: challenge._id, usedAt: { $exists: false }, expiresAt: { $gt: now }, attempts: { $lt: maxAttempts } },
+        {
+          _id: challenge._id,
+          usedAt: { $exists: false },
+          expiresAt: { $gt: now },
+          attempts: { $lt: maxAttempts },
+        },
         { $set: { usedAt: now } },
         { session: databaseSession, returnDocument: "after" },
       );
-      if (!consumed) throw new AppError(409, "OTP_ALREADY_USED", "Verification code was already used.");
-      if (!consumed.name || !consumed.passwordHash) throw new Error("Registration challenge is incomplete.");
-      if (await User.exists({ emailNormalized: consumed.emailNormalized }).session(databaseSession)) {
-        throw new AppError(409, "EMAIL_ALREADY_EXISTS", "An account with this email already exists.");
+      if (!consumed)
+        throw new AppError(409, "OTP_ALREADY_USED", "Verification code was already used.");
+      if (!consumed.name || !consumed.passwordHash)
+        throw new Error("Registration challenge is incomplete.");
+      if (
+        await User.exists({ emailNormalized: consumed.emailNormalized }).session(databaseSession)
+      ) {
+        throw new AppError(
+          409,
+          "EMAIL_ALREADY_EXISTS",
+          "An account with this email already exists.",
+        );
       }
       const [user] = await User.create(
-        [{ name: consumed.name, emailNormalized: consumed.emailNormalized, passwordHash: consumed.passwordHash, emailVerifiedAt: now }],
+        [
+          {
+            name: consumed.name,
+            emailNormalized: consumed.emailNormalized,
+            passwordHash: consumed.passwordHash,
+            emailVerifiedAt: now,
+          },
+        ],
         { session: databaseSession },
       );
       const authSession = await createSession(user!._id.toString(), databaseSession);
-      result = { user: userResponse(user!), sessionToken: authSession.sessionToken, csrfToken: authSession.csrfToken };
+      result = {
+        user: userResponse(user!),
+        sessionToken: authSession.sessionToken,
+        csrfToken: authSession.csrfToken,
+      };
     });
   } finally {
     await databaseSession.endSession();
   }
-  if (!result) throw new AppError(503, "SERVICE_UNAVAILABLE", "Registration could not be completed.");
+  if (!result)
+    throw new AppError(503, "SERVICE_UNAVAILABLE", "Registration could not be completed.");
   return result;
 }
 
@@ -197,21 +254,36 @@ export async function verifyLogin(
   const now = options.now ?? new Date();
   const challenge = await assertCode(challengeId, "login", code, now, options.secret);
   const databaseSession = await mongoose.startSession();
-  let result: { user: ReturnType<typeof userResponse>; sessionToken: string; csrfToken: string } | undefined;
+  let result:
+    | { user: ReturnType<typeof userResponse>; sessionToken: string; csrfToken: string }
+    | undefined;
   try {
     await databaseSession.withTransaction(async () => {
       const consumed = await AuthChallenge.findOneAndUpdate(
-        { _id: challenge._id, usedAt: { $exists: false }, expiresAt: { $gt: now }, attempts: { $lt: maxAttempts } },
+        {
+          _id: challenge._id,
+          usedAt: { $exists: false },
+          expiresAt: { $gt: now },
+          attempts: { $lt: maxAttempts },
+        },
         { $set: { usedAt: now } },
         { session: databaseSession, returnDocument: "after" },
       );
-      if (!consumed?.userId) throw new AppError(409, "OTP_ALREADY_USED", "Verification code was already used.");
-      const user = await User.findById(consumed.userId).session(databaseSession);
+      if (!consumed?.userId)
+        throw new AppError(409, "OTP_ALREADY_USED", "Verification code was already used.");
+      const user = await User.findOne({
+        _id: consumed.userId,
+        deletedAt: { $exists: false },
+      }).session(databaseSession);
       if (!user) throw new AppError(401, "UNAUTHENTICATED", "Verification challenge is invalid.");
       user.emailVerifiedAt ??= now;
       await user.save({ session: databaseSession });
       const authSession = await createSession(user._id.toString(), databaseSession);
-      result = { user: userResponse(user), sessionToken: authSession.sessionToken, csrfToken: authSession.csrfToken };
+      result = {
+        user: userResponse(user),
+        sessionToken: authSession.sessionToken,
+        csrfToken: authSession.csrfToken,
+      };
     });
   } finally {
     await databaseSession.endSession();
@@ -225,12 +297,17 @@ export async function resendOtp(
   options: { mailer?: OtpMailer; now?: Date; secret?: string } = {},
 ) {
   const now = options.now ?? new Date();
-  if (!Types.ObjectId.isValid(challengeId)) throw new AppError(400, "VALIDATION_ERROR", "Challenge ID is invalid.");
+  if (!Types.ObjectId.isValid(challengeId))
+    throw new AppError(400, "VALIDATION_ERROR", "Challenge ID is invalid.");
   const challenge = await AuthChallenge.findById(challengeId);
-  if (!challenge || challenge.usedAt) throw new AppError(409, "OTP_ALREADY_USED", "Verification challenge is unavailable.");
-  if (challenge.expiresAt <= now) throw new AppError(409, "OTP_EXPIRED", "Verification code has expired.");
-  if (challenge.attempts >= maxAttempts) throw new AppError(409, "OTP_LOCKED", "Verification challenge is locked.");
-  if (challenge.resendAt > now) throw new AppError(429, "RATE_LIMITED", "Please wait before requesting another code.");
+  if (!challenge || challenge.usedAt)
+    throw new AppError(409, "OTP_ALREADY_USED", "Verification challenge is unavailable.");
+  if (challenge.expiresAt <= now)
+    throw new AppError(409, "OTP_EXPIRED", "Verification code has expired.");
+  if (challenge.attempts >= maxAttempts)
+    throw new AppError(409, "OTP_LOCKED", "Verification challenge is locked.");
+  if (challenge.resendAt > now)
+    throw new AppError(429, "RATE_LIMITED", "Please wait before requesting another code.");
   const code = otpCode();
   const expiresAt = new Date(now.getTime() + otpLifetimeMs);
   const resendAt = new Date(now.getTime() + resendCooldownMs);
@@ -245,9 +322,14 @@ export async function resendOtp(
     },
     { $set: { codeHash, expiresAt, resendAt, attempts: 0 } },
   );
-  if (!updated) throw new AppError(429, "RATE_LIMITED", "Please wait before requesting another code.");
+  if (!updated)
+    throw new AppError(429, "RATE_LIMITED", "Please wait before requesting another code.");
   try {
-    await (options.mailer ?? sendOtpEmail)({ to: challenge.emailNormalized, code, purpose: challenge.purpose });
+    await (options.mailer ?? sendOtpEmail)({
+      to: challenge.emailNormalized,
+      code,
+      purpose: challenge.purpose,
+    });
   } catch (error) {
     await AuthChallenge.updateOne(
       { _id: challenge._id, codeHash, usedAt: { $exists: false } },
@@ -268,7 +350,10 @@ export async function resendOtp(
 
 export async function createOAuthState(now = new Date()) {
   const state = createToken();
-  await OAuthState.create({ stateHash: hashToken(state), expiresAt: new Date(now.getTime() + oauthStateLifetimeMs) });
+  await OAuthState.create({
+    stateHash: hashToken(state),
+    expiresAt: new Date(now.getTime() + oauthStateLifetimeMs),
+  });
   return state;
 }
 
@@ -281,12 +366,18 @@ export async function consumeOAuthState(state: string, cookieState: string, now 
   return Boolean(consumed);
 }
 
-export async function resolveGoogleUser(profile: { id: string; displayName: string; email: string; emailVerified: boolean }) {
-  if (!profile.emailVerified) throw new AppError(401, "UNAUTHENTICATED", "Google email is not verified.");
+export async function resolveGoogleUser(profile: {
+  id: string;
+  displayName: string;
+  email: string;
+  emailVerified: boolean;
+}) {
+  if (!profile.emailVerified)
+    throw new AppError(401, "UNAUTHENTICATED", "Google email is not verified.");
   const emailNormalized = profile.email.trim().toLowerCase();
-  const byGoogleId = await User.findOne({ googleId: profile.id });
+  const byGoogleId = await User.findOne({ googleId: profile.id, deletedAt: { $exists: false } });
   if (byGoogleId) return byGoogleId;
-  const byEmail = await User.findOne({ emailNormalized });
+  const byEmail = await User.findOne({ emailNormalized, deletedAt: { $exists: false } });
   if (byEmail) {
     byEmail.googleId = profile.id;
     byEmail.emailVerifiedAt ??= new Date();

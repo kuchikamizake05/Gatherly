@@ -2,17 +2,22 @@ import mongoose from "mongoose";
 
 import { app } from "./app.js";
 import { env } from "./config/env.js";
-import { startPaymentReconciliationJob } from "./jobs/payment-reconciliation.job.js";
-import { startTicketIssuanceJob } from "./jobs/ticket-issuance.job.js";
+import { attachRealtime } from "./modules/realtime/server.js";
 
 async function startServer() {
   await mongoose.connect(env.MONGODB_URI);
-  startPaymentReconciliationJob();
-  startTicketIssuanceJob();
-
-  app.listen(env.PORT, () => {
+  const server = app.listen(env.PORT, "127.0.0.1", () => {
     console.info(`Gatherly API listening on http://localhost:${env.PORT}`);
   });
+  attachRealtime(server);
+  const shutdown = () => {
+    server.close(() => {
+      void mongoose.disconnect().then(() => process.exit(0));
+    });
+    setTimeout(() => process.exit(1), 10_000).unref();
+  };
+  process.on("SIGTERM", shutdown);
+  process.on("SIGINT", shutdown);
 }
 
 startServer().catch((error: unknown) => {

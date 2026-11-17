@@ -58,7 +58,7 @@ export type Application = ApplicationInput & {
   rejectionReason?: string | null;
 };
 
-const pending = { pending: true } as const;
+const pending = {} as const;
 
 const mockApplication: Application = {
   id: "app_0042",

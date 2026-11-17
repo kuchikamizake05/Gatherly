@@ -5,6 +5,24 @@ import { Order, type OrderDocument } from "../orders/order.model.js";
 import { createSnapTransaction, type SnapTransport } from "./midtrans.client.js";
 import type { SnapRequest } from "./payment.schemas.js";
 
+const paymentOptions: Record<string, string[]> = {
+  qris: ["qris"],
+  gopay: ["gopay"],
+  shopeepay: ["shopeepay"],
+  dana: ["dana"],
+  ovo: ["ovo"],
+  bca_va: ["bca_va"],
+  mandiri_va: ["echannel"],
+  bni_va: ["bni_va"],
+  bri_va: ["bri_va"],
+  bsi_va: ["bsi_va"],
+  permata_va: ["permata_va"],
+  cimb_va: ["cimb_va"],
+  credit_card: ["credit_card"],
+  indomaret: ["indomaret"],
+  alfamart: ["alfamart"],
+  paylater: ["akulaku", "kredivo"],
+};
 const providerMinimumRemainingMs = 20_000;
 const creationLeaseMs = 30_000;
 
@@ -30,6 +48,7 @@ function formatJakartaTime(date: Date) {
 
 export function snapPayload(order: OrderDocument & { _id: Types.ObjectId }): SnapRequest {
   return {
+    ...(order.paymentMethod ? { enabled_payments: paymentOptions[order.paymentMethod] } : {}),
     transaction_details: {
       order_id: order.providerOrderId,
       gross_amount: order.totalAmount,
@@ -41,6 +60,16 @@ export function snapPayload(order: OrderDocument & { _id: Types.ObjectId }): Sna
         quantity: order.quantity,
         name: order.ticketTypeSnapshot.name.slice(0, 50),
       },
+      ...(order.serviceFeeAmount
+        ? [
+            {
+              id: "gatherly-service-fee",
+              price: order.serviceFeeAmount,
+              quantity: 1,
+              name: "Gatherly service fee",
+            },
+          ]
+        : []),
     ],
     customer_details: {
       first_name: order.buyerSnapshot.name,
@@ -70,6 +99,7 @@ export async function createPaymentSession(
   orderId: string,
   buyerId: string,
   transport: SnapTransport = createSnapTransaction,
+  method?: string,
 ): Promise<PaymentSessionResult> {
   if (!Types.ObjectId.isValid(orderId)) {
     throw new AppError(404, "NOT_FOUND", "Order not found.");
@@ -77,6 +107,19 @@ export async function createPaymentSession(
 
   const order = await Order.findOne({ _id: orderId, buyerId });
   if (!order) throw new AppError(404, "NOT_FOUND", "Order not found.");
+  if (method && !paymentOptions[method])
+    throw new AppError(400, "INVALID_PAYMENT_METHOD", "Unsupported payment method.");
+  if (
+    method &&
+    order.paymentMethod &&
+    order.paymentMethod !== method &&
+    order.paymentSessionState !== "not_started"
+  )
+    throw new AppError(
+      409,
+      "PAYMENT_METHOD_LOCKED",
+      "Resume the existing payment session with its original method.",
+    );
   const now = new Date();
   const terminal =
     order.paymentStatus !== "pending" ||
@@ -158,11 +201,18 @@ export async function createPaymentSession(
     await Order.updateOne(
       { _id: claimed._id, paymentSessionState: "creating" },
       {
-        $set: { paymentSessionState: "not_started", paymentSessionLastError: `http_${providerResult.status}` },
+        $set: {
+          paymentSessionState: "not_started",
+          paymentSessionLastError: `http_${providerResult.status}`,
+        },
         $unset: { leaseUntil: 1 },
       },
     );
-    throw new AppError(502, "PROVIDER_REJECTED", "The payment provider rejected the session request.");
+    throw new AppError(
+      502,
+      "PROVIDER_REJECTED",
+      "The payment provider rejected the session request.",
+    );
   }
 
   const errorCode = providerResult.kind === "rate_limited" ? "rate_limited" : providerResult.reason;
@@ -178,7 +228,11 @@ export async function createPaymentSession(
     },
   );
   if (providerResult.kind === "rate_limited") {
-    throw new AppError(503, "PROVIDER_UNAVAILABLE", "The payment provider is temporarily unavailable.");
+    throw new AppError(
+      503,
+      "PROVIDER_UNAVAILABLE",
+      "The payment provider is temporarily unavailable.",
+    );
   }
   return { status: "uncertain" };
 }

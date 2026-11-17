@@ -1,6 +1,6 @@
 import { Schema, Types, model } from "mongoose";
 
-export type CheckInStatus = "unused" | "used";
+export type CheckInStatus = "unused" | "used" | "cancelled";
 
 export interface TicketDocument {
   orderId: Types.ObjectId;
@@ -9,12 +9,19 @@ export interface TicketDocument {
   ticketTypeId: Types.ObjectId;
   sequence: number;
   attendeeName: string;
+  attendeeEmail?: string;
+  cancelledAt?: Date;
+  cancellationReason?: string;
+  refundId?: Types.ObjectId;
   ticketCode: string;
   qrToken: string;
   checkInStatus: CheckInStatus;
   checkedInAt?: Date;
   checkedInBy?: Types.ObjectId;
   eventSnapshot: {
+    slug?: string;
+    poster?: string;
+    endsAt?: Date;
     title: string;
     startsAt: Date;
     timezone: string;
@@ -35,17 +42,24 @@ const ticketSchema = new Schema<TicketDocument>(
     ticketTypeId: { type: Schema.Types.ObjectId, required: true, ref: "TicketType" },
     sequence: { type: Number, required: true, min: 0 },
     attendeeName: { type: String, required: true, trim: true },
+    attendeeEmail: String,
+    cancelledAt: Date,
+    cancellationReason: String,
+    refundId: Schema.Types.ObjectId,
     ticketCode: { type: String, required: true, unique: true },
     qrToken: { type: String, required: true, unique: true, select: false },
     checkInStatus: {
       type: String,
-      enum: ["unused", "used"],
+      enum: ["unused", "used", "cancelled"],
       default: "unused",
       required: true,
     },
     checkedInAt: { type: Date },
     checkedInBy: { type: Schema.Types.ObjectId, ref: "User" },
     eventSnapshot: {
+      slug: String,
+      poster: String,
+      endsAt: Date,
       title: { type: String, required: true },
       startsAt: { type: Date, required: true },
       timezone: { type: String, required: true },

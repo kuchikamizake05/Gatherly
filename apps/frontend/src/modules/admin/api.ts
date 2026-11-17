@@ -12,11 +12,11 @@ import { FIX } from "@/modules/_mock/fixtures";
 import type { Application, FieldFlag } from "@/modules/applications/api";
 
 /**
- * admin.gatherly.xyz. Pita desain 20, 21, 22, 24. Semua pending:
+ * admin.gatherly.xyz. Pita desain 20, 21, 22, 24. Semua memakai API nyata:
  * login + 2FA (B30), pengajuan (B31), organizer (B32), pencairan (B39), laporan (B40).
  */
 
-const pending = { pending: true } as const;
+const pending = {} as const;
 const base = "/admin";
 
 export type AdminMe = {
@@ -99,7 +99,8 @@ export type ReportRow = Omit<(typeof FIX.reports)[number], "status"> & {
   status: "new" | "done";
 };
 export type ReportDetail = ReportRow & {
-  resolutionNote?: string;
+  resolutionNote?: string | null;
+  closedAt?: string | null;
   note: string;
   reporter: { email: string; isTicketHolder: boolean };
   event: { slug: string; title: string; startsAt: string; soldLabel: string };
@@ -505,7 +506,7 @@ export const adminApi = {
   markTransferred: (id: string, reference: string, transferredAt: string) =>
     api.post<void>(
       `${base}/payouts/${id}/transferred`,
-      { reference, transferredAt },
+      { transferReference: reference, transferredAt },
       {
         ...pending,
         mock: () => {

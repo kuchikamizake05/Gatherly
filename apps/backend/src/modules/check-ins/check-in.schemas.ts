@@ -1,9 +1,8 @@
 import { z } from "zod";
 
-const qrPayload = z.string().regex(
-  /^gatherly:v1:[A-Za-z0-9_-]{43}$/,
-  "QR payload has an invalid format.",
-);
+const qrPayload = z
+  .string()
+  .regex(/^gatherly:v1:[A-Za-z0-9_-]{43}$/, "QR payload has an invalid format.");
 
 export const checkInSchema = z
   .object({
@@ -23,6 +22,7 @@ export const committeeTicketQuerySchema = z.object({
 });
 
 export const checkInHistoryQuerySchema = z.object({
+  rejectedOnly: z.preprocess((v) => v === "true" || v === true, z.boolean()).default(false),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(50).default(20),
 });

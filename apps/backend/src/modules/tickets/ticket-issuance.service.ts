@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import mongoose from "mongoose";
 
 import { Order } from "../orders/order.model.js";
+import { publishUpdate } from "../realtime/events.js";
 import { Ticket } from "./ticket.model.js";
 
 const leaseMs = 30_000;
@@ -57,6 +58,7 @@ async function issueClaimedOrder(orderId: string) {
                 ticketTypeId: order.ticketTypeId,
                 sequence,
                 attendeeName: attendee.name,
+                attendeeEmail: attendee.email ?? order.buyerSnapshot.email,
                 ticketCode: ticketCode(),
                 qrToken: qrToken(),
                 checkInStatus: "unused",
@@ -80,6 +82,7 @@ async function issueClaimedOrder(orderId: string) {
       order.issuanceNextAttemptAt = undefined;
       order.issuanceLastError = undefined;
       await order.save({ session });
+      await publishUpdate({ topic: "order", id: order.id, type: "tickets.issued" }, session);
     });
   } finally {
     await session.endSession();

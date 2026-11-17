@@ -1,0 +1,22 @@
+[Unit]
+Description=Gatherly background worker (payments, tickets, refunds, email, reminders)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=gatherly
+Group=gatherly
+WorkingDirectory=/opt/gatherly/app/backend
+EnvironmentFile=/etc/gatherly/backend.env
+ExecStart=/usr/bin/node dist/worker.js
+Restart=always
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=30
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

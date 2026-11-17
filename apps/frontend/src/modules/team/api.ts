@@ -7,7 +7,7 @@ import { mockAssignments, mockEventIds } from "./mock-assignments";
 import { FIX } from "@/modules/_mock/fixtures";
 
 /**
- * Tim dan akun panitia di Pengaturan, Tim. Pita desain 18. Semua pending (issue B28).
+ * Tim dan akun panitia di Pengaturan, Tim. Pita desain 18. Terhubung ke backend B28.
  */
 
 export type MemberStatus = "owner" | "active" | "never_logged_in" | "inactive";
@@ -36,7 +36,7 @@ export type Credentials = {
   expiresAt: string;
 };
 
-const pending = { pending: true } as const;
+const pending = {} as const;
 const base = "/organizer/team";
 
 const owner: TeamMember = {
