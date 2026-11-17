@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { useIdempotencyKey } from "@/hooks/use-idempotency-key";
 import { qk } from "@/lib/api/query-keys";
 
 import { organizerEventsApi as apiOrg } from "./api";
@@ -10,9 +11,10 @@ import type { EventInput, RefundInput, TicketTypeInput } from "./types";
 const RANGE_DAYS = { "7d": 7, "30d": 30, "90d": 90 } as const;
 export type SummaryRange = keyof typeof RANGE_DAYS | "year";
 
-export function useOrgSummary(range: SummaryRange = "30d") {
+export function useOrgSummary(range: SummaryRange = "30d", enabled = true) {
   return useQuery({
     queryKey: qk.orgSummary(range),
+    enabled,
     queryFn: async () => {
       const to = new Date();
       const from =
@@ -24,20 +26,37 @@ export function useOrgSummary(range: SummaryRange = "30d") {
   });
 }
 
-export function useOrgEvents(status?: string) {
-  return useQuery({ queryKey: qk.orgEvents(status), queryFn: () => apiOrg.list(status) });
+export function useOrgEvents(status?: string, enabled = true) {
+  return useQuery({
+    queryKey: qk.orgEvents(status),
+    enabled,
+    queryFn: () => apiOrg.list(status),
+  });
 }
 
 export function useOrgEvent(id: string) {
-  return useQuery({ queryKey: qk.orgEvent(id), queryFn: async () => (await apiOrg.get(id)).data, enabled: !!id });
+  return useQuery({
+    queryKey: qk.orgEvent(id),
+    queryFn: async () => (await apiOrg.get(id)).data,
+    enabled: !!id,
+  });
 }
 
 export function useOrgEventSummary(id: string) {
-  return useQuery({ queryKey: qk.orgEventSummary(id), queryFn: async () => (await apiOrg.eventSummary(id)).data });
+  return useQuery({
+    queryKey: qk.orgEventSummary(id),
+    queryFn: async () => (await apiOrg.eventSummary(id)).data,
+  });
 }
 
-export function useOrgEventOrders(id: string, params: { q?: string; paymentStatus?: string; page?: number } = {}) {
-  return useQuery({ queryKey: qk.orgEventOrders(id, params), queryFn: () => apiOrg.orders(id, params) });
+export function useOrgEventOrders(
+  id: string,
+  params: { q?: string; paymentStatus?: string; page?: number } = {},
+) {
+  return useQuery({
+    queryKey: qk.orgEventOrders(id, params),
+    queryFn: () => apiOrg.orders(id, params),
+  });
 }
 
 export function useOrgEventOrder(id: string, orderId: string | null) {
@@ -48,12 +67,21 @@ export function useOrgEventOrder(id: string, orderId: string | null) {
   });
 }
 
-export function useOrgEventAttendees(id: string, params: { q?: string; checkInStatus?: string; page?: number } = {}) {
-  return useQuery({ queryKey: qk.orgEventAttendees(id, params), queryFn: () => apiOrg.attendees(id, params) });
+export function useOrgEventAttendees(
+  id: string,
+  params: { q?: string; checkInStatus?: string; page?: number } = {},
+) {
+  return useQuery({
+    queryKey: qk.orgEventAttendees(id, params),
+    queryFn: () => apiOrg.attendees(id, params),
+  });
 }
 
 export function useEventCommittee(id: string) {
-  return useQuery({ queryKey: qk.orgEventCommittee(id), queryFn: async () => (await apiOrg.committee(id)).data });
+  return useQuery({
+    queryKey: qk.orgEventCommittee(id),
+    queryFn: async () => (await apiOrg.committee(id)).data,
+  });
 }
 
 /** Mutasi yang menyegarkan data acara terkait. */
@@ -64,6 +92,8 @@ function useEventMutation<T>(id: string, fn: (input: T) => Promise<unknown>) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["org", "event", id] });
       qc.invalidateQueries({ queryKey: ["org", "events"] });
+      qc.invalidateQueries({ queryKey: qk.orgTeam });
+      qc.invalidateQueries({ queryKey: qk.assigned });
     },
   });
 }
@@ -76,22 +106,65 @@ export function useCreateEvent() {
   });
 }
 
-export const useUpdateEvent = (id: string) => useEventMutation(id, (input: Partial<EventInput>) => apiOrg.update(id, input));
-export const usePublishEvent = (id: string) => useEventMutation(id, () => apiOrg.publish(id));
-export const useAddTicketType = (id: string) => useEventMutation(id, (input: TicketTypeInput) => apiOrg.addTicketType(id, input));
+export const useUpdateEvent = (id: string) =>
+  useEventMutation(id, (input: Partial<EventInput>) =>
+    apiOrg.update(id, input),
+  );
+export const usePublishEvent = (id: string) =>
+  useEventMutation(id, () => apiOrg.publish(id));
+export const useAddTicketType = (id: string) =>
+  useEventMutation(id, (input: TicketTypeInput) =>
+    apiOrg.addTicketType(id, input),
+  );
 export const useUpdateTicketType = (id: string) =>
-  useEventMutation(id, ({ typeId, input }: { typeId: string; input: Partial<TicketTypeInput> }) => apiOrg.updateTicketType(id, typeId, input));
-export const useRemoveTicketType = (id: string) => useEventMutation(id, (typeId: string) => apiOrg.removeTicketType(id, typeId));
+  useEventMutation(
+    id,
+    ({ typeId, input }: { typeId: string; input: Partial<TicketTypeInput> }) =>
+      apiOrg.updateTicketType(id, typeId, input),
+  );
+export const useRemoveTicketType = (id: string) =>
+  useEventMutation(id, (typeId: string) => apiOrg.removeTicketType(id, typeId));
 export const useSetTicketSales = (id: string) =>
-  useEventMutation(id, ({ typeId, stopped }: { typeId: string; stopped: boolean }) => apiOrg.setTicketSales(id, typeId, stopped));
-export const useCancelEvent = (id: string) =>
-  useEventMutation(id, ({ confirmTitle, reason }: { confirmTitle: string; reason: string }) => apiOrg.cancelEvent(id, confirmTitle, reason));
-export const useDuplicateEvent = (id: string) => useEventMutation(id, () => apiOrg.duplicate(id));
-export const useAssignCommittee = (id: string) => useEventMutation(id, (memberIds: string[]) => apiOrg.assignCommittee(id, memberIds));
-export const useRevokeCommittee = (id: string) => useEventMutation(id, (userId: string) => apiOrg.revokeCommittee(id, userId));
-export const useRefundOrder = (id: string) =>
-  useEventMutation(id, ({ orderId, input }: { orderId: string; input: RefundInput }) => apiOrg.refund(id, orderId, input));
+  useEventMutation(
+    id,
+    ({ typeId, stopped }: { typeId: string; stopped: boolean }) =>
+      apiOrg.setTicketSales(id, typeId, stopped),
+  );
+export function useCancelEvent(id: string) {
+  const keyFor = useIdempotencyKey();
+  return useEventMutation(
+    id,
+    (input: { confirmTitle: string; reason: string }) =>
+      apiOrg.cancelEvent(
+        id,
+        input.confirmTitle,
+        input.reason,
+        keyFor({ id, ...input }),
+      ),
+  );
+}
+export const useDuplicateEvent = (id: string) =>
+  useEventMutation(id, () => apiOrg.duplicate(id));
+export const useAssignCommittee = (id: string) =>
+  useEventMutation(id, (memberIds: string[]) =>
+    apiOrg.assignCommittee(id, memberIds),
+  );
+export const useRevokeCommittee = (id: string) =>
+  useEventMutation(id, (userId: string) => apiOrg.revokeCommittee(id, userId));
+export function useRefundOrder(id: string) {
+  const keyFor = useIdempotencyKey();
+  return useEventMutation(
+    id,
+    (request: { orderId: string; input: RefundInput }) =>
+      apiOrg.refund(
+        id,
+        request.orderId,
+        request.input,
+        keyFor({ id, ...request }),
+      ),
+  );
+}
 
 export function useUploadPoster() {
-  return useMutation({ mutationFn: (file: Blob) => apiOrg.uploadPoster(file) });
+  return useMutation({ mutationFn: (file: File) => apiOrg.uploadPoster(file) });
 }

@@ -6,10 +6,8 @@ import { useEffect, type ReactNode } from "react";
 import { useMe } from "@/modules/auth/hooks";
 import { useWorkspaceMe } from "@/modules/organizer-auth/hooks";
 import { useAdminMe } from "@/modules/admin/hooks";
+import { QueryState } from "@/components/elements/QueryState";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StateView } from "@/components/elements/StateView";
-import { Button } from "@/components/ui/button";
-import { useOnline } from "@/hooks/use-online";
 
 function GuardLoading() {
   return (
@@ -34,11 +32,12 @@ function useRedirect(when: boolean, to: string) {
 /** Halaman peserta yang butuh login (Tiketku, Disimpan, Akun saya, checkout). */
 export function RequireBuyer({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { data, isPending } = useMe();
+  const { data, isPending, isError, error, refetch } = useMe();
   useRedirect(
     !isPending && data === null,
     `/login?returnTo=${encodeURIComponent(pathname)}`,
   );
+  if (isError) return <QueryState error={error} retry={refetch} />;
   if (isPending || !data) return <GuardLoading />;
   return <>{children}</>;
 }
@@ -51,7 +50,7 @@ export function RequireBuyer({ children }: { children: ReactNode }) {
  */
 export function RequireWorkspace({ children }: { children: ReactNode }) {
   const pathname = usePathname().replace(/^\/organizer/, "") || "/";
-  const { data, isPending } = useWorkspaceMe();
+  const { data, isPending, isError, error, refetch } = useWorkspaceMe();
   const committeeAllowed =
     pathname === "/" || /^\/events\/[^/]+\/scan(\/.*)?$/.test(pathname);
 
@@ -66,6 +65,7 @@ export function RequireWorkspace({ children }: { children: ReactNode }) {
           : null;
 
   useRedirect(!!target, target ?? "/");
+  if (isError) return <QueryState error={error} retry={refetch} />;
   if (isPending || !data || target) return <GuardLoading />;
   return <>{children}</>;
 }
@@ -73,21 +73,12 @@ export function RequireWorkspace({ children }: { children: ReactNode }) {
 /** Konsol admin.gatherly.xyz. */
 export function RequireAdmin({ children }: { children: ReactNode }) {
   const pathname = usePathname().replace(/^\/admin/, "") || "/";
-  const { data, isPending, isError, refetch } = useAdminMe();
-  const online = useOnline();
+  const { data, isPending, isError, error, refetch } = useAdminMe();
   useRedirect(
     !isPending && data === null,
     `/login?returnTo=${encodeURIComponent(pathname)}`,
   );
-  if (!online || isError)
-    return (
-      <StateView
-        illustration="failed-load"
-        title={!online ? "Anda sedang luring" : "Sesi gagal diperiksa"}
-        description="Periksa koneksi Anda lalu coba lagi."
-        action={<Button onClick={() => void refetch()}>Coba lagi</Button>}
-      />
-    );
+  if (isError) return <QueryState error={error} retry={refetch} />;
   if (isPending || !data) return <GuardLoading />;
   return <>{children}</>;
 }

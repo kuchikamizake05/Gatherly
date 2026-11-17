@@ -173,12 +173,13 @@ export function FileUpload({
   const inputId = id ?? autoId;
   const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  useEffect(() => () => abortRef.current?.abort(), []);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [dragging, setDragging] = useState(false);
-  useEffect(() => () => abortRef.current?.abort(), []);
 
   const start = async (raw: File) => {
     if (disabled || abortRef.current) return;
+    const isPdf = raw.type === "application/pdf";
     if (!navigator.onLine) {
       setStatus({
         kind: "error",
@@ -187,7 +188,6 @@ export function FileUpload({
       });
       return;
     }
-    const isPdf = raw.type === "application/pdf";
     if (!accept.includes(raw.type)) {
       const ext = extension(raw.name) || "ini";
       setStatus({
@@ -370,7 +370,7 @@ export function FileUpload({
         disabled={disabled || status.kind === "uploading"}
         aria-labelledby={`${inputId}-label`}
         onChange={(e) => pick(e.target.files)}
-        className="sr-only focus-visible:not-sr-only focus-visible:h-11 focus-visible:w-full"
+        className="sr-only"
       />
       {error && status.kind === "idle" && (
         <p className="text-[13px] text-danger-ink" role="alert">
