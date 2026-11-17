@@ -271,6 +271,7 @@ export function TeamView() {
         open={create}
         onOpenChange={(value) => !busy && setCreate(value)}
         title="Tambah anggota"
+        form
         description="Kredensial sementara akan ditampilkan sekali setelah akun dibuat."
       >
         <form
@@ -352,6 +353,7 @@ export function TeamView() {
         open={action?.type === "assign"}
         onOpenChange={(open) => !open && !busy && setAction(null)}
         title="Atur penugasan"
+        form
         description={`Pilih acara untuk ${action?.member.name ?? "anggota"}.`}
       >
         {error && <Alert title="Penugasan belum tersimpan">{error}</Alert>}

@@ -1,4 +1,5 @@
 "use client";
+import { Plus } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -304,9 +305,11 @@ function ProfileForm({ profile }: { profile: OrganizerProfileSettings }) {
           <Button
             type="button"
             variant="outline"
+            className="w-full md:w-auto"
             disabled={disabled || links.fields.length >= 5}
             onClick={() => links.append({ type: "website", url: "" })}
           >
+            <Plus className="size-4" aria-hidden />
             Tambah tautan ({links.fields.length}/5)
           </Button>
         </fieldset>

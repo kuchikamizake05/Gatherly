@@ -10,7 +10,8 @@ export const profileResponse = z.object({
 export const bankResponse = z
   .object({
     bank: z.string().min(1),
-    accountNumber: z.string().regex(/^\d{10,16}$/),
+    // Backend mengirim nomor tersamar (••••1234), bukan nomor lengkap.
+    accountNumber: z.string().min(1),
     holderName: z.string().min(1),
   })
   .nullable();
@@ -22,8 +23,13 @@ export const payoutsResponse = z.object({
     z.object({
       eventId: z.string().min(1),
       eventTitle: z.string(),
-      eventDate: z.string().datetime({ offset: true }),
-      net: z.number().nonnegative(),
+      eventDate: z.string(),
+      // Nilai kosong atau tidak valid dari backend dianggap 0 supaya halaman tetap tampil.
+      net: z
+        .number()
+        .nullable()
+        .catch(0)
+        .transform((v) => Math.max(0, v ?? 0)),
       status: z.enum([
         "waiting_event",
         "available",
@@ -31,11 +37,7 @@ export const payoutsResponse = z.object({
         "transferred",
       ]),
       requestedAt: z.string().nullable().optional(),
-      transferredAt: z
-        .string()
-        .datetime({ offset: true })
-        .nullable()
-        .optional(),
+      transferredAt: z.string().nullable().optional(),
       transferReference: z.string().nullable().optional(),
     }),
   ),

@@ -217,8 +217,8 @@ function DashboardContent({ listOnly = false }: { listOnly?: boolean }) {
       )}
       {!listOnly && (
         <>
-          <div className="flex justify-center xl:justify-end">
-            <div className="flex items-center gap-3 text-sm font-semibold">
+          <div className="flex xl:justify-end">
+            <div className="flex w-full items-center justify-between gap-3 text-sm font-semibold xl:w-auto">
               <span id="summary-range">Periode</span>
               <Select
                 value={range}
@@ -264,9 +264,13 @@ function DashboardContent({ listOnly = false }: { listOnly?: boolean }) {
                     : "…"
                 }
                 caption={
-                  summary.data
-                    ? formatRupiah(summary.data.grossPaidSales)
-                    : "Memuat ringkasan"
+                  !summary.data
+                    ? "Memuat ringkasan"
+                    : // Nominal lengkap hanya ditampilkan bila angka utama disingkat (misalnya Rp16,8 jt).
+                      formatRupiahShort(summary.data.grossPaidSales) !==
+                        formatRupiah(summary.data.grossPaidSales)
+                      ? formatRupiah(summary.data.grossPaidSales)
+                      : "Dari pesanan yang sudah dibayar"
                 }
               />
               <StatCard
@@ -283,10 +287,14 @@ function DashboardContent({ listOnly = false }: { listOnly?: boolean }) {
                 label="Tingkat kehadiran"
                 value={
                   summary.data?.attendanceRate === undefined
-                    ? "Belum tersedia"
+                    ? "–"
                     : `${summary.data.attendanceRate}%`
                 }
-                caption="Acara yang sudah selesai"
+                caption={
+                  summary.data?.attendanceRate === undefined
+                    ? "Tersedia setelah ada acara yang selesai"
+                    : "Dari acara yang sudah selesai"
+                }
               />
             </div>
           )}

@@ -110,7 +110,10 @@ export function PayoutSettings() {
             disabled={disabled}
             onClick={() => {
               reset(
-                bank.data ?? { bank: "", accountNumber: "", holderName: "" },
+                // Nomor rekening dari server tersamar, jadi wajib diketik ulang saat mengubah rekening.
+                bank.data
+                  ? { ...bank.data, accountNumber: "" }
+                  : { bank: "", accountNumber: "", holderName: "" },
               );
               save.reset();
               setEditing(true);
@@ -202,6 +205,7 @@ export function PayoutSettings() {
         open={editing}
         onOpenChange={(open) => !save.isPending && setEditing(open)}
         title="Rekening pencairan"
+        form
         description="Pastikan nomor dan nama pemilik rekening sudah benar."
       >
         <form
