@@ -26,13 +26,13 @@ export function AdminAuthShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-dvh bg-background">
       <div className="flex min-w-0 flex-1 flex-col px-5 py-6 md:px-12 md:py-10 xl:px-20">
         <div className="flex items-center gap-2">
-          <Image
-            src="/gatherly-horizontal-ink.svg"
-            alt="Gatherlyy"
-            width={120}
-            height={30}
-            priority
-          />
+          {/* Simbol + teks, sama dengan navbar, supaya wordmark mudah diganti. */}
+          <span className="flex items-center gap-2">
+            <Image src="/gatherly-symbol-ink.svg" alt="" width={28} height={28} priority />
+            <span className="text-[22px] font-extrabold tracking-tight">
+              gatherlyy
+            </span>
+          </span>
           <span className="rounded-sm bg-inverse px-2 py-0.5 text-xs font-bold text-inverse-foreground">
             admin
           </span>

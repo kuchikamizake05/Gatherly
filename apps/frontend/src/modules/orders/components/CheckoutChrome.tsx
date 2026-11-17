@@ -11,6 +11,7 @@ import { id as localeId } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
 import { estimateAmounts, type Amounts } from "../pricing";
+import { ProgressiveBlur } from "@/components/elements/ProgressiveBlur";
 
 /**
  * Bagian bersama halaman checkout dan status pesanan (pita 05).
@@ -51,7 +52,8 @@ export function CheckoutProgress({ step }: { step: 1 | 2 | 3 | 4 }) {
 
 export function CheckoutMobileHeader({ title, step, onBack }: { title: string; step: 1 | 2 | 3 | 4; onBack?: () => void }) {
   return (
-    <div className="sticky top-0 z-20 bg-background pt-[env(safe-area-inset-top)] md:hidden">
+    <div className="sticky top-0 z-20 isolate pt-[env(safe-area-inset-top)] md:hidden">
+      <ProgressiveBlur className="top-0 -bottom-8 -z-10" />
       <div className="flex items-center gap-1 px-2 pt-1">
         {onBack ? (
           <button type="button" onClick={onBack} aria-label="Kembali" className="press flex size-11 items-center justify-center rounded-full">

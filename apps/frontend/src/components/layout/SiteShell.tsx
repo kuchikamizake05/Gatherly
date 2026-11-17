@@ -26,7 +26,7 @@ const isExplore = (p: string) => p === "/" || p.startsWith("/events") || p.start
 
 const NAV = [
   { href: "/", label: "Jelajahi", icon: Compass, match: isExplore },
-  { href: "/tickets", label: "Tiketku", icon: Ticket, match: (p: string) => p.startsWith("/tickets") || p.startsWith("/orders") },
+  { href: "/tickets", label: "Tiketku", icon: Ticket, match: (p: string) => (p.startsWith("/tickets") && !p.startsWith("/tickets/shared")) || p.startsWith("/orders") },
 ];
 
 const TABS = [
@@ -44,7 +44,7 @@ function Logo({ size = 28 }: { size?: number }) {
   return (
     <Link href="/" aria-label="Gatherlyy, ke beranda" className="flex shrink-0 items-center gap-2">
       <Image src="/gatherly-symbol-ink.svg" alt="" width={size} height={size} priority />
-      <span className="text-[20px] font-extrabold tracking-tight md:text-[22px]">gatherly</span>
+      <span className="text-[20px] font-extrabold tracking-tight md:text-[22px]">gatherlyy</span>
     </Link>
   );
 }
@@ -183,7 +183,7 @@ function Footer({ guest }: { guest: boolean }) {
           <div className="flex flex-col gap-[18px] xl:flex-1">
             <span className="flex items-center gap-2">
               <Image src="/gatherly-symbol-on-dark.svg" alt="" width={26} height={26} />
-              <span className="text-[21px] font-extrabold">gatherly</span>
+              <span className="text-[21px] font-extrabold">gatherlyy</span>
             </span>
             <p className="max-w-[340px] text-[15px] leading-relaxed text-neutral-400">
               Titik kumpul acara komunitas. Temukan acara, pesan tiket, dan masuk cukup dengan kode QR.
@@ -250,7 +250,8 @@ export function SiteShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-dvh flex-col">
       <header className="sticky top-0 z-30 isolate">
         {/* Blur bertahap yang menjulur 32 px di bawah header, tanpa tepi tegas. */}
-        <ProgressiveBlur className="top-0 -bottom-8 -z-10" />
+        {/* Di mobile hanya bila header logo tampil. Halaman tanpa header punya header sendiri yang tidak boleh ikut buram. */}
+        <ProgressiveBlur className={cn("top-0 -bottom-8 -z-10", hideMobileHeader && "hidden md:block")} />
         <DesktopNav pathname={pathname} guest={guest} />
         {!hideMobileHeader && <MobileHeader pathname={pathname} guest={guest} />}
         <OfflineBanner />
