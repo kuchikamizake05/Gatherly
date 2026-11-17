@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Building2, CircleHelp, Flag, Inbox, LogOut, Wallet } from "lucide-react";
+import { Building2, CircleHelp, Flag, Inbox, LogOut, ReceiptText, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { WorkspaceShell, type NavItem } from "@/components/layout/WorkspaceShell";
@@ -18,6 +18,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
     { href: "/applications", label: "Pengajuan", icon: Inbox },
     { href: "/organizers", label: "Organizer", icon: Building2 },
     { href: "/payouts", label: "Pencairan", icon: Wallet },
+    { href: "/finance", label: "Keuangan", icon: ReceiptText },
     { href: "/reports", label: "Laporan", icon: Flag },
   ];
   const bottomNav: NavItem[] = [

@@ -12,7 +12,12 @@ import { ApiError, setCsrfToken } from "@/lib/api/client";
 import { qk } from "@/lib/api/query-keys";
 import type { FieldFlag } from "@/modules/applications/api";
 
-import { adminApi as a, type ApplicationTab, type OrganizerTab } from "./api";
+import {
+  adminApi as a,
+  type AdminRefund,
+  type ApplicationTab,
+  type OrganizerTab,
+} from "./api";
 
 export function useAdminMe() {
   return useUntilHydrated(
@@ -196,4 +201,42 @@ export const useCloseReport = () =>
   useAdminMutation(
     ({ id, note }: { id: string; note: string }) => a.closeReport(id, note),
     "reports",
+  );
+
+// Keuangan: pengembalian dana peserta dan pembatalan acara
+export const useAdminRefunds = (status?: AdminRefund["status"]) =>
+  useQuery({
+    queryKey: ["admin", "refunds", status ?? "all"],
+    queryFn: () => a.refunds(status),
+    placeholderData: keepPreviousData,
+  });
+export const useDecideRefund = () =>
+  useAdminMutation(
+    ({ id, approve, note }: { id: string; approve: boolean; note: string }) =>
+      a.decideRefund(id, approve, note),
+    "refunds",
+  );
+export const useRefundTransferred = () =>
+  useAdminMutation(
+    ({
+      id,
+      reference,
+      transferredAt,
+    }: {
+      id: string;
+      reference: string;
+      transferredAt: string;
+    }) => a.refundTransferred(id, reference, transferredAt),
+    "refunds",
+  );
+export const useAdminCancellations = () =>
+  useQuery({
+    queryKey: ["admin", "cancellations"],
+    queryFn: () => a.cancellations(),
+  });
+export const useDecideCancellation = () =>
+  useAdminMutation(
+    ({ id, approve, note }: { id: string; approve: boolean; note: string }) =>
+      a.decideCancellation(id, approve, note),
+    "cancellations",
   );
