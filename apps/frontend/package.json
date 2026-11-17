@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test",
     "build:production": "GATHERLY_PRODUCTION_BUILD=true NEXT_PUBLIC_API_MOCK=false next build",
+    "test:live": "NEXT_PUBLIC_API_MOCK=false playwright test --config=playwright.live.config.ts",
     "test:config": "node --test test/production-config.test.mjs"
   },
   "dependencies": {
