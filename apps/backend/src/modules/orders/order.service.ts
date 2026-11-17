@@ -128,6 +128,19 @@ export async function createOrder(
           { session },
         );
         if (inventoryUpdate.modifiedCount !== 1) {
+          const current = await TicketType.findById(ticketType._id).session(session).lean();
+          const available = current
+            ? Math.max(0, current.capacity - current.reserved - current.sold)
+            : 0;
+          if (available > 0) {
+            throw new AppError(
+              409,
+              "INSUFFICIENT_QUOTA",
+              "Fewer tickets are available than requested.",
+              {},
+              { available },
+            );
+          }
           throw new AppError(409, "SOLD_OUT", "There are not enough tickets available.");
         }
 

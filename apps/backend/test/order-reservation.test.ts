@@ -303,6 +303,22 @@ test("rejects unavailable inventory without creating an order", async () => {
   assert.equal((await TicketType.findById(ticketType._id).lean())?.reserved, 1);
 });
 
+test("reports the remaining quantity when fewer tickets are left than requested", async () => {
+  const { buyerA, ticketType } = await fixture(4);
+  ticketType.sold = 2;
+  await ticketType.save();
+
+  await assert.rejects(
+    createOrder(buyerA._id.toString(), randomUUID(), input(ticketType._id.toString(), 3)),
+    (error: unknown) =>
+      error instanceof AppError &&
+      error.code === "INSUFFICIENT_QUOTA" &&
+      error.details?.available === 2,
+  );
+  assert.equal(await Order.countDocuments(), 0);
+  assert.equal((await TicketType.findById(ticketType._id).lean())?.reserved, 0);
+});
+
 test("rejects a closed sale without changing inventory", async () => {
   const { buyerA, event, ticketType } = await fixture();
   event.salesClosed = true;
