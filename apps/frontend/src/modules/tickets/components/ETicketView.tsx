@@ -23,6 +23,7 @@ import { StateView } from "@/components/elements/StateView";
 import { CalendarMenu } from "./CalendarMenu";
 import { ETicketCard } from "./ETicketCard";
 import { RefundNotice, RefundOrderBlock, useOrderRefund } from "@/modules/refunds/components/RefundPanel";
+import { ProgressiveBlur } from "@/components/elements/ProgressiveBlur";
 
 /**
  * E-tiket satu pesanan. Pita 06 A sampai F dan H.
@@ -167,7 +168,8 @@ export function ETicketView({ orderId }: { orderId: string }) {
   return (
     <div className="flex w-full flex-1 flex-col">
       {/* Header mobile */}
-      <div className="sticky top-0 z-20 flex items-center justify-between bg-background px-2 pt-[max(4px,env(safe-area-inset-top))] pb-2 md:hidden">
+      <div className="sticky top-0 z-20 isolate flex items-center justify-between px-2 pt-[max(4px,env(safe-area-inset-top))] pb-2 md:hidden">
+        <ProgressiveBlur className="top-0 -bottom-8 -z-10" />
         <button type="button" aria-label="Kembali ke Tiketku" onClick={() => router.push("/tickets")} className="press flex size-11 items-center justify-center rounded-full">
           <ArrowLeft className="size-6" aria-hidden />
         </button>
@@ -215,7 +217,7 @@ export function ETicketView({ orderId }: { orderId: string }) {
 
             {/* Tab nama peserta (tablet dan desktop) */}
             {tickets.length > 1 && (
-              <div role="tablist" aria-label="Peserta" className="hidden gap-6 overflow-x-auto border-b border-border [scrollbar-width:none] md:flex">
+              <div role="tablist" aria-label="Peserta" className="hidden gap-6 overflow-x-auto [scrollbar-width:none] md:flex">
                 {tickets.map((t, i) => (
                   <button
                     key={t.id}
@@ -277,9 +279,12 @@ export function ETicketView({ orderId }: { orderId: string }) {
 
             <div className="flex gap-2 md:hidden">{actions}</div>
 
-            <p className="flex flex-wrap items-center gap-2 text-[13px] text-text-tertiary">
-              <Mail className="size-4" aria-hidden />
-              E-tiket juga dikirim ke email setiap peserta.
+            {/* Mobile: teks di kiri, Kirim ulang di kanan. */}
+            <p className="flex flex-wrap items-center justify-between gap-2 text-[13px] text-text-tertiary md:justify-start">
+              <span className="flex items-center gap-2">
+                <Mail className="size-4 shrink-0" aria-hidden />
+                E-tiket juga dikirim ke email setiap peserta.
+              </span>
               <button
                 type="button"
                 onClick={doResend}

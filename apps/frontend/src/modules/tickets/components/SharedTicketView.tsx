@@ -19,6 +19,7 @@ import { useAutoPrint } from "@/components/elements/PrintPage";
 import { CalendarMenu } from "./CalendarMenu";
 import { ETicketCard } from "./ETicketCard";
 import { TicketSheets } from "./TicketPrintView";
+import { ProgressiveBlur } from "@/components/elements/ProgressiveBlur";
 
 /**
  * Tiket yang dibagikan, dibuka dari tautan di email e-tiket tiap peserta, tanpa login. Pita 06 baris I.
@@ -111,7 +112,8 @@ export function SharedTicketView({ token }: { token: string }) {
   return (
     <div className="flex w-full flex-1 flex-col">
       {/* Header mobile: logo ke beranda, karena penerima tautan belum tentu punya akun. */}
-      <div className="sticky top-0 z-20 flex items-center justify-between bg-background px-4 pt-[max(8px,env(safe-area-inset-top))] pb-2 md:hidden">
+      <div className="sticky top-0 z-20 isolate flex items-center justify-between px-4 pt-[max(8px,env(safe-area-inset-top))] pb-2 md:hidden">
+        <ProgressiveBlur className="top-0 -bottom-8 -z-10" />
         <Link href="/" aria-label="Gatherlyy, ke beranda" className="press flex size-11 items-center">
           <Image src="/gatherly-symbol-ink.svg" alt="" width={28} height={28} priority />
         </Link>
