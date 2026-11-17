@@ -75,6 +75,8 @@ src/
 
 ## Data dan mock
 
+Antarmuka admin untuk issue #70 sampai #74 memiliki [panduan verifikasi, data demo, dan batas integrasi backend](../../docs/frontend-admin-70-74.md).
+
 - Semua request lewat `api` di `src/lib/api/client.ts`. Cookie sesi dan header CSRF sudah diurus.
 - Mock hanya aktif dengan `NEXT_PUBLIC_API_MOCK=true`. Jika false/tidak diisi, semua request memakai HTTP asli, termasuk endpoint yang ditandai pending.
 - `pending: true` hanya metadata kontrak backend. Tidak ada fallback dari error API ke fixture atau sukses lokal. Nomor issue backend ada di komentar tiap file (B28 sampai B42).

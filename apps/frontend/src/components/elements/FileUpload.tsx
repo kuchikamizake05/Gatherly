@@ -128,13 +128,14 @@ export function FileRow({
           <span
             className="h-1.5 w-full overflow-hidden rounded-full bg-surface-2"
             role="progressbar"
+            aria-label={`Mengunggah ${name}`}
             aria-valuenow={progress}
             aria-valuemin={0}
             aria-valuemax={100}
           >
             <span
-              className="block h-full rounded-full bg-foreground transition-[width] duration-200"
-              style={{ width: `${progress}%` }}
+              className="block h-full origin-left rounded-full bg-foreground transition-transform duration-200"
+              style={{ transform: `scaleX(${progress / 100})` }}
             />
           </span>
         ) : (
@@ -177,7 +178,16 @@ export function FileUpload({
   const [dragging, setDragging] = useState(false);
 
   const start = async (raw: File) => {
+    if (disabled || abortRef.current) return;
     const isPdf = raw.type === "application/pdf";
+    if (!navigator.onLine) {
+      setStatus({
+        kind: "error",
+        name: raw.name,
+        message: "Berkas gagal diunggah. Periksa koneksi Anda, lalu coba lagi.",
+      });
+      return;
+    }
     if (!accept.includes(raw.type)) {
       const ext = extension(raw.name) || "ini";
       setStatus({
@@ -201,12 +211,14 @@ export function FileUpload({
           maxWidthOrHeight: 2400,
           useWebWorker: true,
           signal: controller.signal,
-          onProgress: (p) =>
-            setStatus({
-              kind: "uploading",
-              name: raw.name,
-              percent: Math.round(p * 0.3),
-            }),
+          onProgress: (p) => {
+            if (!controller.signal.aborted)
+              setStatus({
+                kind: "uploading",
+                name: raw.name,
+                percent: Math.round(p * 0.3),
+              });
+          },
         });
         file = new File([blob], raw.name, { type: blob.type || raw.type });
       } catch {
@@ -215,7 +227,9 @@ export function FileUpload({
     }
 
     const limit = isPdf ? maxPdfBytes : maxImageBytes;
+    if (controller.signal.aborted) return;
     if (file.size > limit) {
+      abortRef.current = null;
       setStatus({
         kind: "error",
         name: raw.name,
@@ -227,18 +241,25 @@ export function FileUpload({
     try {
       const done = await upload(file, {
         signal: controller.signal,
-        onProgress: (p) =>
-          setStatus({
-            kind: "uploading",
-            name: raw.name,
-            percent: isPdf ? p : 30 + Math.round(p * 0.7),
-          }),
+        onProgress: (p) => {
+          if (!controller.signal.aborted)
+            setStatus({
+              kind: "uploading",
+              name: raw.name,
+              percent: Math.max(
+                0,
+                Math.min(100, isPdf ? p : 30 + Math.round(p * 0.7)),
+              ),
+            });
+        },
       });
       if (controller.signal.aborted) return;
+      abortRef.current = null;
       setStatus({ kind: "idle" });
       onChange(done);
     } catch {
       if (controller.signal.aborted) return;
+      abortRef.current = null;
       setStatus({
         kind: "error",
         name: raw.name,
@@ -264,7 +285,7 @@ export function FileUpload({
       type="button"
       onClick={onClick}
       aria-label={labelText}
-      className="press flex size-9 shrink-0 items-center justify-center rounded-full text-text-secondary [@media(hover:hover)]:hover:bg-surface"
+      className="press flex size-11 shrink-0 items-center justify-center rounded-full text-text-secondary [@media(hover:hover)]:hover:bg-surface"
     >
       <X className="size-[18px]" aria-hidden />
     </button>
@@ -285,7 +306,7 @@ export function FileUpload({
       <FileRow
         name={status.name}
         tone="danger"
-        note={status.message}
+        note={<span role="alert">{status.message}</span>}
         action={removeButton(() => setStatus({ kind: "idle" }), "Hapus berkas")}
       />
     );
@@ -313,7 +334,7 @@ export function FileUpload({
           if (!disabled) pick(e.dataTransfer.files);
         }}
         className={cn(
-          "flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed px-4 py-6 text-center transition-colors",
+          "flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed px-4 py-6 text-center transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
           dragging
             ? "border-foreground bg-primary-tint"
             : error
@@ -346,7 +367,7 @@ export function FileUpload({
         id={inputId}
         type="file"
         accept={accept.join(",")}
-        disabled={disabled}
+        disabled={disabled || status.kind === "uploading"}
         aria-labelledby={`${inputId}-label`}
         onChange={(e) => pick(e.target.files)}
         className="sr-only"
