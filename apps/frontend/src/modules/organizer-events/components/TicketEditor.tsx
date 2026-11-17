@@ -1,5 +1,6 @@
 "use client";
 
+import { DateTimePicker } from "@/components/elements/DateTimePicker";
 import { useState } from "react";
 import { Copy, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -215,19 +216,17 @@ export function TicketEditor({
               />
             </Field>
             <Field label="Mulai dijual" htmlFor="sales-start">
-              <Input
+              <DateTimePicker
                 id="sales-start"
-                type="datetime-local"
                 value={form.salesStartsAt.slice(0, 16)}
-                onChange={(e) => field("salesStartsAt", e.target.value)}
+                onChange={(value) => field("salesStartsAt", value)}
               />
             </Field>
             <Field label="Akhir dijual" htmlFor="sales-end">
-              <Input
+              <DateTimePicker
                 id="sales-end"
-                type="datetime-local"
                 value={form.salesEndsAt.slice(0, 16)}
-                onChange={(e) => field("salesEndsAt", e.target.value)}
+                onChange={(value) => field("salesEndsAt", value)}
               />
             </Field>
           </div>

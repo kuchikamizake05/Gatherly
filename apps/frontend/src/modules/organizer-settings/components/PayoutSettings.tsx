@@ -1,6 +1,13 @@
 "use client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -49,6 +56,7 @@ export function PayoutSettings() {
   const [selected, setSelected] = useState<PayoutRow | null>(null);
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors },
@@ -212,27 +220,38 @@ export function PayoutSettings() {
             <Alert title="Rekening belum tersimpan">{save.error.message}</Alert>
           )}
           <Field label="Bank" htmlFor="bank" error={errors.bank?.message}>
-            <select
-              id="bank"
-              className="min-h-11 rounded-md border border-border bg-background px-3 text-sm"
-              {...register("bank")}
-            >
-              <option value="">Pilih bank</option>
-              {[
-                "BCA",
-                "BNI",
-                "BRI",
-                "Mandiri",
-                "BSI",
-                "CIMB Niaga",
-                "Permata",
-                "BTN",
-                "Danamon",
-                "Bank Jago",
-              ].map((name) => (
-                <option key={name}>{name}</option>
-              ))}
-            </select>
+            <Controller
+              control={control}
+              name="bank"
+              render={({ field }) => (
+                <Select
+                  value={field.value || undefined}
+                  onValueChange={field.onChange}
+                >
+                  <SelectTrigger id="bank" aria-invalid={!!errors.bank}>
+                    <SelectValue placeholder="Pilih bank" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[
+                      "BCA",
+                      "BNI",
+                      "BRI",
+                      "Mandiri",
+                      "BSI",
+                      "CIMB Niaga",
+                      "Permata",
+                      "BTN",
+                      "Danamon",
+                      "Bank Jago",
+                    ].map((name) => (
+                      <SelectItem key={name} value={name}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
           </Field>
           <Field
             label="Nomor rekening"

@@ -1,7 +1,8 @@
 "use client";
 
+import { DateTimePicker } from "@/components/elements/DateTimePicker";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAdminPayouts, useMarkTransferred } from "@/modules/admin/hooks";
@@ -54,6 +55,7 @@ export function PayoutList() {
   const [notice, setNotice] = useState("");
   const {
     register,
+    control,
     reset,
     handleSubmit,
     watch,
@@ -236,11 +238,18 @@ export function PayoutList() {
             htmlFor="transfer-date"
             error={errors.date?.message}
           >
-            <Input
-              id="transfer-date"
-              type="datetime-local"
-              aria-invalid={!!errors.date}
-              {...register("date")}
+            <Controller
+              control={control}
+              name="date"
+              render={({ field }) => (
+                <DateTimePicker
+                  id="transfer-date"
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  invalid={!!errors.date}
+                />
+              )}
             />
           </Field>
         </DangerConfirmDialog>

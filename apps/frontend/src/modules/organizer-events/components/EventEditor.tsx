@@ -1,5 +1,14 @@
 "use client";
 
+import { DateTimePicker } from "@/components/elements/DateTimePicker";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ApiError } from "@/lib/api/client";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -52,6 +61,26 @@ const categories = [
   "Komunitas",
   "Kuliner",
 ];
+/**
+ * Backend baru menerima acara bila kolom wajib lengkap (deskripsi, kategori, jadwal, tempat).
+ * Sebelum itu draf hanya disimpan di perangkat, supaya autosave tidak terus ditolak server.
+ */
+function serverReady(values: EditorValues) {
+  const filled = (v: unknown, min = 1) =>
+    typeof v === "string" && v.trim().length >= min;
+  return (
+    filled(values.title, 2) &&
+    filled(values.description) &&
+    filled(values.category, 2) &&
+    filled(values.startsAt) &&
+    filled(values.endsAt) &&
+    values.endsAt > values.startsAt &&
+    filled(values.venueName, 2) &&
+    filled(values.address, 2) &&
+    filled(values.city, 2)
+  );
+}
+
 function payload(values: EditorValues): EventInput {
   return {
     ...values,
@@ -207,6 +236,16 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
       );
       return true;
     }
+    if (!revision.current && !serverReady(current)) {
+      setStatus("Draf tersimpan di perangkat");
+      if (manual)
+        toast("Draf disimpan di perangkat", {
+          id: "draft-local",
+          description:
+            "Lengkapi deskripsi, kategori, jadwal, dan tempat agar draf tersimpan di akun Anda.",
+        });
+      return true;
+    }
     saving.current = true;
     setStatus("Menyimpan draf…");
     const signature = JSON.stringify(current);
@@ -221,12 +260,17 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
       setStatus(
         `Draf tersimpan otomatis pukul ${formatTime(new Date()).replace(" WIB", "")}`,
       );
+      setError("");
       if (manual) toast.success("Draf disimpan");
       return true;
-    } catch {
+    } catch (e) {
       setStatus("Draf tersimpan di perangkat");
+      // Error koneksi memakai pesan koneksi. Error lain (misalnya isian ditolak) memakai pesan dari layanan.
+      const offline = e instanceof ApiError && e.status === 0;
       setError(
-        "Draf belum terkirim. Periksa koneksi Anda lalu simpan kembali.",
+        offline || !(e instanceof Error)
+          ? "Draf belum terkirim. Periksa koneksi Anda lalu simpan kembali."
+          : `Draf belum terkirim. ${e.message}`,
       );
       return false;
     } finally {
@@ -343,6 +387,35 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
     helper?: string,
   ) {
     const message = form.formState.errors[name]?.message;
+    const validate = () => {
+      const result = editorSchema.safeParse(form.getValues());
+      const issue = result.success
+        ? undefined
+        : result.error.issues.find((i) => i.path[0] === name);
+      if (issue) form.setError(name, { message: issue.message });
+      else form.clearErrors(name);
+    };
+    if (type === "datetime-local")
+      return (
+        <Field
+          label={label}
+          htmlFor={name}
+          helper={helper}
+          error={typeof message === "string" ? message : undefined}
+        >
+          <DateTimePicker
+            id={name}
+            value={String(values[name] ?? "")}
+            onChange={(value) =>
+              form.setValue(name, value as never, { shouldDirty: true })
+            }
+            onBlur={validate}
+            invalid={!!message}
+            describedBy={`${name}-message`}
+            min={new Date()}
+          />
+        </Field>
+      );
     return (
       <Field
         label={label}
@@ -515,8 +588,8 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
                   ))}
                 </div>
               </Field>
+              {/* Label poster ditampilkan oleh FileUpload sendiri. */}
               <Field
-                label="Poster acara"
                 error={form.formState.errors.posterAssetId?.message}
                 helper="Poster tampil di kartu acara dan halaman detail."
               >
@@ -554,15 +627,27 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
                 {input("endsAt", "Tanggal dan jam selesai", "datetime-local")}
               </div>
               <Field label="Zona waktu" htmlFor="timezone">
-                <select
-                  id="timezone"
-                  {...form.register("timezone")}
-                  className="h-12 w-full rounded-md border border-border-strong bg-background px-3"
+                <Select
+                  value={values.timezone}
+                  onValueChange={(value) =>
+                    form.setValue(
+                      "timezone",
+                      value as EditorValues["timezone"],
+                      {
+                        shouldDirty: true,
+                      },
+                    )
+                  }
                 >
-                  <option value="Asia/Jakarta">WIB (GMT+7)</option>
-                  <option value="Asia/Makassar">WITA (GMT+8)</option>
-                  <option value="Asia/Jayapura">WIT (GMT+9)</option>
-                </select>
+                  <SelectTrigger id="timezone">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Asia/Jakarta">WIB (GMT+7)</SelectItem>
+                    <SelectItem value="Asia/Makassar">WITA (GMT+8)</SelectItem>
+                    <SelectItem value="Asia/Jayapura">WIT (GMT+9)</SelectItem>
+                  </SelectContent>
+                </Select>
               </Field>
               <h3 className="font-bold">Lokasi</h3>
               <fieldset>
@@ -737,21 +822,31 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
                 {values.showPerformers && (
                   <>
                     <Field label="Sebutan" htmlFor="performerLabel">
-                      <select
-                        id="performerLabel"
-                        {...form.register("performerLabel")}
-                        className="h-12 w-full rounded-md border border-border-strong bg-background px-3"
+                      <Select
+                        value={values.performerLabel}
+                        onValueChange={(value) =>
+                          form.setValue("performerLabel", value, {
+                            shouldDirty: true,
+                          })
+                        }
                       >
-                        {[
-                          "Penampil",
-                          "Pembicara",
-                          "Pemateri",
-                          "Bintang tamu",
-                          "Pengisi acara",
-                        ].map((label) => (
-                          <option key={label}>{label}</option>
-                        ))}
-                      </select>
+                        <SelectTrigger id="performerLabel">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[
+                            "Penampil",
+                            "Pembicara",
+                            "Pemateri",
+                            "Bintang tamu",
+                            "Pengisi acara",
+                          ].map((label) => (
+                            <SelectItem key={label} value={label}>
+                              {label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </Field>
                     {values.performers.map((performer, index) => (
                       <div

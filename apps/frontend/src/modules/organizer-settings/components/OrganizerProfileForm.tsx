@@ -1,7 +1,14 @@
 "use client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { useFieldArray, useForm } from "react-hook-form";
+import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -237,24 +244,38 @@ function ProfileForm({ profile }: { profile: OrganizerProfileSettings }) {
               className="grid items-start gap-3 md:grid-cols-[160px_1fr_auto]"
             >
               <Field label="Jenis tautan" htmlFor={`link-type-${index}`}>
-                <select
-                  id={`link-type-${index}`}
-                  className="min-h-11 rounded-md border border-border bg-background px-3 text-sm"
-                  disabled={disabled}
-                  {...register(`links.${index}.type`)}
-                >
-                  {[
-                    "website",
-                    "instagram",
-                    "tiktok",
-                    "youtube",
-                    "x",
-                    "facebook",
-                    "email",
-                  ].map((type) => (
-                    <option key={type}>{type}</option>
-                  ))}
-                </select>
+                <Controller
+                  control={control}
+                  name={`links.${index}.type`}
+                  render={({ field }) => (
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      disabled={disabled}
+                    >
+                      <SelectTrigger id={`link-type-${index}`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(
+                          [
+                            ["website", "Situs web"],
+                            ["instagram", "Instagram"],
+                            ["tiktok", "TikTok"],
+                            ["youtube", "YouTube"],
+                            ["x", "X"],
+                            ["facebook", "Facebook"],
+                            ["email", "Email"],
+                          ] as const
+                        ).map(([type, label]) => (
+                          <SelectItem key={type} value={type}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </Field>
               <Field
                 label="URL"

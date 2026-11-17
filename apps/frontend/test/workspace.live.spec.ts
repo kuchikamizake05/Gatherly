@@ -406,7 +406,8 @@ test("normalizes backend order snapshots and preserves the refund idempotency ke
     .filter({
       has: page.getByRole("heading", { name: "Kembalikan dana pesanan?" }),
     });
-  await dialog.getByLabel("Jenis pengembalian").selectOption("partial");
+  await dialog.getByLabel("Jenis pengembalian").click();
+  await page.getByRole("option", { name: "Sebagian tiket" }).click();
   await dialog.getByRole("checkbox").first().check();
   await dialog.getByLabel("Alasan pengembalian").fill("Peserta berhalangan");
   const confirm = dialog.getByRole("button", {

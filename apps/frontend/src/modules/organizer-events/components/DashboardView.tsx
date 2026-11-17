@@ -1,5 +1,12 @@
 "use client";
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import Link from "next/link";
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
@@ -129,7 +136,10 @@ function DashboardContent({ listOnly = false }: { listOnly?: boolean }) {
   const [query, setQuery] = useState(search.get("q") ?? "");
   const debouncedQuery = useDebounced(query);
   const events = useOrgEvents(undefined, me.data?.role === "organizer");
-  const summary = useOrgSummary(range, me.data?.role === "organizer" && !listOnly);
+  const summary = useOrgSummary(
+    range,
+    me.data?.role === "organizer" && !listOnly,
+  );
   const frozen = me.data?.organizer.frozen;
   const setUrl = (key: string, value: string) => {
     const url = new URL(window.location.href);
@@ -208,22 +218,30 @@ function DashboardContent({ listOnly = false }: { listOnly?: boolean }) {
       {!listOnly && (
         <>
           <div className="flex justify-center xl:justify-end">
-            <label className="flex items-center gap-3 text-sm font-semibold">
-              Periode
-              <select
+            <div className="flex items-center gap-3 text-sm font-semibold">
+              <span id="summary-range">Periode</span>
+              <Select
                 value={range}
-                onChange={(e) => {
-                  setRange(e.target.value as SummaryRange);
-                  setUrl("range", e.target.value);
+                onValueChange={(value) => {
+                  setRange(value as SummaryRange);
+                  setUrl("range", value);
                 }}
-                className="h-11 rounded-full border border-border-strong bg-background px-4"
               >
-                <option value="7d">7 hari terakhir</option>
-                <option value="30d">30 hari terakhir</option>
-                <option value="90d">90 hari terakhir</option>
-                <option value="year">Tahun ini</option>
-              </select>
-            </label>
+                <SelectTrigger
+                  aria-labelledby="summary-range"
+                  size="sm"
+                  className="w-auto min-w-44 rounded-full px-4"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7d">7 hari terakhir</SelectItem>
+                  <SelectItem value="30d">30 hari terakhir</SelectItem>
+                  <SelectItem value="90d">90 hari terakhir</SelectItem>
+                  <SelectItem value="year">Tahun ini</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           {summary.isError ? (
             <Alert
