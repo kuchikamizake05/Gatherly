@@ -120,7 +120,7 @@ Dokumentasi proyek tersedia dalam folder [`docs`](docs/README.md).
 
 | Bagian | Alamat | Keterangan |
 | --- | --- | --- |
-| Backend | [api.gatherly.scientivan.dev](https://api.gatherly.scientivan.dev/api/v1/health) · [Swagger](https://api.gatherly.scientivan.dev/api/v1/docs/) | VPS dengan Caddy, service API dan worker terpisah. Lihat [panduan deployment VPS](docs/deployment-vps.md) |
+| Backend | [api.gatherlyy.fun](https://api.gatherlyy.fun/api/v1/health) · [Swagger](https://api.gatherlyy.fun/api/v1/docs/) | VPS dengan Caddy, service API dan worker terpisah. Lihat [panduan deployment VPS](docs/deployment-vps.md) |
 | Frontend | [gatherlyy.fun](https://gatherlyy.fun) · [organizer.gatherlyy.fun](https://organizer.gatherlyy.fun) · [admin.gatherlyy.fun](https://admin.gatherlyy.fun) | Lihat [panduan deployment frontend](docs/deployment-frontend.md) |
 | Video demo | Menyusul | Disiapkan pada #24 |
 

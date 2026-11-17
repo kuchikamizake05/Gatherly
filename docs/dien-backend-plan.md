@@ -29,7 +29,7 @@ Tujuan pekerjaan adalah menghubungkan alur frontend dengan backend yang konsiste
 - Organizer wajib mengajukan pembatalan event dengan alasan kepada operator Gatherly. Pembatalan baru dijalankan setelah admin menyetujui. Pada pembatalan event yang disetujui, pembeli mendapat refund seluruh pembayaran termasuk biaya layanan. Batas satu bulan untuk permintaan pembeli tidak menghalangi refund karena pembatalan event.
 - Email e-ticket peserta berisi lampiran PDF dan tautan tiket. Pembeli menerima ringkasan pesanan. Lampiran dan tautan mengacu ke tiket/QR yang sama, tidak menerbitkan tiket tambahan.
 - Pencairan baru boleh dilakukan setelah event selesai dan seluruh refund yang telah disetujui selesai diproses. Cegah persetujuan refund dan pencairan serentak menghasilkan saldo yang tidak konsisten.
-- Alamat backend yang disetujui adalah api.gatherly.scientivan.dev. Ketersediaan DNS dan konfigurasi HTTPS belum diverifikasi dan dikerjakan pada tahap deployment.
+- Alamat backend yang disetujui adalah api.gatherly.scientivan.dev, lalu dipindah ke api.gatherlyy.fun pada 17 November 2026. Ketersediaan DNS dan konfigurasi HTTPS belum diverifikasi dan dikerjakan pada tahap deployment.
 
 ## Pendekatan implementasi yang diusulkan
 

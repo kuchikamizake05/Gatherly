@@ -100,6 +100,8 @@ export const AuthChallenge = model<AuthChallengeDocument>("AuthChallenge", authC
 
 export interface OAuthStateDocument {
   stateHash: string;
+  origin?: string;
+  returnTo?: string;
   expiresAt: Date;
   usedAt?: Date;
   createdAt: Date;
@@ -109,6 +111,8 @@ export interface OAuthStateDocument {
 const oauthStateSchema = new Schema<OAuthStateDocument>(
   {
     stateHash: { type: String, required: true, unique: true },
+    origin: { type: String },
+    returnTo: { type: String },
     expiresAt: { type: Date, required: true, index: { expires: 0 } },
     usedAt: { type: Date },
   },

@@ -1,5 +1,6 @@
 # Gatherly backend API. Append to /etc/caddy/Caddyfile, then validate and reload.
-api.gatherly.scientivan.dev {
+# api.gatherly.scientivan.dev stays as an alias until every client uses api.gatherlyy.fun.
+api.gatherlyy.fun, api.gatherly.scientivan.dev {
 	encode zstd gzip
 	request_body {
 		max_size 10MB

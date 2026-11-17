@@ -6,6 +6,7 @@ import { env } from "../../config/env.js";
 import { AppError } from "../../lib/app-error.js";
 import { asyncHandler } from "../../lib/async-handler.js";
 import { createToken, hashToken } from "../../lib/crypto.js";
+import { requestOrigin, safeReturnTo } from "../../lib/origins.js";
 import { CommitteeAssignment } from "../committee/committee-assignment.model.js";
 import { Organizer } from "../organizers/organizer.model.js";
 import {
@@ -19,7 +20,7 @@ import { Session, type UserDocument } from "./auth.models.js";
 import {
   beginLogin,
   beginRegistration,
-  consumeOAuthState,
+  consumeOAuthContext,
   createOAuthState,
   createSession,
   resendOtp,
@@ -46,7 +47,9 @@ const authLimiter = rateLimit({
   limit: 10,
   standardHeaders: "draft-8",
   legacyHeaders: false,
-  message: { error: { code: "RATE_LIMITED", message: "Too many attempts. Please try again later." } },
+  message: {
+    error: { code: "RATE_LIMITED", message: "Too many attempts. Please try again later." },
+  },
 });
 
 function parseBody<T>(schema: z.ZodType<T>, body: unknown): T {
@@ -58,8 +61,15 @@ function parseBody<T>(schema: z.ZodType<T>, body: unknown): T {
   throw new AppError(400, "VALIDATION_ERROR", "Please check the submitted fields.", fields);
 }
 
-function oauthRedirect(error: string) {
-  return `${env.WEB_ORIGIN}/auth/callback?error=${encodeURIComponent(error)}`;
+/** The frontend login page shows the Google error banner for `error=google`. */
+function oauthFailure(origin: string, returnTo = "/") {
+  const query = new URLSearchParams({ error: "google" });
+  if (returnTo !== "/") query.set("returnTo", returnTo);
+  return `${origin}/login?${query.toString()}`;
+}
+
+function googleCallbackUrl(origin: string) {
+  return `${origin}/api/v1/auth/google/callback`;
 }
 
 const oauthStateCookie = {
@@ -132,11 +142,19 @@ authRouter.post(
 authRouter.get(
   "/google",
   authLimiter,
-  asyncHandler(async (_request, response, next) => {
-    if (!googleAuthConfigured) throw new AppError(503, "SERVICE_UNAVAILABLE", "Google login is unavailable.");
-    const state = await createOAuthState();
+  asyncHandler(async (request, response, next) => {
+    if (!googleAuthConfigured)
+      throw new AppError(503, "SERVICE_UNAVAILABLE", "Google login is unavailable.");
+    const origin = requestOrigin(request);
+    const returnTo = safeReturnTo(request.query.returnTo);
+    const state = await createOAuthState(new Date(), { origin, returnTo });
     response.cookie(oauthStateCookie.name, state, oauthStateCookie.options);
-    passport.authenticate("google", { scope: ["profile", "email"], session: false, state })(_request, response, next);
+    passport.authenticate("google", {
+      scope: ["profile", "email"],
+      session: false,
+      state,
+      callbackURL: googleCallbackUrl(origin),
+    } as passport.AuthenticateOptions)(request, response, next);
   }),
 );
 
@@ -145,25 +163,31 @@ authRouter.get(
   asyncHandler(async (request, response, next) => {
     const state = typeof request.query.state === "string" ? request.query.state : "";
     const cookieState = request.cookies[oauthStateCookie.name];
-    if (typeof cookieState !== "string" || !(await consumeOAuthState(state, cookieState))) {
-      response.clearCookie(oauthStateCookie.name, oauthStateCookie.options);
-      response.redirect(oauthRedirect("oauth_state_invalid"));
+    const context =
+      typeof cookieState === "string" ? await consumeOAuthContext(state, cookieState) : null;
+    response.clearCookie(oauthStateCookie.name, oauthStateCookie.options);
+    if (!context) {
+      response.redirect(oauthFailure(requestOrigin(request)));
       return;
     }
-    passport.authenticate("google", { session: false }, (error: unknown, user: UserDocument & { _id: string }) => {
-      if (error || !user) {
-        response.clearCookie(oauthStateCookie.name, oauthStateCookie.options);
-        response.redirect(oauthRedirect("oauth_failed"));
-        return;
-      }
-      createSession(user._id.toString())
-        .then((result) => {
-          response.cookie(sessionCookie.name, result.sessionToken, sessionCookie.options);
-          response.clearCookie(oauthStateCookie.name, oauthStateCookie.options);
-          response.redirect(`${env.WEB_ORIGIN}/auth/callback?status=success`);
-        })
-        .catch(next);
-    })(request, response, next);
+    const origin = context.origin ?? requestOrigin(request);
+    const returnTo = safeReturnTo(context.returnTo);
+    passport.authenticate(
+      "google",
+      { session: false, callbackURL: googleCallbackUrl(origin) } as passport.AuthenticateOptions,
+      (error: unknown, user: UserDocument & { _id: string }) => {
+        if (error || !user) {
+          response.redirect(oauthFailure(origin, returnTo));
+          return;
+        }
+        createSession(user._id.toString())
+          .then((result) => {
+            response.cookie(sessionCookie.name, result.sessionToken, sessionCookie.options);
+            response.redirect(`${origin}${returnTo}`);
+          })
+          .catch(next);
+      },
+    )(request, response, next);
   }),
 );
 
