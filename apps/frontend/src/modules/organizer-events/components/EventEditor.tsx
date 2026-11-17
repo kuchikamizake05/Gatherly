@@ -1,5 +1,6 @@
 "use client";
 
+import { SortableList } from "@/components/elements/SortableList";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DateTimePicker } from "@/components/elements/DateTimePicker";
 import {
@@ -14,7 +15,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Check, ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
+import { Check, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
@@ -442,13 +443,28 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
       </Field>
     );
   }
-  const moveTerm = (index: number, direction: number) => {
-    const list = [...values.terms];
-    [list[index], list[index + direction]] = [
-      list[index + direction],
-      list[index],
-    ];
-    form.setValue("terms", list);
+  // Id stabil per ketentuan supaya daftar bisa digeser. Ikut panjang daftar bila berubah dari luar (draf dipulihkan).
+  const termIds = useRef<string[]>([]);
+  while (termIds.current.length < values.terms.length)
+    termIds.current.push(Math.random().toString(36).slice(2));
+  termIds.current.length = values.terms.length;
+  const moveTerm = (from: number, to: number) => {
+    const move = <T,>(list: T[]) => {
+      const next = [...list];
+      const [item] = next.splice(from, 1);
+      next.splice(to, 0, item!);
+      return next;
+    };
+    termIds.current = move(termIds.current);
+    form.setValue("terms", move(values.terms), { shouldDirty: true });
+  };
+  const removeTerm = (index: number) => {
+    termIds.current = termIds.current.filter((_, i) => i !== index);
+    form.setValue(
+      "terms",
+      values.terms.filter((_, i) => i !== index),
+      { shouldDirty: true },
+    );
   };
   async function confirm() {
     setError("");
@@ -756,60 +772,38 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
                   Tampil sebagai daftar poin di halaman acara.
                 </p>
               </div>
-              {values.terms.map((_, index) => (
-                <div
-                  className="flex flex-wrap items-start gap-1 md:flex-nowrap"
-                  key={index}
-                >
-                  <Field
-                    label={`Ketentuan ${index + 1}`}
-                    reserveMessageSpace
-                    htmlFor={`term-${index}`}
-                    error={form.formState.errors.terms?.[index]?.message}
-                  >
-                    <Input
-                      id={`term-${index}`}
-                      {...form.register(`terms.${index}`)}
-                    />
-                  </Field>
-                  <div className="flex md:pt-6">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      type="button"
-                      disabled={!index}
-                      aria-label={`Naikkan ketentuan ${index + 1}`}
-                      onClick={() => moveTerm(index, -1)}
+              <SortableList
+                ids={termIds.current}
+                onMove={moveTerm}
+                itemLabel={(index) => `ketentuan ${index + 1}`}
+                disabled={!online || frozen}
+              >
+                {(index) => (
+                  <>
+                    <Field
+                      label={`Ketentuan ${index + 1}`}
+                      reserveMessageSpace
+                      htmlFor={`term-${index}`}
+                      error={form.formState.errors.terms?.[index]?.message}
                     >
-                      <ChevronUp className="size-4" />
-                    </Button>
+                      <Input
+                        id={`term-${index}`}
+                        {...form.register(`terms.${index}`)}
+                      />
+                    </Field>
                     <Button
                       variant="ghost"
                       size="icon"
                       type="button"
-                      disabled={index === values.terms.length - 1}
-                      aria-label={`Turunkan ketentuan ${index + 1}`}
-                      onClick={() => moveTerm(index, 1)}
-                    >
-                      <ChevronDown className="size-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      type="button"
+                      className="mt-[22px] shrink-0"
                       aria-label={`Hapus ketentuan ${index + 1}`}
-                      onClick={() =>
-                        form.setValue(
-                          "terms",
-                          values.terms.filter((_, i) => i !== index),
-                        )
-                      }
+                      onClick={() => removeTerm(index)}
                     >
                       <Trash2 className="size-4" />
                     </Button>
-                  </div>
-                </div>
-              ))}
+                  </>
+                )}
+              </SortableList>
               <Button
                 type="button"
                 variant="outline"
@@ -819,9 +813,13 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
                 Tambah ketentuan
               </Button>
               <div className="space-y-4 border-t border-border pt-6">
-                <h2 className="text-xl font-extrabold">
-                  {values.performerLabel}
-                </h2>
+                <div className="space-y-1">
+                  <h2 className="text-xl font-extrabold">Pengisi acara</h2>
+                  <p className="text-sm text-text-secondary">
+                    Opsional. Tampilkan siapa saja yang mengisi acara, misalnya
+                    pembicara, penampil, atau bintang tamu.
+                  </p>
+                </div>
                 <label className="flex min-h-11 cursor-pointer items-center gap-3">
                   <Checkbox
                     checked={values.showPerformers}
@@ -835,7 +833,11 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
                 </label>
                 {values.showPerformers && (
                   <>
-                    <Field label="Sebutan" htmlFor="performerLabel">
+                    <Field
+                      label="Sebutan"
+                      htmlFor="performerLabel"
+                      helper="Dipakai sebagai judul bagian ini di halaman acara."
+                    >
                       <Select
                         value={values.performerLabel}
                         onValueChange={(value) =>
@@ -887,7 +889,7 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
                           </Button>
                         </div>
                         <EventImageUpload
-                          label={`Foto ${performer.name || values.performerLabel}`}
+                          label={`Foto ${performer.name || values.performerLabel.toLowerCase()} (opsional)`}
                           value={performer.photoUrl}
                           disabled={!online || frozen}
                           onChange={(assetId, url) => {
@@ -911,16 +913,24 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
                             {...form.register(`performers.${index}.name`)}
                           />
                         </Field>
-                        <Field label="Keterangan" htmlFor={`note-${index}`}>
+                        <Field
+                          label="Keterangan (opsional)"
+                          htmlFor={`note-${index}`}
+                        >
                           <Input
                             id={`note-${index}`}
+                            placeholder="Contoh: Fotografer jalanan, Yogyakarta"
                             {...form.register(`performers.${index}.note`)}
                           />
                         </Field>
-                        <Field label="Jam tampil" htmlFor={`time-${index}`}>
+                        <Field
+                          label="Jam tampil (opsional)"
+                          htmlFor={`time-${index}`}
+                        >
                           <Input
                             id={`time-${index}`}
                             type="time"
+                            className="w-36 [&::-webkit-calendar-picker-indicator]:hidden"
                             {...form.register(`performers.${index}.time`)}
                           />
                         </Field>
