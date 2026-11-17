@@ -22,7 +22,7 @@ const schema = z.object({
     .email("Masukkan alamat email yang valid.")
     .refine(
       (value) => value.endsWith(`@${ADMIN_EMAIL_DOMAIN}`) && !value.slice(0, -ADMIN_EMAIL_DOMAIN.length - 1).includes("@"),
-      "Gunakan email kerja Gatherly.",
+      "Gunakan email kerja Gatherlyy.",
     ),
   password: z.string().min(1, "Masukkan password Anda."),
 });
@@ -97,9 +97,9 @@ export function AdminLoginForm() {
   return (
     <form onSubmit={submit} className="flex flex-col gap-5" noValidate>
       <div>
-        <h1 className="text-3xl font-extrabold">Masuk ke admin Gatherly</h1>
+        <h1 className="text-3xl font-extrabold">Masuk ke admin Gatherlyy</h1>
         <p className="mt-2 text-sm text-text-secondary">
-          Khusus tim Gatherly. Setiap aktivitas di halaman admin tercatat.
+          Khusus tim Gatherlyy. Setiap aktivitas di halaman admin tercatat.
         </p>
       </div>
       {!online && (
@@ -145,7 +145,7 @@ export function AdminLoginForm() {
       </Field>
       {help && (
         <Alert tone="info" title="Hubungi admin utama">
-          Password admin diatur ulang melalui admin utama Gatherly.
+          Password admin diatur ulang melalui admin utama Gatherlyy.
         </Alert>
       )}
       <Button type="submit" loading={login.isPending} disabled={!online} block>

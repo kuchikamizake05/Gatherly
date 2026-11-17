@@ -54,7 +54,7 @@ export function ReceiptPrintView({ orderId }: { orderId: string }) {
     <PrintDocument title="Bukti pembayaran">
       <PrintSheet
         label="Bukti pembayaran"
-        footerLeft={`Gatherly, ${MAIL.halo}`}
+        footerLeft={`Gatherlyy, ${MAIL.halo}`}
         footerRight={`Diterbitkan ${format(new Date(issued), "d MMM yyyy", { locale: localeId })}`}
       >
         <div className="flex items-start justify-between gap-6">

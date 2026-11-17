@@ -28,7 +28,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   return (
     <WorkspaceShell
       app="admin"
-      account={{ name: "Tim Gatherly", caption: me.email, initials: me.name.slice(0, 2).toUpperCase() }}
+      account={{ name: "Tim Gatherlyy", caption: me.email, initials: me.name.slice(0, 2).toUpperCase() }}
       nav={nav}
       bottomNav={bottomNav}
     >

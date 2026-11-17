@@ -53,7 +53,7 @@ function ReportForm({ slug, onDone, desktop }: { slug: string; onDone: () => voi
       <div className="flex flex-col gap-1.5">
         <Title className="text-[22px]">Laporkan acara</Title>
         <Description className="text-[15px] font-medium">
-          Pilih alasan yang paling sesuai. Tim Gatherly meninjau paling lambat 1 hari kerja.
+          Pilih alasan yang paling sesuai. Tim Gatherlyy meninjau paling lambat 1 hari kerja.
         </Description>
       </div>
 

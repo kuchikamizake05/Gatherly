@@ -153,7 +153,7 @@ function Card({ n, title, description, children }: { n: number; title: string; d
 function FlagNote({ note }: { note: string }) {
   return (
     <div className="flex flex-col gap-1 rounded-md border border-warning/40 bg-warning-tint px-4 py-3 text-warning-ink">
-      <span className="text-[13px] font-bold">Catatan tim Gatherly</span>
+      <span className="text-[13px] font-bold">Catatan tim Gatherlyy</span>
       <span className="text-sm">{note}</span>
     </div>
   );
@@ -395,7 +395,7 @@ export function ApplicationForm({
         </fieldset>
       </Card>
 
-      <Card n={2} title="Penanggung jawab" description="Tim Gatherly menghubungi orang ini selama peninjauan.">
+      <Card n={2} title="Penanggung jawab" description="Tim Gatherlyy menghubungi orang ini selama peninjauan.">
         <div className="grid gap-5 md:grid-cols-2">
           <Field label="Nama lengkap" htmlFor="picName" error={formState.errors.picName?.message}>
             <Input id="picName" autoComplete="name" disabled={!editable("pic")} aria-invalid={!!formState.errors.picName} {...register("picName")} />
@@ -435,7 +435,7 @@ export function ApplicationForm({
         {flags.get("username") && <FlagNote note={flags.get("username")!} />}
       </Card>
 
-      <Card n={4} title="Dokumen" description="Dokumen hanya dilihat tim Gatherly untuk verifikasi.">
+      <Card n={4} title="Dokumen" description="Dokumen hanya dilihat tim Gatherlyy untuk verifikasi.">
         <div className="flex flex-col gap-3">
           <Controller
             control={control}
@@ -499,7 +499,7 @@ export function ApplicationForm({
                   <label htmlFor="agree" className="cursor-pointer text-sm leading-relaxed text-text-secondary">
                     Saya menyatakan data yang saya isi benar dan menyetujui{" "}
                     <Link href="/become-organizer#ketentuan" className="font-bold text-foreground underline-offset-4 hover:underline">
-                      Ketentuan Penyelenggara Gatherly
+                      Ketentuan Penyelenggara Gatherlyy
                     </Link>
                     .
                   </label>

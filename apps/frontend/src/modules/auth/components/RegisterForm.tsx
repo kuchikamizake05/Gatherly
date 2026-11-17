@@ -156,7 +156,7 @@ export function RegisterForm() {
               <Link href="/#privasi" className="font-bold text-foreground underline-offset-4 hover:underline">
                 Kebijakan Privasi
               </Link>{" "}
-              Gatherly.
+              Gatherlyy.
             </label>
           </div>
         )}

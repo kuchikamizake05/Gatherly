@@ -239,7 +239,7 @@ function PaymentForm({ order, router }: { order: Order; router: ReturnType<typeo
       </section>
 
       <div className="flex flex-col items-center gap-3 md:hidden">
-        <p className="text-center text-xs text-text-tertiary">Dengan membayar, Anda setuju dengan Syarat & ketentuan Gatherly.</p>
+        <p className="text-center text-xs text-text-tertiary">Dengan membayar, Anda setuju dengan Syarat & ketentuan Gatherlyy.</p>
         <button type="button" onClick={() => setCancelOpen(true)} className="press text-sm font-bold text-text-secondary">
           Batalkan pesanan
         </button>
@@ -272,7 +272,7 @@ function PaymentForm({ order, router }: { order: Order; router: ReturnType<typeo
               amounts={orderAmounts(order)}
             />
             {actions}
-            <p className="px-1 text-xs text-text-tertiary">Dengan membayar, Anda setuju dengan Syarat & ketentuan Gatherly.</p>
+            <p className="px-1 text-xs text-text-tertiary">Dengan membayar, Anda setuju dengan Syarat & ketentuan Gatherlyy.</p>
             <button
               type="button"
               onClick={() => setCancelOpen(true)}

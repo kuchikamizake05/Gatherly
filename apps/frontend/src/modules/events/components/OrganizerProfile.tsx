@@ -46,7 +46,7 @@ function ShareButton({ name, className }: { name: string; className?: string }) 
     const url = window.location.href;
     if (navigator.share && window.matchMedia("(pointer: coarse)").matches) {
       try {
-        await navigator.share({ title: `${name} di Gatherly`, url });
+        await navigator.share({ title: `${name} di Gatherlyy`, url });
         return;
       } catch {
         return;

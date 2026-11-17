@@ -10,7 +10,7 @@ export function OrganizerAuthShell({ children }: { children: ReactNode }) {
         <span className="flex items-center gap-2">
           <Image
             src="/gatherly-horizontal-ink.svg"
-            alt="Gatherly"
+            alt="Gatherlyy"
             width={120}
             height={30}
             priority

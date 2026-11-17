@@ -10,9 +10,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { username } = await params;
   try {
     const { data } = await eventsApi.organizerProfile(username);
-    return { title: `${data.name} di Gatherly`, description: data.description };
+    return { title: `${data.name} di Gatherlyy`, description: data.description };
   } catch {
-    return { title: "Penyelenggara di Gatherly" };
+    return { title: "Penyelenggara di Gatherlyy" };
   }
 }
 

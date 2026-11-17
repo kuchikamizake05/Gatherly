@@ -177,7 +177,7 @@ function SidebarBody({
           <div className="flex items-center gap-2">
             <Image
               src="/gatherly-symbol-ink.svg"
-              alt="Gatherly"
+              alt="Gatherlyy"
               width={28}
               height={28}
             />
@@ -286,7 +286,7 @@ export function WorkspaceShell({
             <span className="flex items-center gap-2 md:hidden">
               <Image
                 src="/gatherly-symbol-ink.svg"
-                alt="Gatherly"
+                alt="Gatherlyy"
                 width={24}
                 height={24}
               />
