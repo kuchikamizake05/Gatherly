@@ -13,7 +13,12 @@ const organizerSchema = z.object({
   contactEmail: z.string().trim().email().max(254),
 });
 
-function organizerResponse(organizer: { _id: Types.ObjectId; name: string; description: string; contactEmail: string }) {
+function organizerResponse(organizer: {
+  _id: Types.ObjectId;
+  name: string;
+  description: string;
+  contactEmail: string;
+}) {
   return {
     id: organizer._id.toString(),
     name: organizer.name,
@@ -29,20 +34,11 @@ organizerRouter.post(
   requireSession,
   requireCsrf,
   asyncHandler(async (request: AuthenticatedRequest, response) => {
-    const parsed = organizerSchema.safeParse(request.body);
-    if (!parsed.success) {
-      throw new AppError(400, "VALIDATION_ERROR", "Please check the submitted fields.");
-    }
-    const existingOrganizer = await Organizer.exists({ ownerId: request.auth!.user._id });
-    if (existingOrganizer) {
-      throw new AppError(409, "CONFLICT", "An organizer profile already exists.");
-    }
-    const organizer = await Organizer.create({
-      ...parsed.data,
-      contactEmail: parsed.data.contactEmail.toLowerCase(),
-      ownerId: request.auth!.user._id,
-    });
-    response.status(201).json({ data: organizerResponse(organizer) });
+    throw new AppError(
+      403,
+      "APPLICATION_REQUIRED",
+      "Submit an organizer application for admin approval.",
+    );
   }),
 );
 
