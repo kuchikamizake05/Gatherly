@@ -9,7 +9,7 @@ import { DataList } from "@/components/elements/DataList";
 import { DangerConfirmDialog } from "@/components/elements/DangerConfirmDialog";
 import { useOnline } from "@/hooks/use-online";
 import { useWorkspaceMe } from "@/modules/organizer-auth/hooks";
-import { formatRupiah } from "@/lib/format";
+import { formatDateTimeCompact, formatRupiah } from "@/lib/format";
 import { Trash2 } from "lucide-react";
 import { useOrgEvent, useRemoveTicketType, useSetTicketSales } from "../hooks";
 import type { OrgTicketType } from "../types";
@@ -86,6 +86,18 @@ export function TicketTypeList() {
             ),
           },
           {
+            key: "period",
+            title: "Periode jual",
+            render: (t) => (
+              <div className="text-sm">
+                <p>Mulai {formatDateTimeCompact(t.salesStartsAt)}</p>
+                <p className="text-text-secondary">
+                  Sampai {formatDateTimeCompact(t.salesEndsAt)}
+                </p>
+              </div>
+            ),
+          },
+          {
             key: "sold",
             title: "Terjual / kuota",
             render: (t) => `${t.sold} / ${t.capacity}`,
@@ -106,6 +118,10 @@ export function TicketTypeList() {
             <p className="font-bold">{t.name}</p>
             <p className="text-sm">
               {formatRupiah(t.price)} · {t.sold} / {t.capacity} terjual
+            </p>
+            <p className="text-sm text-text-secondary">
+              Dijual {formatDateTimeCompact(t.salesStartsAt)} sampai{" "}
+              {formatDateTimeCompact(t.salesEndsAt)}
             </p>
             <Badge tone={t.salesStopped ? "warning" : "success"}>
               {t.salesStopped ? "Dihentikan" : "Aktif"}

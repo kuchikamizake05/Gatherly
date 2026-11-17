@@ -1,5 +1,6 @@
 "use client";
 
+import { LocationPreview } from "./LocationPreview";
 import { SortableList } from "@/components/elements/SortableList";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DateTimePicker } from "@/components/elements/DateTimePicker";
@@ -798,6 +799,10 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
                   />
                   {input("address", "Alamat lengkap")}
                   {input("postalCode", "Kode pos")}
+                  <LocationPreview
+                    venueName={values.venueName}
+                    address={values.address}
+                  />
                 </>
               )}
             </section>
