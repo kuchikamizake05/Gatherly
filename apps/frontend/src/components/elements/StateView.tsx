@@ -11,7 +11,8 @@ import { Illustration, type IllustrationName } from "@/components/elements/Illus
  * - layout="page"      memenuhi area konten di bawah navbar/topbar, isi di tengah.
  *                      Di mobile tombol aksi menempel di bawah layar.
  * - layout="screen"    memenuhi seluruh layar (tanpa shell), misalnya 404 global.
- * - layout="section"   memenuhi lebar kartu atau bagian, dengan jarak dalam.
+ * - layout="section"   di dalam kartu atau tab. Mengisi sisa tinggi halaman bila setiap
+ *                      pembungkusnya memakai fillState (lihat di bawah).
  *
  * Hanya satu aksi. Jangan taruh tombol yang sama di tempat lain di halaman.
  *
@@ -55,8 +56,9 @@ export function StateView({
   if (layout === "section") {
     return (
       <div
+        data-state-view=""
         role={tone === "error" ? "alert" : undefined}
-        className={cn("flex w-full flex-col items-center gap-3.5 px-5 pt-8 pb-10 text-center md:px-8 md:py-12", className)}
+        className={cn("flex w-full flex-1 flex-col items-center justify-center gap-3.5 px-5 pt-8 pb-10 text-center md:px-8 md:py-12", className)}
       >
         {body}
         {action && <div className="mt-2 flex w-full justify-center [&>*]:w-full md:[&>*]:w-auto">{action}</div>}
@@ -85,3 +87,9 @@ export function StateView({
     </div>
   );
 }
+
+/**
+ * Kelas untuk pembungkus di antara halaman dan StateView section. Pembungkus hanya
+ * tumbuh mengisi sisa tinggi selama berisi state, jadi kartu berisi data tetap seukuran isinya.
+ */
+export const fillState = "flex flex-col has-[[data-state-view]]:flex-1";

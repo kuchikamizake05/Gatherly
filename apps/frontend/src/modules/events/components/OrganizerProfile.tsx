@@ -18,7 +18,7 @@ import { Alert } from "@/components/elements/Alert";
 import { initials } from "@/components/elements/AccountMenu";
 import { InstagramIcon, TikTokIcon } from "@/components/elements/BrandIcons";
 import { EventCard, EventCardSkeleton } from "@/components/elements/EventCard";
-import { StateView } from "@/components/elements/StateView";
+import { StateView, fillState } from "@/components/elements/StateView";
 
 /**
  * Profil publik penyelenggara. Pita 09.
@@ -246,7 +246,7 @@ export function OrganizerProfileView({ username }: { username: string }) {
       )}
       <ProfileHeader profile={data} />
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)} className="gap-5 md:gap-6 md:pt-10">
+      <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)} className="gap-5 has-[[data-state-view]]:flex-1 md:gap-6 md:pt-10">
         <TabsList className="w-full gap-1 rounded-full bg-surface-2 p-1 md:w-auto md:gap-7 md:rounded-none md:bg-transparent md:p-0">
           <TabsTrigger value="upcoming" className={TRIGGER}>
             <TabLabel label="Akan datang" count={data.upcoming.length} active={tab === "upcoming"} />
@@ -256,7 +256,7 @@ export function OrganizerProfileView({ username }: { username: string }) {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="upcoming">
+        <TabsContent value="upcoming" className={fillState}>
           {data.upcoming.length > 0 ? (
             <EventList events={data.upcoming} onSave={guestSave} />
           ) : (
@@ -275,7 +275,7 @@ export function OrganizerProfileView({ username }: { username: string }) {
             />
           )}
         </TabsContent>
-        <TabsContent value="past">
+        <TabsContent value="past" className={fillState}>
           {data.past.length > 0 ? (
             <EventList events={data.past} onSave={guestSave} />
           ) : (

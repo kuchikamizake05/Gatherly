@@ -48,7 +48,7 @@ function PosterStrip({ events }: { events: EventCardData[] }) {
   if (events.length === 0) return null;
   return (
     <section aria-label="Acara pilihan" className="w-full">
-      <ul className="flex snap-x scroll-px-5 items-end gap-3.5 overflow-x-auto px-5 pt-6 md:scroll-px-6 xl:scroll-px-10 pb-1 [scrollbar-width:none] md:gap-5 md:px-6 md:pt-2 xl:px-10 [&::-webkit-scrollbar]:hidden">
+      <ul className="flex snap-x scroll-px-5 items-end justify-center-safe gap-3.5 overflow-x-auto px-5 pt-6 md:scroll-px-6 xl:scroll-px-10 pb-1 [scrollbar-width:none] md:gap-5 md:px-6 md:pt-2 xl:px-10 [&::-webkit-scrollbar]:hidden">
         {events.map((event, i) => {
           const size = POSTER_SIZES[i % POSTER_SIZES.length];
           return (

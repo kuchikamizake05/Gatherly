@@ -12,6 +12,8 @@ export function ListPagination({
   onChange: (page: number) => void;
   disabled?: boolean;
 }) {
+  // Daftar kosong sudah memakai StateView, jadi tidak perlu navigasi halaman.
+  if (total === 0) return null;
   const pages = Math.max(1, Math.ceil(total / limit));
   return (
     <nav

@@ -141,7 +141,7 @@ export function PayoutSettings() {
           caption={formatRupiah(payouts.data.transferred)}
         />
       </div>
-      <section className="space-y-4 rounded-lg bg-background p-4 md:p-6">
+      <section className="flex flex-col gap-4 rounded-lg bg-background p-4 has-[[data-state-view]]:flex-1 md:p-6">
         <h2 className="text-xl font-extrabold">Pendapatan per acara</h2>
         <p className="text-sm text-text-secondary">
           Pendapatan dari harga tiket, sudah dikurangi pengembalian dana. Biaya
