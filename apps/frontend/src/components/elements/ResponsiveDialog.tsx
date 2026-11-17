@@ -39,18 +39,14 @@ export function ResponsiveDialog({
   if (mobile)
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        {/* Yang digulir pembungkus di dalam, bukan DrawerContent. Lapisan pantulan vaul (::after)
-            ikut tergulir bila DrawerContent sendiri overflow-y-auto, jadi muncul ruang kosong panjang. */}
-        <DrawerContent className="max-h-[90dvh]">
-          <div className="-mx-5 flex min-h-0 flex-1 flex-col overflow-y-auto px-5">
-            <DrawerTitle>{title}</DrawerTitle>
-            {description && (
-              <DrawerDescription className="mt-2">
-                {description}
-              </DrawerDescription>
-            )}
-            <div className="mt-5 space-y-4">{children}</div>
-          </div>
+        <DrawerContent className="max-h-[90dvh] overflow-y-auto">
+          <DrawerTitle>{title}</DrawerTitle>
+          {description && (
+            <DrawerDescription className="mt-2">
+              {description}
+            </DrawerDescription>
+          )}
+          <div className="mt-5 space-y-4">{children}</div>
         </DrawerContent>
       </Drawer>
     );

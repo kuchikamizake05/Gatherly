@@ -251,13 +251,12 @@ function RefundDialog({
 
         {serverError && <Alert title={serverError} />}
 
-        {/* Mobile: tombol menempel di bawah drawer saat isi digulir (desain G2). */}
-        <div className="sticky bottom-0 -mx-5 flex flex-col gap-2 bg-background px-5 pt-3 pb-1 md:static md:mx-0 md:flex-row-reverse md:justify-start md:p-0">
-          <Button type="submit" loading={request.isPending}>
-            {request.isPending ? "Mengirim…" : "Kirim pengajuan"}
-          </Button>
+        <div className="flex flex-col-reverse gap-2 md:flex-row md:justify-end">
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={request.isPending}>
             Batal
+          </Button>
+          <Button type="submit" loading={request.isPending}>
+            {request.isPending ? "Mengirim…" : "Kirim pengajuan"}
           </Button>
         </div>
       </form>
