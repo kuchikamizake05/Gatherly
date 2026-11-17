@@ -64,10 +64,17 @@ export function AdminVerifyForm({ backup = false }: { backup?: boolean }) {
       sessionStorage.removeItem("gatherly_admin_challenge");
       router.replace("/applications");
     } catch (error) {
-      if (error instanceof ApiError && error.code === "CHALLENGE_EXPIRED")
+      const code = error instanceof ApiError ? error.code : "";
+      const status = error instanceof ApiError ? error.status : 0;
+      // Kode dari backend: CHALLENGE_INVALID dan CHALLENGE_USED berarti sesi verifikasi tidak berlaku lagi.
+      if (["CHALLENGE_EXPIRED", "CHALLENGE_INVALID", "CHALLENGE_USED"].includes(code))
         setExpired(true);
-      else if (error instanceof ApiError && error.code === "NETWORK_ERROR")
+      else if (code === "NETWORK_ERROR")
         setError("Koneksi terputus. Periksa internet Anda lalu coba lagi.");
+      else if (code === "ACCOUNT_LOCKED" || status === 429)
+        setError("Terlalu banyak percobaan. Akun dikunci sementara, coba lagi dalam 10 menit.");
+      else if (status >= 500)
+        setError("Server sedang bermasalah. Tunggu sebentar, lalu coba lagi dengan kode yang baru.");
       else {
         setError("Kode tidak sesuai. Periksa kode dan coba lagi.");
         setValue("code", "");

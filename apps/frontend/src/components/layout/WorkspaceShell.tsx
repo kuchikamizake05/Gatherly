@@ -42,12 +42,19 @@ type WorkspaceShellProps = {
 
 const STORAGE_KEY = "gatherly.sidebar.collapsed";
 
+/**
+ * Status ciut sidebar desktop, diingat di perangkat. `animate` baru true setelah status tersimpan
+ * diterapkan, supaya sidebar tidak terlihat melipat sendiri saat halaman dibuka.
+ */
 function useCollapsed() {
   const [collapsed, setCollapsed] = useState(false);
+  const [animate, setAnimate] = useState(false);
   useEffect(() => {
     try {
       setCollapsed(localStorage.getItem(STORAGE_KEY) === "1");
     } catch {}
+    const frame = requestAnimationFrame(() => setAnimate(true));
+    return () => cancelAnimationFrame(frame);
   }, []);
   const toggle = () =>
     setCollapsed((v) => {
@@ -56,11 +63,12 @@ function useCollapsed() {
       } catch {}
       return !v;
     });
-  return [collapsed, toggle] as const;
+  return [collapsed, toggle, animate] as const;
 }
 
 function isActive(pathname: string, href: string) {
-  const path = pathname.replace(/^\/(organizer|admin)/, "") || "/";
+  // Awalan folder rute dibuang hanya bila utuh, supaya "/organizers" di admin tidak terpotong jadi "s".
+  const path = pathname.replace(/^\/(organizer|admin)(?=\/|$)/, "") || "/";
   return href === "/"
     ? path === "/"
     : path === href || path.startsWith(`${href}/`);
@@ -116,7 +124,7 @@ function NavList({
           </>
         );
         const cls = cn(
-          "press flex h-11 w-full items-center gap-3 rounded-md px-3 text-[15px] transition-colors",
+          "press flex h-11 w-full items-center gap-3 rounded-md px-3 text-left text-[15px] transition-colors",
           collapsed && "justify-center px-0",
           active
             ? "bg-primary font-extrabold"
@@ -239,15 +247,22 @@ export function WorkspaceShell({
   crumb,
   children,
 }: WorkspaceShellProps) {
-  const [collapsed, toggle] = useCollapsed();
+  const [collapsed, toggle, animate] = useCollapsed();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const pathname = usePathname();
+  // Tanpa crumb khusus, header menampilkan nama menu yang sedang dibuka (desain band 20 sampai 24).
+  const title =
+    crumb ?? nav.find((item) => !item.external && !item.onClick && isActive(pathname, item.href))?.label;
 
   return (
     <div className="flex min-h-dvh bg-surface">
       {/* Tablet: selalu ciut. Desktop: bisa diciutkan. */}
+      {/* Desktop: lebar wadah bergeser 264 <-> 76 px (ease-in-out 200 ms), sidebar penuh dan rail
+          saling berganti (150 ms). Isi tidak berubah bentuk selama animasi karena lebarnya tetap. */}
       <aside
         className={cn(
-          "sticky top-0 hidden h-dvh shrink-0 border-r border-border bg-background transition-[width] duration-200 ease-in-out md:block",
+          "sticky top-0 hidden h-dvh shrink-0 overflow-hidden border-r border-border bg-background md:block",
+          animate && "transition-[width] duration-200 ease-in-out motion-reduce:transition-none",
           collapsed ? "md:w-[76px]" : "md:w-[76px] xl:w-[264px]",
         )}
       >
@@ -260,15 +275,39 @@ export function WorkspaceShell({
             collapsed
           />
         </div>
-        <div className="hidden h-full xl:block">
-          <SidebarBody
-            app={app}
-            account={account}
-            nav={nav}
-            bottomNav={bottomNav}
-            collapsed={collapsed}
-            onToggle={toggle}
-          />
+        <div className="relative hidden h-full xl:block">
+          <div
+            inert={collapsed}
+            className={cn(
+              "absolute inset-y-0 left-0 w-[264px] transition-opacity duration-150 ease-out motion-reduce:transition-none",
+              collapsed ? "opacity-0" : "opacity-100 delay-50",
+            )}
+          >
+            <SidebarBody
+              app={app}
+              account={account}
+              nav={nav}
+              bottomNav={bottomNav}
+              collapsed={false}
+              onToggle={toggle}
+            />
+          </div>
+          <div
+            inert={!collapsed}
+            className={cn(
+              "absolute inset-y-0 left-0 w-[76px] transition-opacity duration-150 ease-out motion-reduce:transition-none",
+              collapsed ? "opacity-100 delay-50" : "opacity-0",
+            )}
+          >
+            <SidebarBody
+              app={app}
+              account={account}
+              nav={nav}
+              bottomNav={bottomNav}
+              collapsed
+              onToggle={toggle}
+            />
+          </div>
         </div>
       </aside>
 
@@ -293,7 +332,7 @@ export function WorkspaceShell({
               <AppBadge app={app} />
             </span>
             <span className="hidden truncate text-sm font-semibold text-text-secondary md:block">
-              {crumb}
+              {title}
             </span>
             <button
               type="button"

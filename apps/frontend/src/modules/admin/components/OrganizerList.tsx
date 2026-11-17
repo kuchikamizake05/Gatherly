@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StateView } from "@/components/elements/StateView";
@@ -16,6 +15,8 @@ import {
   AdminOnline,
   AdminQueue,
 } from "./AdminPage";
+import { IconInput } from "@/components/elements/IconInput";
+import { Search } from "lucide-react";
 
 const tabs = [
   { value: "active", label: "Aktif" },
@@ -48,11 +49,12 @@ export function OrganizerList() {
           counts={query.data.counts}
         />
         <AdminCard>
-          <label className="mb-5 block text-sm font-semibold">
-            Cari organizer
-            <Input
+          <label className="mb-5 block md:max-w-md">
+            <span className="sr-only">Cari organizer</span>
+            <IconInput
               type="search"
-              placeholder="Nama organizer atau username"
+              leading={<Search aria-hidden />}
+              placeholder="Cari nama organizer atau username"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />

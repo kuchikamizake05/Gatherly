@@ -290,7 +290,7 @@
   }
 }
 
-/* Scrollbar tipis seperti app hellonear (apps/fe): thumb membulat, tanpa panah, tanpa track.
+/* Scrollbar tipis: thumb membulat, tanpa panah, tanpa track.
    Berlaku untuk halaman dan semua area yang bisa digulir. Chrome dan Safari memakai ::-webkit-scrollbar.
    Jangan pasang scrollbar-width atau scrollbar-color untuk mereka, karena Chrome lalu memakai
    scrollbar sistem yang berpanah di Windows. Firefox hanya mendapat dua properti itu. */
