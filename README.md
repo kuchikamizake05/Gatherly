@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="design/brand/logo/gatherly-app-icon.svg" alt="Logo Gatherly" width="120">
+  <img src="design/brand/logo/gatherly-app-icon.svg" alt="Logo Gatherlyy" width="120">
 </p>
 
-<h1 align="center">Gatherly</h1>
+<h1 align="center">Gatherlyy</h1>
 
 <p align="center">
   <strong>Discover events. Book your spot. Be there.</strong><br>
@@ -128,7 +128,7 @@ Dokumentasi proyek tersedia dalam folder [`docs`](docs/README.md).
 - **Aplikasi web:** [gatherlyy.fun](https://gatherlyy.fun)
 - **Video presentasi dan demonstrasi:** [Video Demo Kelompok 11](https://bit.ly/VideoDemo_Kel11_PAW)
 - **File presentasi:** [PPT Kelompok 11](https://bit.ly/PPT_Kel11_PAW)
-- **Repositori:** [Gatherly di GitHub](https://github.com/kuchikamizake05/Gatherly)
+- **Repositori:** [Gatherlyy di GitHub](https://github.com/kuchikamizake05/Gatherly)
 
 ## Deployment
 
