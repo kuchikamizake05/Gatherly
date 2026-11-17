@@ -57,7 +57,10 @@ export function AdminQueryState({
   const online = useOnline();
   const [showLoading, setShowLoading] = useState(false);
   useEffect(() => {
-    if (!query.isPending) { setShowLoading(false); return; }
+    if (!query.isPending) {
+      setShowLoading(false);
+      return;
+    }
     const timer = setTimeout(() => setShowLoading(true), 300);
     return () => clearTimeout(timer);
   }, [query.isPending]);
@@ -70,7 +73,8 @@ export function AdminQueryState({
         action={<Button onClick={() => query.refetch()}>Coba lagi</Button>}
       />
     );
-  if (query.isPending && !showLoading) return <div className="flex w-full flex-1" aria-busy="true" />;
+  if (query.isPending && !showLoading)
+    return <div className="flex w-full flex-1" aria-busy="true" />;
   if (query.isPending)
     return (
       <div
@@ -147,7 +151,12 @@ export function AdminCard({
   children: ReactNode;
 }) {
   return (
-    <section className={cn("min-w-0 rounded-xl border border-border bg-background p-5 md:p-6", fillState)}>
+    <section
+      className={cn(
+        "min-w-0 rounded-xl border border-border bg-background p-5 md:p-6",
+        fillState,
+      )}
+    >
       {title && <h2 className="mb-5 text-lg font-extrabold">{title}</h2>}
       {children}
     </section>
@@ -259,5 +268,23 @@ export function AdminQueue({
         ))}
       </ul>
     </>
+  );
+}
+
+/**
+ * Kerangka baris selama data tab baru dimuat. Dipakai saat query masih menampilkan data tab
+ * sebelumnya (keepPreviousData), supaya tidak sempat muncul state kosong atau data tab lain.
+ */
+export function AdminListSkeleton({ label }: { label: string }) {
+  return (
+    <div
+      aria-busy="true"
+      aria-label={`Memuat ${label.toLowerCase()}`}
+      className="space-y-3 py-2"
+    >
+      {[0, 1, 2].map((i) => (
+        <Skeleton key={i} className="h-14 w-full" />
+      ))}
+    </div>
   );
 }

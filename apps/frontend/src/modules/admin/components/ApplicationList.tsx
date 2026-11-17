@@ -22,9 +22,17 @@ import {
   AdminTabs,
   AdminOnline,
   AdminQueue,
+  AdminListSkeleton,
 } from "./AdminPage";
 import { IconInput } from "@/components/elements/IconInput";
 import { Search } from "lucide-react";
+import { ORGANIZER_TYPES } from "@/modules/applications/api";
+
+/** Backend mengirim kode ("organisasi_kampus"), data contoh memakai label. Keduanya jadi label. */
+const typeLabel = (type: string) =>
+  ORGANIZER_TYPES.find(
+    (option) => option.value === type || option.label === type,
+  )?.label ?? type;
 
 const tabs = [
   { value: "new", label: "Perlu ditinjau" },
@@ -35,10 +43,10 @@ const tabs = [
 const statusBadge = (row: ApplicationRow) => (
   <Badge
     tone={
-      row.status === "fix_submitted"
-        ? "warning"
-        : row.status === "new"
-          ? "info"
+      row.status === "new" || row.status === "fix_submitted"
+        ? "info"
+        : row.status === "needs_fix"
+          ? "warning"
           : row.status === "rejected"
             ? "danger"
             : "success"
@@ -59,7 +67,12 @@ export function ApplicationList() {
   const query = useApplications({
     tab,
     q: search,
-    type: type === "all" ? "" : type,
+    // Filter memakai label, backend menerima kode jenis.
+    type:
+      type === "all"
+        ? ""
+        : (ORGANIZER_TYPES.find((option) => option.label === type)?.value ??
+          type),
   });
   if (!query.data || query.isError || query.isPending)
     return <AdminQueryState query={query} label="Pengajuan" />;
@@ -68,7 +81,7 @@ export function ApplicationList() {
       (tab === "new"
         ? ["new", "fix_submitted"].includes(row.status)
         : row.status === tab) &&
-      (type === "all" || row.type === type) &&
+      (type === "all" || typeLabel(row.type) === type) &&
       `${row.organizerName} ${row.number}`
         .toLowerCase()
         .includes(search.toLowerCase()),
@@ -79,7 +92,7 @@ export function ApplicationList() {
       ...rows.map((row) => [
         row.number,
         row.organizerName,
-        row.type,
+        typeLabel(row.type),
         row.submittedAt,
         row.status,
       ]),
@@ -136,13 +149,11 @@ export function ApplicationList() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Semua jenis</SelectItem>
-                  {["Komunitas", "Organisasi kampus", "Perusahaan"].map(
-                    (value) => (
-                      <SelectItem key={value} value={value}>
-                        {value}
-                      </SelectItem>
-                    ),
-                  )}
+                  {ORGANIZER_TYPES.map(({ label }) => (
+                    <SelectItem key={label} value={label}>
+                      {label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -150,7 +161,9 @@ export function ApplicationList() {
               Unduh CSV
             </Button>
           </div>
-          {rows.length ? (
+          {query.isPlaceholderData ? (
+            <AdminListSkeleton label="Pengajuan" />
+          ) : rows.length ? (
             <AdminQueue
               columns={[
                 { label: "Nomor", className: "hidden xl:table-cell" },
@@ -178,7 +191,7 @@ export function ApplicationList() {
                       {row.number}
                     </strong>,
                     <strong key="name">{row.organizerName}</strong>,
-                    row.type,
+                    typeLabel(row.type),
                     formatDateTimeCompact(row.submittedAt),
                     statusBadge(row),
                     action,
@@ -186,7 +199,7 @@ export function ApplicationList() {
                   title: row.organizerName,
                   number: row.number,
                   status: statusBadge(row),
-                  meta: `${row.type}, masuk ${formatDateTimeCompact(row.submittedAt)}`,
+                  meta: `${typeLabel(row.type)}, masuk ${formatDateTimeCompact(row.submittedAt)}`,
                   action,
                 };
               })}
