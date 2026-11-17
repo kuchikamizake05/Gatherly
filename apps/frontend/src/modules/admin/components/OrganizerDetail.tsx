@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { DangerConfirmDialog } from "@/components/elements/DangerConfirmDialog";
 import { Alert } from "@/components/elements/Alert";
 import { StateView } from "@/components/elements/StateView";
+import { auditLabel, collapseRepeats } from "../audit";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatRupiah, formatDateShort } from "@/lib/format";
 import { useOnline } from "@/hooks/use-online";
@@ -191,9 +192,9 @@ export function OrganizerDetail({ id }: { id: string }) {
             <TabsContent value="activity">
               {data.activity.length ? (
                 <ul className="space-y-4">
-                  {data.activity.map((item, index) => (
+                  {collapseRepeats(data.activity).map((item, index) => (
                     <li key={index} className="text-sm">
-                      {item.action}
+                      {auditLabel(item.action)}
                       <span className="mt-1 block text-xs text-text-secondary">
                         {formatDateShort(item.at)}
                       </span>

@@ -26,6 +26,9 @@ import { FileRow, formatBytes } from "@/components/elements/FileUpload";
 import { AdminCard, AdminPage, AdminQueryState } from "./AdminPage";
 import { useOnline } from "@/hooks/use-online";
 import { formatDateShort } from "@/lib/format";
+import { CircleCheck, TriangleAlert } from "lucide-react";
+import { auditLabel, collapseRepeats } from "../audit";
+import { useAdminMe } from "../hooks";
 
 const schema = z.object({
   notes: z.record(
@@ -43,6 +46,7 @@ type Document = { name: string; url: string; type: string };
 
 export function ApplicationReview({ id }: { id: string }) {
   const query = useApplicationReview(id);
+  const me = useAdminMe();
   const approve = useApproveApplication();
   const reject = useRejectApplication();
   const requestFix = useRequestFix();
@@ -279,31 +283,69 @@ export function ApplicationReview({ id }: { id: string }) {
         </AdminCard>
         <div className="space-y-6">
           <AdminCard title="Pemeriksaan">
+            {/* Daftar centang: hijau aman, kuning perlu diperhatikan sebelum menyetujui. */}
             <ul className="space-y-3 text-sm">
-              <li>
-                Email{" "}
-                {data.checks.emailVerified
-                  ? "terverifikasi"
-                  : "belum terverifikasi"}
-              </li>
-              <li>
-                Username{" "}
-                {data.checks.usernameAvailable ? "tersedia" : "sudah dipakai"}
-              </li>
-              <li>
-                {data.checks.similarOrganizers} organizer dengan nama serupa
-              </li>
+              {[
+                {
+                  ok: data.checks.emailVerified,
+                  text: data.checks.emailVerified
+                    ? "Email penanggung jawab terverifikasi"
+                    : "Email penanggung jawab belum diverifikasi",
+                },
+                {
+                  ok: data.checks.usernameAvailable,
+                  text: data.checks.usernameAvailable
+                    ? "Username tersedia"
+                    : "Username sudah dipakai",
+                },
+                {
+                  ok: data.checks.similarOrganizers === 0,
+                  text:
+                    data.checks.similarOrganizers === 0
+                      ? "Tidak ada organizer dengan nama serupa"
+                      : `${data.checks.similarOrganizers} organizer dengan nama serupa`,
+                },
+              ].map((check) => (
+                <li key={check.text} className="flex items-start gap-2.5">
+                  {check.ok ? (
+                    <CircleCheck
+                      className="mt-px size-[18px] shrink-0 text-success"
+                      aria-label="Aman"
+                    />
+                  ) : (
+                    <TriangleAlert
+                      className="mt-px size-[18px] shrink-0 text-warning"
+                      aria-label="Perlu diperhatikan"
+                    />
+                  )}
+                  <span className={check.ok ? undefined : "font-semibold"}>
+                    {check.text}
+                  </span>
+                </li>
+              ))}
             </ul>
           </AdminCard>
           <AdminCard title="Riwayat">
-            {data.history.map((item, index) => (
-              <p key={index} className="mb-3 text-sm">
-                {item.action}
-                <span className="mt-1 block text-xs text-text-secondary">
-                  {item.by}, {formatDateShort(item.at)}
-                </span>
-              </p>
-            ))}
+            {data.history.length ? (
+              <ul className="space-y-3">
+                {collapseRepeats(data.history).map((item, index) => (
+                  <li key={index} className="text-sm">
+                    {auditLabel(item.action)}
+                    <span className="mt-1 block text-xs text-text-secondary">
+                      {/* Backend mengirim id admin (belum nama). Data contoh berisi nama. */}
+                      {/^[a-f0-9]{24}$/.test(item.by)
+                        ? item.by === me.data?.id
+                          ? "Oleh Anda"
+                          : "Oleh admin lain"
+                        : `Oleh ${item.by}`}
+                      , {formatDateShort(item.at)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-text-secondary">Belum ada riwayat.</p>
+            )}
           </AdminCard>
         </div>
       </div>
