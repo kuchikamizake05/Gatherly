@@ -1,4 +1,5 @@
 import { ApiError, api, page, wrap, type Paginated } from "@/lib/api/client";
+import { mediaUrl } from "@/lib/media";
 import { FIX } from "@/modules/_mock/fixtures";
 import { refundDemoEvent } from "@/modules/tickets/api";
 
@@ -159,6 +160,12 @@ const paidOrder = () =>
     },
   });
 
+/** Snapshot acara di pesanan menyimpan poster sebagai id aset. */
+const withPoster = (order: Order): Order => ({
+  ...order,
+  event: { ...order.event, poster: mediaUrl(order.event?.poster) },
+});
+
 export const ordersApi = {
   /** Idempotency-Key: UUID per percobaan checkout. Pertahankan saat retry, ganti untuk pesanan baru. */
   create: (input: CreateOrderInput, idempotencyKey: string) =>
@@ -184,8 +191,11 @@ export const ordersApi = {
               ? refundDemoOrder()
               : (mockOrders.find((o) => o.id === id) ?? mockOrder({ id })),
         ),
-    }),
-  list: () => api.get<Paginated<Order>>("/orders", { mock: () => page([paidOrder(), ...mockOrders]) }),
+    }).then((res) => ({ data: withPoster(res.data) })),
+  list: () =>
+    api
+      .get<Paginated<Order>>("/orders", { mock: () => page([paidOrder(), ...mockOrders]) })
+      .then((res) => ({ ...res, data: res.data.map(withPoster) })),
   /** method: kode dari payment-methods.ts. Backend meneruskannya sebagai enabled_payments Snap. */
   paymentSession: (id: string, method: string) =>
     api.post<{ data: PaymentSession }>(`/orders/${id}/payment-session`, { method }, {

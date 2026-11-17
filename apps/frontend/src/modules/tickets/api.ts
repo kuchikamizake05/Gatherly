@@ -1,4 +1,5 @@
 import { ApiError, api, page, wrap, type Paginated } from "@/lib/api/client";
+import { mediaUrl } from "@/lib/media";
 import { FIX } from "@/modules/_mock/fixtures";
 
 import type { TicketDetail, TicketEvent, TicketSummary } from "./types";
@@ -118,12 +119,31 @@ const mockTickets: TicketDetail[] = [
   ),
 ];
 
+/**
+ * Backend mengirim nama jenis tiket di ticketType.name dan poster sebagai id aset.
+ * Samakan ke bentuk yang dipakai tampilan (ticketTypeName, URL poster).
+ */
+function normalize<T extends TicketSummary>(raw: T): T {
+  const t = raw as T & { ticketType?: { name?: string } };
+  return {
+    ...t,
+    ticketTypeName: t.ticketTypeName ?? t.ticketType?.name ?? "",
+    orderCode: t.orderCode ?? "",
+    event: { ...t.event, poster: mediaUrl(t.event?.poster) },
+  };
+}
+
 export const ticketsApi = {
-  list: () => api.get<Paginated<TicketSummary>>("/tickets", { mock: () => page(mockTickets) }),
+  list: () =>
+    api
+      .get<Paginated<TicketSummary>>("/tickets", { mock: () => page(mockTickets) })
+      .then((res) => ({ ...res, data: res.data.map(normalize) })),
   get: (id: string) =>
-    api.get<{ data: TicketDetail }>(`/tickets/${id}`, {
-      mock: () => wrap(mockTickets.find((t) => t.id === id) ?? mockTickets[0]!),
-    }),
+    api
+      .get<{ data: TicketDetail }>(`/tickets/${id}`, {
+        mock: () => wrap(mockTickets.find((t) => t.id === id) ?? mockTickets[0]!),
+      })
+      .then((res) => ({ data: normalize(res.data) })),
   /**
    * Tiket dari tautan di email e-tiket, tanpa login. Bentuknya sama dengan get.
    * 404 NOT_FOUND bila token tidak dikenal. Mock: token "demo-rafi" berisi tiket Rafi.
@@ -135,7 +155,7 @@ export const ticketsApi = {
         if (!ticket) throw new ApiError(404, "NOT_FOUND", "Tautan e-tiket tidak berlaku.");
         return wrap(ticket);
       },
-    }),
+    }).then((res) => ({ data: normalize(res.data) })),
   /** Kirim ulang e-tiket ke email peserta. Backend menolak dengan 409 RESEND_UNAVAILABLE bila belum lewat 60 detik. */
   resend: (orderId: string) =>
     api.post<void>(`/orders/${orderId}/tickets/resend`, undefined, { mock: () => undefined }),
