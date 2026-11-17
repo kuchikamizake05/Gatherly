@@ -195,13 +195,18 @@ export function EventCard({
           className="object-cover transition-transform duration-200 ease-out [@media(hover:hover)]:group-hover:scale-[1.02]"
           priority={priority}
         />
-        {showSave && (
-          <span className="absolute top-2.5 right-2.5">
-            <SaveButton slug={event.slug} saved={!!event.saved} title={event.title} variant="card" onSaveChange={onSaveChange} />
-          </span>
-        )}
+        {/* Label di atas gambar supaya judul dan tanggal sejajar antarkartu, ada label atau tidak. */}
+        <span className="absolute inset-x-2.5 top-2.5 flex items-center justify-between gap-2">
+          {shownBadge ? (
+            <Badge tone={shownBadge.tone ?? "neutral"} className="shadow-[0_1px_2px_#1111131f]">
+              {shownBadge.label}
+            </Badge>
+          ) : (
+            <span />
+          )}
+          {showSave && <SaveButton slug={event.slug} saved={!!event.saved} title={event.title} variant="card" onSaveChange={onSaveChange} />}
+        </span>
       </span>
-      {shownBadge && <Badge tone={shownBadge.tone ?? "neutral"}>{shownBadge.label}</Badge>}
       <span className="line-clamp-2 text-lg leading-snug font-bold text-foreground">{event.title}</span>
       <span className="flex flex-col gap-0.5">
         <span className="text-sm font-semibold text-text-secondary">{shortDate(event.startsAt)} WIB</span>
