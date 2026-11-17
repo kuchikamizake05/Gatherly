@@ -167,7 +167,7 @@ function ManageWorkspace({ children }: { children: ReactNode }) {
         description="Penjualan akan dihentikan. Pembatalan dan pengembalian dana diproses sesuai kebijakan acara."
         confirmText={event.data.title}
         confirmLabel="Batalkan acara"
-        canConfirm={!disabled && !!reason.trim()}
+        canConfirm={!disabled && reason.trim().length >= 10}
         loading={cancel.isPending}
         error={cancel.error?.message}
         onConfirm={() =>
@@ -182,10 +182,15 @@ function ManageWorkspace({ children }: { children: ReactNode }) {
           )
         }
       >
-        <Field label="Alasan pembatalan" htmlFor="cancel-reason">
+        <Field
+          label="Alasan pembatalan"
+          htmlFor="cancel-reason"
+          helper={`Minimal 10 karakter, ${reason.trim().length}/500`}
+        >
           <Textarea
             id="cancel-reason"
             value={reason}
+            minLength={10}
             maxLength={500}
             onChange={(e) => setReason(e.target.value)}
           />
