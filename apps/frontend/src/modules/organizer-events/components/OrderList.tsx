@@ -311,7 +311,7 @@ export function OrderList() {
                 render: (r) => (
                   <Button
                     variant="link"
-                    className="h-auto min-h-11 whitespace-normal p-0 text-left"
+                    className="h-auto min-h-11 whitespace-normal p-0 text-left underline underline-offset-4"
                     onClick={() => {
                       setSelected(r.id);
                       setSendError("");
@@ -348,6 +348,22 @@ export function OrderList() {
                   >
                     {paymentLabels[r.paymentStatus]}
                   </Badge>
+                ),
+              },
+              {
+                key: "action",
+                title: "Tindakan",
+                render: (r) => (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelected(r.id);
+                      setSendError("");
+                    }}
+                  >
+                    Detail
+                  </Button>
                 ),
               },
             ]}
