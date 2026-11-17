@@ -1,5 +1,6 @@
 "use client";
 
+import { CATEGORIES } from "@/modules/events/categories";
 import { LocationPreview } from "./LocationPreview";
 import { SortableList } from "@/components/elements/SortableList";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -57,14 +58,8 @@ const steps = [
   ["Detail", "Ketentuan, penampil"],
   ["Tinjau & terbitkan", "Periksa sebelum tayang"],
 ];
-const categories = [
-  "Musik",
-  "Seni",
-  "Olahraga",
-  "Lokakarya",
-  "Komunitas",
-  "Kuliner",
-];
+// Sama dengan kategori di Jelajahi dan backend. Filter Jelajahi mencocokkan nama ini.
+const categories = CATEGORIES.map((category) => category.name);
 /**
  * Backend baru menerima acara bila kolom wajib lengkap (deskripsi, kategori, jadwal, tempat).
  * Sebelum itu draf hanya disimpan di perangkat, supaya autosave tidak terus ditolak server.
