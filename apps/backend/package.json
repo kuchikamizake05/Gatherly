@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "test:integration": "tsx --test test/**/*.test.ts",
     "test:smoke:midtrans": "tsx --test test/midtrans-sandbox.smoke.ts",
+    "seed:demo": "tsx scripts/seed-demo.ts",
     "format": "prettier --write",
     "format:check": "prettier --check"
   },
