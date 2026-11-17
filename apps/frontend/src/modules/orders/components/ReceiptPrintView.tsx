@@ -106,8 +106,8 @@ export function ReceiptPrintView({ orderId }: { orderId: string }) {
             <tr className="border-t border-border">
               <td className="px-4 py-3">Biaya layanan</td>
               <td className="px-4 py-3 text-center">1</td>
-              <td className="px-4 py-3 text-right">Rp0</td>
-              <td className="px-4 py-3 text-right">Rp0</td>
+              <td className="px-4 py-3 text-right">{formatRupiah(o.serviceFeeAmount ?? Math.max(0,o.totalAmount-subtotal))}</td>
+              <td className="px-4 py-3 text-right">{formatRupiah(o.serviceFeeAmount ?? Math.max(0,o.totalAmount-subtotal))}</td>
             </tr>
           </tbody>
         </table>

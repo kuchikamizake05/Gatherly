@@ -9,7 +9,7 @@ import type { EventCard, EventDetail, EventQuery, EventSuggestions, OrganizerPro
  * Semua masih pending: katalog publik (issue #3 B10), disimpan dan profil (B37), laporan (B40).
  */
 
-const pending = { pending: true } as const;
+const pending = {} as const;
 
 const SAVED = ["festival-jazz-di-sawah", "pameran-foto-kampung-kota", "keroncong-di-pendopo", "bazar-buku-bekas-zine", "workshop-risograph", "senja-akustik-di-kotabaru"];
 const PAST = (c: EventCard) => new Date(c.startsAt).getTime() < Date.now();
@@ -109,14 +109,13 @@ export const eventsApi = {
   detail: (slug: string, cookie?: string) =>
     api.get<{ data: EventDetail }>(`/events/${slug}`, { cookie, ...pending, mock: () => wrap({ ...festival, slug }) }),
 
-  saved: () => api.get<Paginated<EventCard>>("/me/saved-events", { ...pending, mock: () => page(SAVED.map((slug) => cards.find((c) => c.slug === slug)!)) }),
-  save: (slug: string) => api.put<void>(`/me/saved-events/${slug}`, undefined, { ...pending, mock: () => undefined }),
-  unsave: (slug: string) => api.delete<void>(`/me/saved-events/${slug}`, { ...pending, mock: () => undefined }),
+  saved: () => api.get<Paginated<EventCard>>("/me/saved-events", { mock: () => page(SAVED.map((slug) => cards.find((c) => c.slug === slug)!)) }),
+  save: (slug: string) => api.put<void>(`/me/saved-events/${slug}`, undefined, { mock: () => undefined }),
+  unsave: (slug: string) => api.delete<void>(`/me/saved-events/${slug}`, { mock: () => undefined }),
 
   organizerProfile: (username: string, cookie?: string) =>
     api.get<{ data: OrganizerProfile }>(`/organizers/${username}/profile`, {
       cookie,
-      ...pending,
       mock: () =>
         wrap({
           username,
@@ -134,5 +133,5 @@ export const eventsApi = {
     }),
 
   report: (slug: string, input: ReportInput) =>
-    api.post<void>(`/events/${slug}/reports`, input, { ...pending, mock: () => undefined }),
+    api.post<void>(`/events/${slug}/reports`, input, { mock: () => undefined }),
 };

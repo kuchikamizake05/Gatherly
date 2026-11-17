@@ -105,7 +105,7 @@ export const ticketsApi = {
     api.get<{ data: TicketDetail }>(`/tickets/${id}`, {
       mock: () => wrap(mockTickets.find((t) => t.id === id) ?? mockTickets[0]!),
     }),
-  /** Pending #25: kirim ulang e-tiket ke email peserta, jeda 60 detik. */
+  /** Kirim ulang e-tiket ke email peserta. Backend menolak dengan 409 RESEND_UNAVAILABLE bila belum lewat 60 detik. */
   resend: (orderId: string) =>
-    api.post<void>(`/orders/${orderId}/tickets/resend`, undefined, { pending: true, mock: () => undefined }),
+    api.post<void>(`/orders/${orderId}/tickets/resend`, undefined, { mock: () => undefined }),
 };

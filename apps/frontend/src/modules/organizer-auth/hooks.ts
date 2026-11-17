@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { ApiError } from "@/lib/api/client";
+import { ApiError, setCsrfToken } from "@/lib/api/client";
 import { qk } from "@/lib/api/query-keys";
 
 import { organizerAuthApi } from "./api";
@@ -27,7 +27,7 @@ export function useWorkspaceLogin() {
   return useMutation({
     mutationFn: ({ username, password }: { username: string; password: string }) =>
       organizerAuthApi.login(username, password),
-    onSuccess: (res) => qc.setQueryData(qk.orgMe, res.data),
+    onSuccess: (res) => { setCsrfToken(res.data.csrfToken); qc.setQueryData(qk.orgMe, res.data); },
   });
 }
 

@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { ApiError } from "@/lib/api/client";
+import { ApiError, setCsrfToken } from "@/lib/api/client";
 import { qk } from "@/lib/api/query-keys";
 import type { FieldFlag } from "@/modules/applications/api";
 
@@ -30,7 +30,7 @@ export function useAdminVerifyTotp() {
   return useMutation({
     mutationFn: ({ challengeId, code, rememberDevice }: { challengeId: string; code: string; rememberDevice: boolean }) =>
       a.verifyTotp(challengeId, code, rememberDevice),
-    onSuccess: (res) => qc.setQueryData(qk.adminMe, res.data),
+    onSuccess: (res) => { setCsrfToken(res.data.csrfToken); qc.setQueryData(qk.adminMe, res.data); },
   });
 }
 
@@ -38,7 +38,7 @@ export function useAdminBackupCode() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ challengeId, code }: { challengeId: string; code: string }) => a.verifyBackupCode(challengeId, code),
-    onSuccess: (res) => qc.setQueryData(qk.adminMe, res.data),
+    onSuccess: (res) => { setCsrfToken(res.data.csrfToken); qc.setQueryData(qk.adminMe, res.data); },
   });
 }
 

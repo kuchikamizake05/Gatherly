@@ -22,7 +22,7 @@ import type {
  * Pending: batalkan dan duplikat acara, hentikan penjualan, poster (B33), refund (B35).
  */
 
-const pending = { pending: true } as const;
+const pending = {} as const;
 const base = "/organizer/events";
 
 const mockEvent: OrgEvent = {

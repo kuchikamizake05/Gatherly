@@ -4,7 +4,7 @@ import { FIX } from "@/modules/_mock/fixtures";
 /**
  * Scan tiket untuk panitia dan organizer. Pita desain 14 (acara ditugaskan) dan 19.
  * Sudah ada: acara ditugaskan, cari tiket, riwayat, check-in.
- * Pending B41: unduh daftar tiket untuk offline dan sinkronisasi.
+ * Check-in wajib online. Tidak ada validasi tiket atau sinkronisasi offline.
  */
 
 export type AssignedEvent = {
@@ -15,7 +15,7 @@ export type AssignedEvent = {
   poster?: string;
   checkedIn: number;
   paidTickets: number;
-  /** Pemindaian dibuka 2 jam sebelum acara dan ditutup saat acara selesai. */
+  /** Waktu pemindaian ditentukan organizer per acara. */
   scanOpensAt: string;
   scanClosesAt: string;
 };
@@ -98,10 +98,4 @@ export const checkInApi = {
         }),
     }),
 
-  // Pending B41
-  offlineBundle: (eventId: string) =>
-    api.get<{ data: { tickets: LookupTicket[]; qrHashes: string[]; generatedAt: string } }>(`${base}/${eventId}/offline-bundle`, {
-      pending: true,
-      mock: () => wrap({ tickets: [], qrHashes: [], generatedAt: new Date().toISOString() }),
-    }),
 };

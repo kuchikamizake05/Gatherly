@@ -3,7 +3,7 @@ import { FIX } from "@/modules/_mock/fixtures";
 
 /**
  * Profil organizer dan Pengaturan (Rekening pencairan, Keamanan). Pita desain 23.
- * Semua pending: profil dan password (B38), rekening dan pencairan (B39).
+ * Profil dan password (B38), rekening dan pencairan (B39) memakai API nyata.
  */
 
 export type OrganizerProfileSettings = {
@@ -23,7 +23,7 @@ export type PayoutRow = {
   eventId: string;
   eventTitle: string;
   eventDate: string;
-  /** Pendapatan bersih setelah biaya layanan 5%. */
+  /** Nilai dasar tiket setelah pengembalian dana, tanpa potongan biaya layanan tambahan pembeli. */
   net: number;
   status: PayoutStatus;
   requestedAt?: string | null;
@@ -38,8 +38,6 @@ export type PayoutOverview = {
   rows: PayoutRow[];
 };
 
-const pending = { pending: true } as const;
-
 const mockOverview: PayoutOverview = {
   available: 14962500,
   processing: 0,
@@ -47,10 +45,16 @@ const mockOverview: PayoutOverview = {
   rows: FIX.payouts.map((p) => ({ ...p })),
 };
 
+function normalizeLogo(form: FormData) {
+  const logo = form.get("logo");
+  if (logo instanceof File) { form.delete("logo"); form.set("file", logo); }
+  return form;
+}
+
 export const organizerSettingsApi = {
   profile: () =>
     api.get<{ data: OrganizerProfileSettings }>("/organizer/profile", {
-      ...pending,
+      pending: false,
       mock: () =>
         wrap({
           logoUrl: null,
@@ -63,16 +67,16 @@ export const organizerSettingsApi = {
     }),
   /** FormData: name, city, description, links (JSON), logo (gambar maks 1 MB, opsional). */
   updateProfile: (form: FormData) =>
-    api.patch<void>("/organizer/profile", form, { ...pending, mock: () => undefined }),
+    api.patch<void>("/organizer/profile", normalizeLogo(form), { pending: false, mock: () => undefined }),
   changePassword: (currentPassword: string, newPassword: string) =>
-    api.post<void>("/workspace/auth/password", { currentPassword, newPassword }, { ...pending, mock: () => undefined }),
+    api.post<void>("/workspace/auth/password", { currentPassword, newPassword }, { pending: false, mock: () => undefined }),
 
   bankAccount: () =>
-    api.get<{ data: BankAccount | null }>("/organizer/bank-account", { ...pending, mock: () => wrap(FIX.bank) }),
+    api.get<{ data: BankAccount | null }>("/organizer/bank-account", { mock: () => wrap(FIX.bank) }),
   saveBankAccount: (input: BankAccount) =>
-    api.put<{ data: BankAccount }>("/organizer/bank-account", input, { ...pending, mock: () => wrap(input) }),
+    api.put<{ data: BankAccount }>("/organizer/bank-account", input, { mock: () => wrap(input) }),
 
-  payouts: () => api.get<{ data: PayoutOverview }>("/organizer/payouts", { ...pending, mock: () => wrap(mockOverview) }),
+  payouts: () => api.get<{ data: PayoutOverview }>("/organizer/payouts", { mock: () => wrap(mockOverview) }),
   requestPayout: (eventId: string) =>
-    api.post<void>("/organizer/payouts", { eventId }, { ...pending, mock: () => undefined }),
+    api.post<void>("/organizer/payouts", { eventId }, { mock: () => undefined }),
 };

@@ -1,7 +1,7 @@
 import { api, wrap } from "@/lib/api/client";
 import { FIX } from "@/modules/_mock/fixtures";
 
-/** Akun saya di gatherly.xyz. Pita desain 12. Semua endpoint pending (issue B36). */
+/** Akun saya di gatherly.xyz. Pita desain 12. Endpoint akun peserta terhubung ke backend B36. */
 
 export type Account = {
   name: string;
@@ -34,7 +34,7 @@ let mockAccount: Account = {
   notifications: { reminders: true, recommendations: false },
 };
 
-const pending = { pending: true } as const;
+const pending = {} as const;
 
 const saveMock = (next: Partial<Account>) => {
   mockAccount = { ...mockAccount, ...next };

@@ -12,6 +12,7 @@ export type TeamMember = {
   name: string;
   username: string;
   assignedEvents: number;
+  eventIds?: string[];
   status: MemberStatus;
 };
 
@@ -20,7 +21,7 @@ export type CreateMemberInput = { name: string; username: string; eventIds: stri
 /** Password sementara hanya ditampilkan sekali. */
 export type Credentials = { username: string; temporaryPassword: string; expiresAt: string };
 
-const pending = { pending: true } as const;
+const pending = { pending: false } as const;
 const base = "/organizer/team";
 
 const owner: TeamMember = {

@@ -18,7 +18,7 @@ export type WorkspaceMe = {
   csrfToken: string;
 };
 
-const pending = { pending: true } as const;
+const pending = { pending: false } as const;
 
 const mockOrganizer: WorkspaceMe = {
   role: "organizer",

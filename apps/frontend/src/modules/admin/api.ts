@@ -3,11 +3,10 @@ import { FIX } from "@/modules/_mock/fixtures";
 import type { Application, FieldFlag } from "@/modules/applications/api";
 
 /**
- * admin.gatherly.xyz. Pita desain 20, 21, 22, 24. Semua pending:
+ * admin.gatherly.xyz. Pita desain 20, 21, 22, 24. Semua memakai API nyata:
  * login + 2FA (B30), pengajuan (B31), organizer (B32), pencairan (B39), laporan (B40).
  */
 
-const pending = { pending: true } as const;
 const base = "/admin";
 
 export type AdminMe = { id: string; name: string; email: string; csrfToken: string };
@@ -50,9 +49,11 @@ export type AdminPayout = (typeof FIX.adminPayouts)[number] | {
 };
 
 export type ReportReason = "fraud" | "wrong_info" | "inappropriate" | "other";
-export type ReportRow = (typeof FIX.reports)[number];
+export type ReportRow = { id: string; eventTitle: string; organizerName: string; reason: ReportReason; createdAt: string; status: "new" | "done" };
 export type ReportDetail = ReportRow & {
   note: string;
+  resolutionNote?: string | null;
+  closedAt?: string | null;
   reporter: { email: string; isTicketHolder: boolean };
   event: { slug: string; title: string; startsAt: string; soldLabel: string };
   organizer: { id: string; name: string; username: string; recentReports: number };
@@ -81,49 +82,49 @@ const reviewMock: ApplicationReview = {
 export const adminApi = {
   // B30
   login: (email: string, password: string) =>
-    api.post<{ data: { challengeId: string } }>(`${base}/auth/login`, { email, password }, { ...pending, mock: () => wrap({ challengeId: "adm_ch" }) }),
+    api.post<{ data: { challengeId: string } }>(`${base}/auth/login`, { email, password }, { pending: false, mock: () => wrap({ challengeId: "adm_ch" }) }),
   verifyTotp: (challengeId: string, code: string, rememberDevice: boolean) =>
     api.post<{ data: AdminMe }>(`${base}/auth/totp`, { challengeId, code, rememberDevice }, {
-      ...pending,
+      pending: false,
       mock: () => wrap({ id: "adm_nadia", name: "Nadia", email: "nadia@gatherly.xyz", csrfToken: "mock-csrf" }),
     }),
   verifyBackupCode: (challengeId: string, code: string) =>
     api.post<{ data: AdminMe }>(`${base}/auth/backup-code`, { challengeId, code }, {
-      ...pending,
+      pending: false,
       mock: () => wrap({ id: "adm_nadia", name: "Nadia", email: "nadia@gatherly.xyz", csrfToken: "mock-csrf" }),
     }),
   async me(cookie?: string) {
     const res = await api.get<{ data: AdminMe }>(`${base}/auth/me`, {
       cookie,
-      ...pending,
+      pending: false,
       mock: () => wrap({ id: "adm_nadia", name: "Nadia", email: "nadia@gatherly.xyz", csrfToken: "mock-csrf" }),
     });
     setCsrfToken(res.data.csrfToken);
     return res.data;
   },
-  logout: () => api.post<void>(`${base}/auth/logout`, undefined, { ...pending, mock: () => undefined }),
+  logout: () => api.post<void>(`${base}/auth/logout`, undefined, { pending: false, mock: () => undefined }),
 
   // B31
   applications: (params: { tab?: ApplicationTab; q?: string; type?: string; page?: number } = {}) =>
     api.get<Paginated<ApplicationRow> & { counts: Record<ApplicationTab, number> }>(`${base}/applications`, {
       query: params,
-      ...pending,
+      pending: false,
       mock: () => ({ ...page(FIX.applications), counts: { new: 5, needs_fix: 2, approved: 48, rejected: 7 } }),
     }),
   application: (id: string) =>
-    api.get<{ data: ApplicationReview }>(`${base}/applications/${id}`, { ...pending, mock: () => wrap({ ...reviewMock, id }) }),
-  approve: (id: string) => api.post<void>(`${base}/applications/${id}/approve`, undefined, { ...pending, mock: () => undefined }),
+    api.get<{ data: ApplicationReview }>(`${base}/applications/${id}`, { pending: false, mock: () => wrap({ ...reviewMock, id }) }),
+  approve: (id: string) => api.post<void>(`${base}/applications/${id}/approve`, undefined, { pending: false, mock: () => undefined }),
   requestFix: (id: string, flags: FieldFlag[]) =>
-    api.post<void>(`${base}/applications/${id}/request-fix`, { flags }, { ...pending, mock: () => undefined }),
+    api.post<void>(`${base}/applications/${id}/request-fix`, { flags }, { pending: false, mock: () => undefined }),
   reject: (id: string, reason: string) =>
-    api.post<void>(`${base}/applications/${id}/reject`, { reason }, { ...pending, mock: () => undefined }),
+    api.post<void>(`${base}/applications/${id}/reject`, { reason }, { pending: false, mock: () => undefined }),
   applicationsCsvUrl: () => `/api/v1${base}/applications.csv`,
 
   // B32
   organizers: (params: { tab?: OrganizerTab; q?: string; page?: number } = {}) =>
     api.get<Paginated<OrganizerRow> & { counts: Record<OrganizerTab, number> }>(`${base}/organizers`, {
       query: params,
-      ...pending,
+      pending: false,
       mock: () => ({
         ...page<OrganizerRow>([
           { id: FIX.organizer.id, name: FIX.organizer.name, username: FIX.organizer.username, activeEvents: 3, grossSales: 36250000, status: "active" },
@@ -135,7 +136,7 @@ export const adminApi = {
     }),
   organizer: (id: string) =>
     api.get<{ data: OrganizerDetail }>(`${base}/organizers/${id}`, {
-      ...pending,
+      pending: false,
       mock: () =>
         wrap({
           id, name: FIX.organizer.name, username: FIX.organizer.username, activeEvents: 3, grossSales: 36250000, status: "active" as const,
@@ -151,30 +152,27 @@ export const adminApi = {
           ],
         }),
     }),
-  freeze: (id: string, reason: string) => api.post<void>(`${base}/organizers/${id}/freeze`, { reason }, { ...pending, mock: () => undefined }),
-  unfreeze: (id: string) => api.post<void>(`${base}/organizers/${id}/unfreeze`, undefined, { ...pending, mock: () => undefined }),
-  resendAccess: (id: string) => api.post<void>(`${base}/organizers/${id}/resend-access`, undefined, { ...pending, mock: () => undefined }),
+  freeze: (id: string, reason: string) => api.post<void>(`${base}/organizers/${id}/freeze`, { reason }, { pending: false, mock: () => undefined }),
+  unfreeze: (id: string) => api.post<void>(`${base}/organizers/${id}/unfreeze`, undefined, { pending: false, mock: () => undefined }),
+  resendAccess: (id: string) => api.post<void>(`${base}/organizers/${id}/resend-access`, undefined, { pending: false, mock: () => undefined }),
 
   // B39
   payouts: (params: { tab?: "requested" | "transferred"; page?: number } = {}) =>
     api.get<Paginated<AdminPayout> & { counts: { requested: number; transferred: number } }>(`${base}/payouts`, {
       query: params,
-      ...pending,
       mock: () => ({ ...page<AdminPayout>(FIX.adminPayouts), counts: { requested: 2, transferred: 14 } }),
     }),
   markTransferred: (id: string, reference: string, transferredAt: string) =>
-    api.post<void>(`${base}/payouts/${id}/transferred`, { reference, transferredAt }, { ...pending, mock: () => undefined }),
+    api.post<void>(`${base}/payouts/${id}/transferred`, { transferReference: reference, transferredAt }, { mock: () => undefined }),
 
   // B40
   reports: (params: { tab?: "new" | "done"; page?: number } = {}) =>
     api.get<Paginated<ReportRow> & { counts: { new: number; done: number } }>(`${base}/reports`, {
       query: params,
-      ...pending,
       mock: () => ({ ...page(FIX.reports), counts: { new: 3, done: 21 } }),
     }),
   report: (id: string) =>
     api.get<{ data: ReportDetail }>(`${base}/reports/${id}`, {
-      ...pending,
       mock: () =>
         wrap({
           ...FIX.reports[0]!,
@@ -186,5 +184,5 @@ export const adminApi = {
         }),
     }),
   closeReport: (id: string, note: string) =>
-    api.post<void>(`${base}/reports/${id}/close`, { note }, { ...pending, mock: () => undefined }),
+    api.post<void>(`${base}/reports/${id}/close`, { note }, { mock: () => undefined }),
 };
