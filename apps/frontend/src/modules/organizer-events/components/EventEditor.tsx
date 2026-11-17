@@ -101,7 +101,12 @@ function payload(values: EditorValues): EventInput {
           .map((p) => ({
             ...p,
             photoAssetId: filled(p.photoAssetId),
-            photoUrl: filled(p.photoUrl),
+            // Backend mengisi photoUrl sendiri dari photoAssetId dalam bentuk relatif (/api/v1/media/...),
+            // tapi hanya menerima URL lengkap. Jadi URL hanya dikirim bila tidak ada asset dan berupa http(s).
+            photoUrl:
+              !filled(p.photoAssetId) && /^https?:\/\//.test(p.photoUrl ?? "")
+                ? p.photoUrl
+                : undefined,
           }))
       : [],
   };
