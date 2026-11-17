@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Heart, HeartOff } from "lucide-react";
 import { toast } from "sonner";
+import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import { formatRupiah } from "@/lib/format";
@@ -91,36 +92,51 @@ function SaveButton({
   onSaveChange?: (next: boolean) => void;
 }) {
   const toggle = useToggleSave();
+  // Status lokal supaya hati langsung berubah. Data kartu (daftar atau HTML beranda) bisa terlambat diperbarui.
+  const [current, setCurrent] = useState(saved);
+  useEffect(() => setCurrent(saved), [saved]);
+  const apply = (next: boolean, withToast: boolean) => {
+    setCurrent(next);
+    toggle.mutate(
+      { slug, saved: next },
+      {
+        onSuccess: () => {
+          if (!withToast) return;
+          // Satu id untuk semua toast simpan, jadi toast baru menggantikan yang lama.
+          toast(next ? "Acara disimpan" : "Dihapus dari Disimpan", {
+            id: "saved-toggle",
+            icon: next ? <Heart className="size-[18px]" /> : <HeartOff className="size-[18px]" />,
+            action: { label: "Batalkan", onClick: () => apply(!next, false) },
+          });
+        },
+        onError: () => {
+          setCurrent(!next);
+          toast.error("Gagal menyimpan acara. Coba lagi.", { id: "saved-toggle" });
+        },
+      },
+    );
+  };
+  const shown = onSaveChange ? saved : current;
   const onClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     if (onSaveChange) return onSaveChange(!saved);
-    toggle.mutate(
-      { slug, saved: !saved },
-      {
-        onSuccess: () =>
-          toast(saved ? "Dihapus dari Disimpan" : "Acara disimpan", {
-            icon: saved ? <HeartOff className="size-[18px]" /> : <Heart className="size-[18px]" />,
-            action: { label: "Batalkan", onClick: () => toggle.mutate({ slug, saved }) },
-          }),
-        onError: () => toast.error("Gagal menyimpan acara. Coba lagi."),
-      },
-    );
+    apply(!current, true);
   };
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-pressed={saved}
-      aria-label={saved ? `Hapus ${title} dari Disimpan` : `Simpan ${title}`}
+      aria-pressed={shown}
+      aria-label={shown ? `Hapus ${title} dari Disimpan` : `Simpan ${title}`}
       className={cn(
         "press flex shrink-0 items-center justify-center rounded-full transition-colors",
         variant === "row"
-          ? cn("size-10", saved ? "bg-danger-tint text-danger" : "bg-surface-2 text-foreground")
-          : cn("size-9", saved ? "bg-inverse text-primary" : "bg-white/90 text-foreground"),
+          ? cn("size-10", shown ? "bg-danger-tint text-danger" : "bg-surface-2 text-foreground")
+          : cn("size-9", shown ? "bg-inverse text-primary" : "bg-white/90 text-foreground"),
       )}
     >
-      <Heart className={cn("size-[18px]", saved && "fill-current")} aria-hidden />
+      <Heart className={cn("size-[18px]", shown && "fill-current")} aria-hidden />
     </button>
   );
 }

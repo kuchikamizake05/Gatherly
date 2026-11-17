@@ -54,7 +54,7 @@ const glass =
 
 function DesktopNav({ pathname, guest }: { pathname: string; guest: boolean }) {
   return (
-    <div className="hidden h-[84px] w-full items-center justify-between gap-6 px-10 md:flex xl:px-20">
+    <div className="hidden h-[84px] w-full items-center justify-between gap-6 px-6 md:flex xl:px-10">
       <div className="flex w-[260px] items-center">
         <Logo />
       </div>

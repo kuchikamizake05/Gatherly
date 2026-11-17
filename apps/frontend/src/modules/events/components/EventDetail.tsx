@@ -45,6 +45,7 @@ function SaveToggle({ event, round }: { event: EventDetailData; round: "outline"
           {
             onSuccess: () =>
               toast(event.saved ? "Dihapus dari Disimpan" : "Acara disimpan", {
+                id: "saved-toggle",
                 icon: <Heart className="size-[18px]" />,
                 action: { label: event.saved ? "Batalkan" : "Lihat", onClick: () => (event.saved ? toggle.mutate({ slug: event.slug, saved: true }) : router.push("/saved")) },
               }),

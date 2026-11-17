@@ -44,6 +44,7 @@ export function useToggleSave() {
     onSuccess: (_res, { slug }) => {
       qc.invalidateQueries({ queryKey: qk.saved });
       qc.invalidateQueries({ queryKey: qk.event(slug) });
+      qc.invalidateQueries({ queryKey: ["events"] });
     },
   });
 }
