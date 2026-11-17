@@ -16,6 +16,17 @@ export async function requireOrganizer(
     if (!organizer) {
       throw new AppError(403, "FORBIDDEN", "An organizer profile is required.");
     }
+    const workspace = (
+      request as unknown as {
+        workspace?: { account: { mustChangePassword: boolean; role: string } };
+      }
+    ).workspace;
+    if (workspace?.account.mustChangePassword)
+      throw new AppError(403, "PASSWORD_CHANGE_REQUIRED", "Change the temporary password first.");
+    if (workspace && workspace.account.role !== "organizer")
+      throw new AppError(403, "FORBIDDEN", "Organizer access is required.");
+    if (organizer.status === "frozen" && !["GET", "HEAD", "OPTIONS"].includes(request.method))
+      throw new AppError(403, "ORGANIZER_FROZEN", "Organizer writes are disabled.");
     request.auth!.organizerId = organizer._id.toString();
     next();
   } catch (error) {

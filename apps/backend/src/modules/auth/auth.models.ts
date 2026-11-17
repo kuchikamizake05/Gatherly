@@ -6,6 +6,13 @@ export interface UserDocument {
   passwordHash?: string;
   googleId?: string;
   emailVerifiedAt?: Date;
+  phone?: string | null;
+  avatarUrl?: string;
+  passwordChangedAt?: Date;
+  passwordFailures: number;
+  passwordLockedUntil?: Date;
+  notifications: { reminders: boolean; recommendations: boolean };
+  deletedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -17,6 +24,16 @@ const userSchema = new Schema<UserDocument>(
     passwordHash: { type: String },
     googleId: { type: String, unique: true, sparse: true },
     emailVerifiedAt: { type: Date },
+    phone: { type: String, default: null },
+    avatarUrl: { type: String },
+    passwordChangedAt: { type: Date },
+    passwordFailures: { type: Number, default: 0 },
+    passwordLockedUntil: { type: Date },
+    notifications: {
+      reminders: { type: Boolean, default: true },
+      recommendations: { type: Boolean, default: false },
+    },
+    deletedAt: { type: Date },
   },
   { timestamps: true },
 );
