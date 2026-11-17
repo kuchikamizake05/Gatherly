@@ -1,4 +1,11 @@
 "use client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
@@ -262,22 +269,29 @@ export function OrderList() {
             setPage(1);
           }}
         />
-        <select
-          aria-label="Status pembayaran"
-          value={status}
-          onChange={(e) => {
-            setStatus(e.target.value);
+        <Select
+          value={status || "all"}
+          onValueChange={(value) => {
+            setStatus(value === "all" ? "" : value);
             setPage(1);
           }}
-          className="min-h-11 rounded-md border border-border bg-background px-3 text-sm"
         >
-          <option value="">Semua pembayaran</option>
-          {Object.entries(paymentLabels).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger
+            aria-label="Status pembayaran"
+            size="sm"
+            className="md:w-52"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Semua pembayaran</SelectItem>
+            {Object.entries(paymentLabels).map(([value, label]) => (
+              <SelectItem key={value} value={value}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       {orders.isPending || orders.isError ? (
         <QueryState
@@ -425,15 +439,18 @@ export function OrderList() {
         }
       >
         <Field label="Jenis pengembalian" htmlFor="refund-mode">
-          <select
-            id="refund-mode"
+          <Select
             value={mode}
-            onChange={(e) => setMode(e.target.value as "full" | "partial")}
-            className="min-h-11 rounded-md border border-border bg-background px-3 text-sm"
+            onValueChange={(value) => setMode(value as "full" | "partial")}
           >
-            <option value="full">Semua tiket aktif</option>
-            <option value="partial">Sebagian tiket</option>
-          </select>
+            <SelectTrigger id="refund-mode">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="full">Semua tiket aktif</SelectItem>
+              <SelectItem value="partial">Sebagian tiket</SelectItem>
+            </SelectContent>
+          </Select>
         </Field>
         {mode === "partial" && (
           <fieldset className="space-y-2">

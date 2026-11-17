@@ -1,4 +1,11 @@
 "use client";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
@@ -101,22 +108,29 @@ export function AttendeeList() {
             setPage(1);
           }}
         />
-        <select
-          aria-label="Status check-in"
-          value={status}
-          onChange={(e) => {
-            setStatus(e.target.value);
+        <Select
+          value={status || "all"}
+          onValueChange={(value) => {
+            setStatus(value === "all" ? "" : value);
             setPage(1);
           }}
-          className="min-h-11 rounded-md border border-border bg-background px-3 text-sm"
         >
-          <option value="">Semua peserta</option>
-          {Object.entries(labels).map(([value, label]) => (
-            <option value={value} key={value}>
-              {label}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger
+            aria-label="Status check-in"
+            size="sm"
+            className="md:w-48"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Semua peserta</SelectItem>
+            {Object.entries(labels).map(([value, label]) => (
+              <SelectItem value={value} key={value}>
+                {label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       {attendees.isPending || attendees.isError ? (
         <QueryState

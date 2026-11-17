@@ -155,7 +155,8 @@ test("refunds one ticket and exports the filtered attendees", async ({
     .filter({
       has: page.getByRole("heading", { name: "Kembalikan dana pesanan?" }),
     });
-  await refund.getByLabel("Jenis pengembalian").selectOption("partial");
+  await refund.getByLabel("Jenis pengembalian").click();
+  await page.getByRole("option", { name: "Sebagian tiket" }).click();
   await refund.getByRole("checkbox").first().check();
   await refund
     .getByLabel("Alasan pengembalian")
@@ -166,9 +167,8 @@ test("refunds one ticket and exports the filtered attendees", async ({
   await expect(refund).toBeHidden();
   await page.keyboard.press("Escape");
   await page.goto("/events/ev_festival_jazz/attendees");
-  await page
-    .getByLabel("Status check-in", { exact: true })
-    .selectOption("cancelled");
+  await page.getByLabel("Status check-in", { exact: true }).click();
+  await page.getByRole("option", { name: "Dibatalkan" }).click();
   await expect(
     page.getByText("Galih Prasetyo", { exact: true }).filter({ visible: true }),
   ).toBeVisible();
