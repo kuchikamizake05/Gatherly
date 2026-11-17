@@ -83,13 +83,57 @@ function serverReady(values: EditorValues) {
   );
 }
 
+/**
+ * Data untuk backend. Isian kosong dibuang dulu karena backend menolak teks kosong:
+ * ketentuan kosong, kartu pengisi acara tanpa nama, serta poster atau foto yang belum diunggah.
+ */
 function payload(values: EditorValues): EventInput {
+  const filled = (v?: string) => (v && v.trim() ? v : undefined);
   return {
     ...values,
+    posterAssetId: filled(values.posterAssetId),
     startsAt: fromLocalInput(values.startsAt, values.timezone),
     endsAt: fromLocalInput(values.endsAt, values.timezone),
-    performers: values.showPerformers ? values.performers : [],
+    terms: values.terms.filter((term) => term.trim()),
+    performers: values.showPerformers
+      ? values.performers
+          .filter((p) => p.name.trim())
+          .map((p) => ({
+            ...p,
+            photoAssetId: filled(p.photoAssetId),
+            photoUrl: filled(p.photoUrl),
+          }))
+      : [],
   };
+}
+
+/** Nama bagian editor untuk kolom yang ditolak backend, misalnya "performers.0.name". */
+const FIELD_SECTIONS: Record<string, string> = {
+  title: "nama acara",
+  description: "deskripsi",
+  category: "kategori",
+  posterAssetId: "poster",
+  startsAt: "waktu mulai",
+  endsAt: "waktu selesai",
+  timezone: "zona waktu",
+  venueName: "nama tempat",
+  address: "alamat",
+  city: "kota",
+  terms: "ketentuan",
+  performers: "pengisi acara",
+  performerLabel: "sebutan pengisi acara",
+  checkInOpensAt: "waktu buka check-in",
+  checkInClosesAt: "waktu tutup check-in",
+};
+function rejectedSections(fields?: Record<string, string>) {
+  const names = [
+    ...new Set(
+      Object.keys(fields ?? {}).map(
+        (key) => FIELD_SECTIONS[key.split(".")[0] ?? ""] ?? "isian lain",
+      ),
+    ),
+  ];
+  return names.length ? `Periksa ${names.join(", ")}.` : "";
 }
 
 export function EventEditor({ id }: { id?: string }) {
@@ -120,6 +164,7 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
   );
   const [poster, setPoster] = useState(initial?.posterUrl ?? "");
   const [status, setStatus] = useState("Draf belum disimpan");
+  const [savedAt, setSavedAt] = useState("");
   const [error, setError] = useState("");
   const [confirmation, setConfirmation] = useState<"publish" | "update" | null>(
     null,
@@ -259,9 +304,8 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
       } else await update.mutateAsync(payload(current));
       saved.current = signature;
       cache();
-      setStatus(
-        `Draf tersimpan otomatis pukul ${formatTime(new Date()).replace(" WIB", "")}`,
-      );
+      setSavedAt(formatTime(new Date()).replace(" WIB", ""));
+      setStatus("");
       setError("");
       if (manual) toast.success("Draf disimpan");
       return true;
@@ -272,7 +316,9 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
       setError(
         offline || !(e instanceof Error)
           ? "Draf belum terkirim. Periksa koneksi Anda lalu simpan kembali."
-          : `Draf belum terkirim. ${e.message}`,
+          : `Draf belum terkirim. ${
+              (e instanceof ApiError && rejectedSections(e.fields)) || e.message
+            }`,
       );
       return false;
     } finally {
@@ -443,6 +489,24 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
       </Field>
     );
   }
+  // Status draf mengikuti ada atau tidaknya perubahan sejak penyimpanan terakhir ke akun.
+  const dirty = JSON.stringify(values) !== saved.current;
+  const draftStatus =
+    status === "Menyimpan draf…"
+      ? status
+      : !dirty
+        ? savedAt
+          ? `Semua perubahan tersimpan pukul ${savedAt}`
+          : initial
+            ? "Belum ada perubahan"
+            : "Draf belum disimpan"
+        : !online
+          ? "Luring. Perubahan disimpan di perangkat."
+          : !revision.current && !serverReady(values)
+            ? "Perubahan disimpan di perangkat. Lengkapi deskripsi, kategori, jadwal, dan tempat untuk menyimpan ke akun."
+            : status === "Draf tersimpan di perangkat" && error
+              ? "Perubahan belum tersimpan ke akun."
+              : "Ada perubahan yang belum disimpan.";
   // Id stabil per ketentuan supaya daftar bisa digeser. Ikut panjang daftar bila berubah dari luar (draf dipulihkan).
   const termIds = useRef<string[]>([]);
   while (termIds.current.length < values.terms.length)
@@ -559,7 +623,7 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
             aria-live="polite"
             className="mt-4 text-xs leading-relaxed text-text-secondary"
           >
-            {status}
+            {draftStatus}
           </p>
         </nav>
         <form
@@ -1045,6 +1109,7 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
                 variant="outline"
                 className="order-2 w-full md:order-none md:w-auto"
                 loading={busy && !confirmation}
+                disabled={!isPublished && !dirty}
                 onClick={() => {
                   if (isPublished) {
                     if (cache())
@@ -1052,7 +1117,11 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
                   } else void save(true);
                 }}
               >
-                {isPublished ? "Simpan di perangkat" : "Simpan draf"}
+                {isPublished
+                  ? "Simpan di perangkat"
+                  : !dirty && (savedAt || initial)
+                    ? "Tersimpan"
+                    : "Simpan draf"}
               </Button>
               {step < 4 ? (
                 <Button
