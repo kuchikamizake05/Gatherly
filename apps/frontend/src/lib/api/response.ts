@@ -23,7 +23,8 @@ export const pageResponse = <T>(schema: z.ZodType<T>) =>
     meta: z
       .object({
         page: z.number().int().positive(),
-        limit: z.number().int().positive(),
+        // Backend mengirim limit 0 untuk daftar kosong (misalnya organizer yang belum punya acara).
+        limit: z.number().int().nonnegative(),
         total: z.number().int().nonnegative(),
       })
       .passthrough(),

@@ -7,6 +7,8 @@
  * - Mock hanya aktif bila NEXT_PUBLIC_API_MOCK=true, termasuk untuk endpoint pending.
  */
 
+import { translateApiError } from "./messages";
+
 export type ApiErrorCode =
   | "VALIDATION_ERROR"
   | "UNAUTHENTICATED"
@@ -156,9 +158,13 @@ function responseError(
   return new ApiError(
     status,
     typeof error.code === "string" ? error.code : "HTTP_ERROR",
-    status >= 500 || typeof error.message !== "string"
+    // Pesan backend berbahasa Inggris diterjemahkan (messages.ts). Yang belum dikenal memakai pesan per status.
+    status >= 500
       ? statusMessage(status)
-      : error.message,
+      : (translateApiError(
+          typeof error.code === "string" ? error.code : "",
+          typeof error.message === "string" ? error.message : undefined,
+        ) ?? statusMessage(status)),
     fields,
     {
       ...(error.details && typeof error.details === "object"
