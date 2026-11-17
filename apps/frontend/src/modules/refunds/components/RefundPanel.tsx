@@ -196,8 +196,10 @@ export function RefundOrderBlock({
           </>
         ) : (
           !latest && (
-            <p className="text-[13px] text-text-tertiary">
-              Batas pengajuan pengembalian dana sudah lewat.
+            <p className="text-[13px] leading-relaxed text-text-secondary">
+              Pengembalian dana hanya bisa diajukan sampai{" "}
+              {format(deadline, "d MMM yyyy", { locale: localeId })}, satu bulan
+              sebelum acara. Hubungi penyelenggara bila Anda butuh bantuan.
             </p>
           )
         ))}
