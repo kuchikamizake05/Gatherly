@@ -1,4 +1,4 @@
-<h1 align="center">Gatherly</h1>
+<h1 align="center">Gatherlyy</h1>
 
 <p align="center">
   <strong>Discover events. Book your spot. Be there.</strong><br>
@@ -15,9 +15,17 @@
 
 ## Deskripsi
 
-Gatherly membantu peserta menemukan dan membeli tiket acara komunitas, organizer mengelola acara serta penjualan, dan panitia memvalidasi tiket di lokasi. Proyek ini dikembangkan oleh **Kelompok 11** untuk mata kuliah **Pengembangan Aplikasi Web**, topik **US3 — Tiket acara komunitas: kuota dan tiket elektronik berkode**.
+Gatherlyy membantu peserta menemukan dan membeli tiket acara komunitas, organizer mengelola acara serta penjualan, panitia memvalidasi tiket di lokasi, dan tim Gatherlyy meninjau organizer serta pencairan dana. Proyek ini dikembangkan oleh **Kelompok 11** untuk mata kuliah **Pengembangan Aplikasi Web**, topik **US3 — Tiket acara komunitas: kuota dan tiket elektronik berkode**.
 
-Backend telah menyediakan autentikasi, manajemen acara, reservasi atomik, integrasi Midtrans Sandbox, penerbitan tiket QR, check-in sekali pakai, dan laporan organizer. Frontend menyediakan alur peserta serta workspace organizer/panitia. Kontrak workspace baru masih menunggu backend. Mode live selalu memakai HTTP asli; data contoh hanya aktif dengan NEXT_PUBLIC_API_MOCK=true. Demo mock tidak membuktikan integrasi transaksi.
+Satu aplikasi Next.js melayani tiga host:
+
+| Host | Untuk | Lokal |
+| --- | --- | --- |
+| `gatherlyy.fun` | Peserta: jelajah acara, checkout, Tiketku, akun, pengajuan organizer | `localhost:3000` |
+| `organizer.gatherlyy.fun` | Organizer dan panitia: acara, penjualan, peserta, tim, pencairan, scan tiket | `organizer.localhost:3000` |
+| `admin.gatherlyy.fun` | Tim Gatherlyy: tinjau pengajuan, organizer, pencairan, laporan | `admin.localhost:3000` |
+
+Mode live selalu memakai HTTP asli ke backend. Data contoh hanya aktif dengan `NEXT_PUBLIC_API_MOCK=true` dan tidak membuktikan integrasi transaksi.
 
 ## Nama dan Daftar Anggota
 
@@ -34,13 +42,16 @@ Backend telah menyediakan autentikasi, manajemen acara, reservasi atomik, integr
 
 | Area | Kemampuan |
 | --- | --- |
-| Akun | Register/login dengan email OTP, Google OAuth, sesi HttpOnly, logout, CSRF, dan profil organizer |
-| Acara | CRUD event dan ticket type, publikasi, kuota, serta assignment panitia |
-| Order | Reservasi inventori atomik, idempotency key, dan pembatasan akses buyer |
-| Pembayaran | Midtrans Snap Sandbox, webhook terverifikasi, serta rekonsiliasi status |
-| Tiket | Satu tiket per peserta, credential QR acak, dan penerbitan idempoten |
-| Check-in | Scan QR/kode manual, validasi assignment dan waktu, serta single-use atomic |
-| Laporan | Ringkasan penjualan, inventori, order, peserta, dan riwayat kehadiran |
+| Akun | Register dan login dengan email OTP, Google OAuth, sesi HttpOnly, CSRF, lupa password, dan hapus akun |
+| Jelajah | Pencarian dengan saran, filter tanggal, harga, kategori, dan kota (514 kabupaten dan kota), urutan, acara disimpan, profil penyelenggara |
+| Checkout | Reservasi kuota atomik dengan idempotency key, tiket ditahan 15 menit, data tiap peserta, biaya layanan 5%, penawaran jumlah tersisa bila kuota berubah |
+| Pembayaran | Midtrans Snap Sandbox, webhook terverifikasi, status pesanan realtime lewat WebSocket dengan polling sebagai cadangan |
+| Tiket | Satu e-tiket berkode QR per peserta, dikirim ke email tiap peserta, tautan e-tiket tanpa login, PDF, tambah ke kalender, kirim ulang |
+| Pengembalian dana | Pembeli mengajukan per tiket sampai satu bulan sebelum acara, ditinjau admin, biaya layanan tidak dikembalikan. Pembatalan acara oleh organizer mengembalikan dana penuh |
+| Workspace organizer | Buat dan edit acara (wizard dengan draf otomatis), jenis tiket, pesanan, peserta, ekspor CSV, tim dan panitia per acara, profil, rekening dan pencairan |
+| Check-in | Scan QR atau cari manual, wajib online, jendela waktu scan per acara, sekali pakai secara atomik, riwayat dari semua panitia |
+| Admin | Login dengan 2FA authenticator (TOTP) dan kode cadangan, tinjau pengajuan organizer, kelola organizer, tandai pencairan sudah ditransfer, tinjau laporan acara |
+| Unggahan | Poster dan dokumen di Cloudflare R2, dokumen identitas privat lewat signed URL |
 
 ## Struktur Folder dan File Proyek
 
@@ -51,35 +62,35 @@ Gatherly/
 │   │   ├── src/
 │   │   │   ├── config/       Validasi environment dan koneksi MongoDB
 │   │   │   ├── docs/         Spesifikasi OpenAPI dan halaman Swagger
-│   │   │   ├── jobs/         Rekonsiliasi pembayaran dan penerbitan tiket lokal
-│   │   │   ├── lib/          Utilitas dan penanganan error
-│   │   │   ├── modules/      Auth, acara, order, pembayaran, tiket, check-in, laporan
+│   │   │   ├── jobs/         Rekonsiliasi pembayaran, penerbitan tiket, pengingat
+│   │   │   ├── lib/          Utilitas, rate limit, dan penanganan error
+│   │   │   ├── modules/      Auth, akun, acara, order, pembayaran, tiket, check-in,
+│   │   │   │                 refund, payout, workspace, admin, realtime, storage
 │   │   │   ├── app.ts        Rute dan middleware Express
-│   │   │   └── server.ts     Menjalankan server lokal
-│   │   ├── test/            Pengujian integrasi dan smoke test Midtrans
-│   │   ├── scripts/         Penyalinan aset Swagger saat build
+│   │   │   ├── server.ts     Server API dan WebSocket
+│   │   │   └── worker.ts     Proses latar: job terjadwal dan email
+│   │   ├── deploy/          Caddy, service systemd API dan worker, skrip deploy VPS
+│   │   ├── scripts/         Provisioning akun admin dan aset Swagger
+│   │   ├── test/            Tes integrasi dan smoke test Midtrans
 │   │   ├── .env.example     Contoh variabel environment tanpa secret nyata
-│   │   ├── app.js           Entry point deployment Vercel
-│   │   ├── vercel.json      Konfigurasi Vercel
-│   │   ├── package.json     Script dan dependency backend
-│   │   └── pnpm-lock.yaml   Kunci dependency backend
+│   │   └── package.json     Script dan dependency backend
 │   └── frontend/
-│       ├── app/             Halaman, layout, dan CSS Next.js
-│       ├── src/components/  Komponen antarmuka
-│       ├── src/lib/         Utilitas frontend
-│       ├── package.json     Script dan dependency frontend
-│       └── pnpm-lock.yaml   Kunci dependency frontend
+│       ├── app/             Rute Next.js: (main) situs utama, organizer, admin
+│       ├── proxy.ts         Membagi tiga host ke folder rute masing-masing
+│       ├── src/components/  Komponen UI bersama (ui, elements, layout)
+│       ├── src/modules/     Fitur per modul: api, hooks, dan komponen
+│       ├── src/lib/         Klien API, domain situs, format, data wilayah
+│       ├── test/            Tes Playwright dan tes browser admin
+│       └── package.json     Script dan dependency frontend
+├── design/                  Struktur kanvas desain (pen.dev)
 ├── docs/
 │   ├── requirements.md, user-flows.md, architecture.md, data-model.md
 │   ├── api-contract.md, testing.md, integrations.md, team-workflow.md
-│   ├── deployment-vercel.md
-│   └── superpowers/        Arsip spesifikasi dan rencana implementasi
-├── postman/
-│   ├── Gatherly API.postman_collection.json
-│   ├── Gatherly Local.postman_environment.json
-│   └── README.md           Panduan menjalankan request
-├── README.md               Panduan proyek ini
-└── package.json            Metadata repository; bukan npm workspace
+│   ├── deployment-vps.md, deployment-frontend.md
+│   └── implementation/      Catatan handoff dan demo per bagian
+├── postman/                 Koleksi, environment, dan panduan request
+├── README.md                Panduan proyek ini
+└── package.json             Metadata repository, bukan npm workspace
 ```
 
 Aplikasi:
@@ -91,12 +102,13 @@ Aplikasi:
 
 | Lapisan | Teknologi |
 | --- | --- |
-| Web | Next.js 16, React 19, TypeScript |
-| API | Express 5, TypeScript, Zod |
-| Database | MongoDB dan Mongoose |
+| Web | Next.js 16, React 19, TypeScript, Tailwind CSS 4, TanStack Query, React Hook Form, Zod |
+| API | Express 5, TypeScript, Zod, WebSocket (`ws`) |
+| Database | MongoDB Atlas dan Mongoose |
 | Pembayaran | Midtrans Snap Sandbox |
-| Keamanan | bcrypt, email OTP, Google OAuth state, cookie HttpOnly, CSRF, Helmet, rate limiting |
-| Tooling | pnpm per aplikasi, Node test runner, Postman |
+| Email dan berkas | Nodemailer (SMTP), PDFKit, Cloudflare R2 (API S3) |
+| Keamanan | bcrypt, email OTP, Google OAuth state, TOTP admin, cookie HttpOnly, CSRF, Helmet, rate limiting |
+| Tooling | pnpm per aplikasi, Node test runner, Playwright, Postman |
 
 ## URL Laporan Milestone 1
 
@@ -106,22 +118,25 @@ Dokumentasi proyek tersedia dalam folder [`docs`](docs/README.md).
 
 ## Deployment
 
-Preview backend di Vercel: [Swagger UI Gatherly](https://gatherly-api-demo.vercel.app/api/v1/docs/). Deployment berstatus Ready dan halaman Swagger sudah tampil. Alur database, OTP/SMTP, Google OAuth, webhook Midtrans, dan job terjadwal belum diverifikasi pada deployment. Lihat [panduan deployment](docs/deployment-vercel.md).
+| Bagian | Alamat | Keterangan |
+| --- | --- | --- |
+| Backend | [api.gatherly.scientivan.dev](https://api.gatherly.scientivan.dev/api/v1/health) · [Swagger](https://api.gatherly.scientivan.dev/api/v1/docs/) | VPS dengan Caddy, service API dan worker terpisah. Lihat [panduan deployment VPS](docs/deployment-vps.md) |
+| Frontend | [gatherlyy.fun](https://gatherlyy.fun) · [organizer.gatherlyy.fun](https://organizer.gatherlyy.fun) · [admin.gatherlyy.fun](https://admin.gatherlyy.fun) | Lihat [panduan deployment frontend](docs/deployment-frontend.md) |
+| Video demo | Menyusul | Disiapkan pada #24 |
 
-Persiapan frontend dan verifikasi HTTPS/kamera tersedia di [panduan deployment frontend](docs/deployment-frontend.md). Link web frontend dan video final belum diverifikasi. [Alur demo dan pembagian presentasi](docs/implementation/workspace-demo.md) disiapkan untuk penyelesaian kelompok pada #23–24.
-
-Frontend kini menyediakan build release tanpa fallback mock dan tes kontrak HTTP pada build produksi. Hasil serta kebutuhan integrasi backend dijelaskan dalam [kesiapan frontend untuk API asli](docs/implementation/frontend-live-readiness.md).
+Domain frontend diatur lewat `NEXT_PUBLIC_SITE_DOMAIN`, dan domain email admin lewat `ADMIN_EMAIL_DOMAIN` di backend.
 
 ## Menjalankan Secara Lokal
 
 Persyaratan:
 
 - Node.js 22 atau versi LTS yang kompatibel;
-- pnpm (versi yang kompatibel dengan lockfile tiap aplikasi; pengujian lokal memakai v11.8.0);
+- pnpm (pengujian lokal memakai v11.8.0);
 - MongoDB replica set atau MongoDB Atlas untuk transaksi;
-- Midtrans Server Key dalam mode Sandbox.
-- SMTP account (Gmail App Password dapat dipakai untuk demo);
-- Google OAuth Client ID dan Client Secret.
+- Midtrans Server Key dalam mode Sandbox;
+- akun SMTP (Gmail App Password dapat dipakai untuk demo);
+- Google OAuth Client ID dan Client Secret;
+- bucket Cloudflare R2 untuk unggahan.
 
 ### 1. Menjalankan Backend (`apps/backend`)
 
@@ -129,27 +144,47 @@ Persyaratan:
 cd apps/backend
 cp .env.example .env
 pnpm install
-pnpm dev
+pnpm dev          # API dan WebSocket
+pnpm dev:worker   # job terjadwal dan email, di terminal lain
 ```
 
 - API: `http://localhost:4000/api/v1`
 - Swagger UI: `http://localhost:4000/api/v1/docs`
 - Health check: `http://localhost:4000/api/v1/health`
 
+Akun admin dibuat lewat skrip, tidak ada pendaftaran admin dari luar:
+
+```bash
+PROVISION_MODE=admin ADMIN_SEED_EMAIL=nama@gatherlyy.fun ADMIN_SEED_NAME=Nama \
+ADMIN_SEED_PASSWORD=... ADMIN_SEED_TOTP_SECRET=... ADMIN_SEED_BACKUP_CODES=kode1,kode2 \
+node --import tsx scripts/provision-accounts.mjs
+```
+
+Secret TOTP berupa string base32 acak yang juga dimasukkan ke aplikasi authenticator. Kirim secret dan kode cadangan ke admin lewat jalur pribadi.
+
 ### 2. Menjalankan Frontend (`apps/frontend`)
 
 ```bash
 cd apps/frontend
+cp .env.example .env.local
 pnpm install
 pnpm dev
 ```
 
-- Frontend: `http://localhost:3000`
-- Workspace organizer/panitia: `http://organizer.localhost:3000`
+- Situs utama: `http://localhost:3000`
+- Workspace organizer dan panitia: `http://organizer.localhost:3000`
+- Konsol admin: `http://admin.localhost:3000`
 
-Untuk demo antarmuka tanpa backend, jalankan `NEXT_PUBLIC_API_MOCK=true pnpm dev` dari `apps/frontend`. Akun contoh organizer: `kolektifsawah` / `GatherlyDemo2026!`. Akun ini hanya fixture lokal. Lihat [panduan demo](docs/implementation/workspace-demo.md) dan [batas kontrak integrasi](docs/implementation/workspace-api-handoff.md).
+Untuk demo antarmuka tanpa backend, isi `NEXT_PUBLIC_API_MOCK=true` di `.env.local`. Akun contoh:
 
-Jangan commit `.env`, MongoDB URI, Midtrans Server Key, cookie sesi, atau QR credential.
+| Host | Akun |
+| --- | --- |
+| Organizer | `kolektifsawah` / `GatherlyDemo2026!` |
+| Admin | `nadia@gatherlyy.fun` / `GatherlyDemo123!`, kode 2FA `123456` |
+
+Akun contoh hanya berlaku di mode data contoh. Lihat [panduan demo](docs/implementation/workspace-demo.md) dan [batas kontrak integrasi](docs/implementation/workspace-api-handoff.md).
+
+Jangan commit `.env`, `.env.local`, MongoDB URI, Midtrans Server Key, kunci R2, secret TOTP, cookie sesi, atau QR credential.
 
 ## Pemeriksaan Kualitas
 
@@ -163,7 +198,7 @@ pnpm exec playwright install chromium
 pnpm test:e2e
 ```
 
-E2E mencakup organizer/panitia pada lebar 390, 834, dan 1440 px dengan data contoh. Kamera perangkat fisik dan alur transaksi backend perlu pemeriksaan integrasi terpisah.
+E2E mencakup organizer dan panitia pada lebar 390, 834, dan 1440 px dengan data contoh. Kamera perangkat fisik dan alur transaksi backend perlu pemeriksaan integrasi terpisah.
 
 Backend:
 
@@ -174,7 +209,7 @@ pnpm build
 pnpm test:integration
 ```
 
-Integration test menggunakan database `gatherly_test` dan menolak pembersihan database dengan nama lain. Pastikan `MONGODB_URI` mengarah ke cluster test yang aman sebelum menjalankannya.
+Tes integrasi memakai database `gatherly_test` dan menolak pembersihan database dengan nama lain. Pastikan `MONGODB_URI` mengarah ke cluster test yang aman sebelum menjalankannya.
 
 Smoke test Midtrans Sandbox dapat dijalankan terpisah:
 
@@ -194,4 +229,6 @@ Panduan urutan request, pergantian role, penyimpanan example response, dan atura
 
 ## Status dan Scope
 
-Target MVP serta acceptance criteria dijelaskan dalam [docs/requirements.md](docs/requirements.md). Fitur di luar scope awal mencakup refund otomatis, payout organizer, transfer tiket, dan offline check-in.
+Target MVP serta acceptance criteria dijelaskan dalam [docs/requirements.md](docs/requirements.md).
+
+Di luar scope: transfer tiket ke pemilik lain, check-in luring (diputuskan wajib online pada 17 November 2026), dan pencairan dana otomatis. Pencairan ke organizer ditransfer manual oleh admin lalu ditandai di konsol admin.
