@@ -242,8 +242,3 @@ Import kedua file berikut:
 
 Panduan urutan request, pergantian role, penyimpanan example response, dan aturan credential tersedia di [postman/README.md](postman/README.md).
 
-## Status dan Scope
-
-Target MVP serta acceptance criteria dijelaskan dalam [docs/requirements.md](docs/requirements.md).
-
-Di luar scope: transfer tiket ke pemilik lain, check-in luring (diputuskan wajib online pada 17 November 2026), dan pencairan dana otomatis. Pencairan ke organizer ditransfer manual oleh admin lalu ditandai di konsol admin.
