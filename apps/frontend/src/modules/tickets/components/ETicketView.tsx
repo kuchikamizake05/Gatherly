@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 
+import { ApiError } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 import { formatRupiah, formatTime } from "@/lib/format";
 import { useOnline } from "@/hooks/use-online";
@@ -120,7 +121,13 @@ export function ETicketView({ orderId }: { orderId: string }) {
           description: o?.buyer?.email ? `Ke ${o.buyer.email} dan email tiap peserta.` : undefined,
         });
       },
-      onError: () => toast.error("Gagal mengirim ulang e-tiket. Coba lagi."),
+      onError: (error) => {
+        // 409: baru saja dikirim (jeda 60 detik) atau e-tiket belum terbit.
+        if (error instanceof ApiError && error.code === "RESEND_UNAVAILABLE") {
+          cooldown.start();
+          toast("E-tiket baru saja dikirim", { description: "Periksa email peserta. Kirim ulang bisa dilakukan lagi dalam 1 menit." });
+        } else toast.error("Gagal mengirim ulang e-tiket. Coba lagi.");
+      },
     });
 
   const goTo = (i: number) => {
