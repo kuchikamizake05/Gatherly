@@ -19,6 +19,10 @@ const PRINT_CSS = `
   html, body { background: #fff !important; }
   .print-toolbar { display: none !important; }
   .print-sheet { box-shadow: none !important; margin: 0 !important; border-radius: 0 !important; }
+  /* Sedikit di bawah 297mm supaya pembulatan tidak mendorong halaman baru. */
+  .print-sheet { height: 296.5mm !important; }
+  /* Lembar terakhir tanpa pemisah halaman, kalau tidak muncul halaman kosong di akhir PDF. */
+  .print-sheet:last-of-type { break-after: auto !important; page-break-after: auto !important; }
 }
 `;
 
