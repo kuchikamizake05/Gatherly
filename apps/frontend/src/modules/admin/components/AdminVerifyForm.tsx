@@ -16,6 +16,7 @@ import { StateView } from "@/components/elements/StateView";
 import { useOnline } from "@/hooks/use-online";
 import { ApiError } from "@/lib/api/client";
 import { useAdminVerifyTotp, useAdminBackupCode } from "@/modules/admin/hooks";
+import { requiresNewAdminChallenge } from "@/modules/admin/auth-errors";
 
 export function AdminVerifyForm({ backup = false }: { backup?: boolean }) {
   const router = useRouter();
@@ -64,7 +65,7 @@ export function AdminVerifyForm({ backup = false }: { backup?: boolean }) {
       sessionStorage.removeItem("gatherly_admin_challenge");
       router.replace("/applications");
     } catch (error) {
-      if (error instanceof ApiError && error.code === "CHALLENGE_EXPIRED")
+      if (error instanceof ApiError && requiresNewAdminChallenge(error.code))
         setExpired(true);
       else if (error instanceof ApiError && error.code === "NETWORK_ERROR")
         setError("Koneksi terputus. Periksa internet Anda lalu coba lagi.");
