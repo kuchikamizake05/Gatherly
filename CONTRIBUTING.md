@@ -41,7 +41,7 @@
 ## Data dari backend
 
 - Semua request lewat modul di `apps/frontend/src/modules/<fitur>/`.
-- Endpoint yang belum dibuat backend ditandai `pending: true` dan memakai data contoh. Saat endpoint asli siap, hapus tanda itu di PR terpisah dan cek ulang halamannya.
+- Endpoint yang belum dibuat backend ditandai `pending: true` sebagai metadata kontrak. Data contoh hanya aktif dengan `NEXT_PUBLIC_API_MOCK=true`; false/tidak diisi selalu mengirim HTTP asli. Error API tidak boleh diam-diam diganti fixture atau dianggap sukses. Saat endpoint asli siap, hapus tanda pending di PR terpisah dan cek ulang halamannya.
 - Perubahan bentuk data dibahas bersama backend dan dicatat di `docs/api-contract.md`.
 
 ### Kontrak untuk endpoint baru
@@ -49,7 +49,7 @@
 Setiap kali menambah endpoint `pending: true`, tulis kontraknya sebagai komentar di issue backend yang terkait, supaya backend tahu persis yang dipakai halaman. Satu komentar per issue, dalam bahasa Inggris, dengan format berikut.
 
 ```
-Frontend contract used by <halaman> (band <nomor>), in `apps/frontend/src/modules/<fitur>/api.ts`. Mocked with `pending: true` until the endpoints exist. If you pick different names or shapes, tell me; the frontend only needs changes in that file.
+Frontend contract used by <halaman> (band <nomor>), in `apps/frontend/src/modules/<fitur>/api.ts`. Marked pending until the endpoints exist. Fixtures run only with NEXT_PUBLIC_API_MOCK=true; live mode always sends HTTP. If you pick different names or shapes, tell me; the frontend only needs changes in that file.
 
 <Nama fitur>
 - `GET /path?query=...` → `{ data: { ... } }`
