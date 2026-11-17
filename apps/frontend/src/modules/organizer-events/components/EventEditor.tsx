@@ -32,6 +32,7 @@ import { useDebounced } from "@/hooks/use-debounced";
 import { useWorkspaceMe } from "@/modules/organizer-auth/hooks";
 import { cn } from "@/lib/utils";
 import { formatRupiah, formatTime, formatEventDateTime } from "@/lib/format";
+import { organizerEventsApi } from "../api";
 import {
   useCreateEvent,
   useOrgEvent,
@@ -245,6 +246,13 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
           setEventId(cached.eventId ?? initial?.id ?? "");
           revision.current = cached.eventId ?? initial?.id ?? "";
           setStatus("Draf dipulihkan dari perangkat");
+          // Draf acara baru yang sudah tersimpan di akun: ambil jenis tiket dari server, supaya
+          // tiket yang sudah dibuat tidak dianggap kosong lalu ditambahkan ulang (tiket dobel).
+          if (cached.eventId && !initial)
+            organizerEventsApi
+              .get(cached.eventId)
+              .then((res) => setTickets(res.data.ticketTypes))
+              .catch(() => {});
         }
       }
     } catch {

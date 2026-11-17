@@ -1,5 +1,6 @@
 "use client";
 
+import { IconInput } from "@/components/elements/IconInput";
 import {
   Select,
   SelectContent,
@@ -10,7 +11,7 @@ import {
 import Link from "next/link";
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Plus, MoreHorizontal } from "lucide-react";
+import { Plus, MoreHorizontal, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SalesChart } from "./SalesChart";
 import { useOnline } from "@/hooks/use-online";
@@ -22,7 +23,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/elements/PageHeader";
@@ -319,8 +319,9 @@ function DashboardContent({ listOnly = false }: { listOnly?: boolean }) {
           <h2 className="text-lg font-extrabold">Acara saya</h2>
           <label className="w-full md:w-64">
             <span className="sr-only">Cari acara</span>
-            <Input
+            <IconInput
               type="search"
+              leading={<Search aria-hidden />}
               placeholder="Cari acara"
               value={query}
               onChange={(e) => {

@@ -1,4 +1,6 @@
 "use client";
+import { Search } from "lucide-react";
+import { IconInput } from "@/components/elements/IconInput";
 import {
   Select,
   SelectContent,
@@ -9,7 +11,6 @@ import {
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DataList } from "@/components/elements/DataList";
@@ -98,9 +99,10 @@ export function AttendeeList() {
         </Button>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
-        <Input
+        <IconInput
           aria-label="Cari peserta"
           type="search"
+          leading={<Search aria-hidden />}
           placeholder="Cari nama atau kode tiket"
           value={query}
           onChange={(e) => {

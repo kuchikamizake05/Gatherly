@@ -9,6 +9,13 @@ export type DataColumn<T> = {
   render: (row: T) => ReactNode;
   numeric?: boolean;
 };
+
+/** Kolom tindakan (key "action" atau "actions") rata kanan dan diberi jarak dari kolom sebelumnya. */
+const isAction = (key: string) => key === "action" || key === "actions";
+const align = (key: string, numeric?: boolean) =>
+  isAction(key)
+    ? "w-40 pl-6 pr-0 text-right [&>*]:ml-auto"
+    : `pr-6 ${numeric ? "text-right" : ""}`;
 export function DataList<T>({
   rows,
   columns,
@@ -63,7 +70,7 @@ export function DataList<T>({
               <th
                 key={col.key}
                 scope="col"
-                className={`border-b border-border py-3 pr-4 font-semibold text-text-secondary ${col.numeric ? "text-right" : ""}`}
+                className={`border-b border-border py-3 font-semibold text-text-secondary ${align(col.key, col.numeric)}`}
               >
                 {col.title}
               </th>
@@ -79,7 +86,7 @@ export function DataList<T>({
               {columns.map((col) => (
                 <td
                   key={col.key}
-                  className={`break-words py-4 pr-4 align-middle ${col.numeric ? "text-right tabular-nums" : ""}`}
+                  className={`break-words py-4 align-middle ${align(col.key, col.numeric)} ${col.numeric ? "tabular-nums" : ""}`}
                 >
                   {col.render(row)}
                 </td>
