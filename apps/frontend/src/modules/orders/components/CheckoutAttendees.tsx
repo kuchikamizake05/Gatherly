@@ -1,12 +1,13 @@
 "use client";
 
+import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Controller, useFieldArray, useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, Check, Info, Phone } from "lucide-react";
+import { ArrowLeft, Info, Phone } from "lucide-react";
 import { differenceInYears, isValid, parseISO } from "date-fns";
 
 import { cn } from "@/lib/utils";
@@ -350,16 +351,7 @@ function AttendeeForm({ slug, qty, event, ticket, me, router }: FormProps) {
               <Badge>{ticket.name}</Badge>
             </div>
             <label className="press flex w-fit cursor-pointer items-center gap-2.5 text-sm font-semibold">
-              <input type="checkbox" checked={!!mine} onChange={() => toggleMine(i)} className="peer sr-only" />
-              <span
-                className={cn(
-                  "flex size-5 items-center justify-center rounded-[6px] border transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-foreground peer-focus-visible:ring-offset-2",
-                  mine ? "border-inverse bg-inverse text-inverse-foreground" : "border-border-strong",
-                )}
-                aria-hidden
-              >
-                {mine && <Check className="size-3.5" />}
-              </span>
+              <Checkbox checked={!!mine} onCheckedChange={() => toggleMine(i)} />
               <span className={mine ? "" : "text-text-secondary"}>Ini tiketku</span>
             </label>
             <Field

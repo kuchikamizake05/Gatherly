@@ -1,4 +1,5 @@
 "use client";
+import { Checkbox } from "@/components/ui/checkbox";
 import { MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
@@ -167,13 +168,11 @@ export function TeamView() {
             key={event.id}
             className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md border border-border p-3 text-sm"
           >
-            <input
-              type="checkbox"
-              className="size-5 accent-foreground"
+            <Checkbox
               checked={selected.includes(event.id)}
-              onChange={(e) =>
+              onCheckedChange={(checked) =>
                 setSelected((ids) =>
-                  e.target.checked
+                  checked === true
                     ? [...ids, event.id]
                     : ids.filter((id) => id !== event.id),
                 )

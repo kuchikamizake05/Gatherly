@@ -1,5 +1,6 @@
 "use client";
 
+import { Checkbox } from "@/components/ui/checkbox";
 import { DateTimePicker } from "@/components/elements/DateTimePicker";
 import { useState } from "react";
 import { Copy, Pencil, Plus, Trash2 } from "lucide-react";
@@ -7,7 +8,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/ui/field";
-import { Badge } from "@/components/ui/badge";
 import { ResponsiveDialog } from "@/components/elements/ResponsiveDialog";
 import {
   useAddTicketType,
@@ -27,6 +27,10 @@ const blank: TicketTypeInput = {
   salesStartsAt: "",
   salesEndsAt: "",
 };
+/** Kolom angka berbasis teks: hanya digit, tanpa nol di depan dan tanpa panah bawaan browser. */
+const toNumber = (text: string) =>
+  Number(text.replace(/\D/g, "").slice(0, 12) || 0);
+
 export function TicketEditor({
   eventId,
   tickets,
@@ -195,24 +199,22 @@ export function TicketEditor({
             >
               <Input
                 id="ticket-price"
-                type="number"
-                min={0}
-                step={1}
-                value={free ? 0 : form.price}
+                inputMode="numeric"
+                placeholder="0"
+                value={
+                  free || !form.price ? "" : form.price.toLocaleString("id-ID")
+                }
                 disabled={free || !!selected?.sold}
-                onChange={(e) => field("price", Number(e.target.value))}
+                onChange={(e) => field("price", toNumber(e.target.value))}
               />
             </Field>
             <Field label="Kuota" htmlFor="ticket-capacity">
               <Input
                 id="ticket-capacity"
-                type="number"
-                min={
-                  selected ? Math.max(1, selected.sold + selected.reserved) : 1
-                }
-                step={1}
-                value={form.capacity}
-                onChange={(e) => field("capacity", Number(e.target.value))}
+                inputMode="numeric"
+                placeholder="0"
+                value={form.capacity ? String(form.capacity) : ""}
+                onChange={(e) => field("capacity", toNumber(e.target.value))}
               />
             </Field>
             <Field label="Mulai dijual" htmlFor="sales-start">
@@ -230,17 +232,14 @@ export function TicketEditor({
               />
             </Field>
           </div>
-          <label className="flex min-h-11 items-center gap-3">
-            <input
-              type="checkbox"
+          <label className="flex min-h-11 cursor-pointer items-center gap-3">
+            <Checkbox
               checked={free}
               disabled={!!selected?.sold}
-              onChange={(e) => setFree(e.target.checked)}
-              className="size-5 accent-foreground"
+              onCheckedChange={(checked) => setFree(checked === true)}
             />
             Tiket gratis
           </label>
-          {free && <Badge tone="brand">Harga Rp0</Badge>}
           {error && (
             <p role="alert" className="text-sm text-danger-ink">
               {error}
