@@ -1,4 +1,6 @@
 "use client";
+import { Search } from "lucide-react";
+import { IconInput } from "@/components/elements/IconInput";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
@@ -11,7 +13,6 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
@@ -260,9 +261,10 @@ export function OrderList() {
         </Button>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
-        <Input
+        <IconInput
           aria-label="Cari pesanan"
           type="search"
+          leading={<Search aria-hidden />}
           placeholder="Cari kode pesanan atau nama"
           value={query}
           onChange={(e) => {
