@@ -117,11 +117,7 @@ export function AttendeeList() {
             setPage(1);
           }}
         >
-          <SelectTrigger
-            aria-label="Status check-in"
-            size="sm"
-            className="md:w-48"
-          >
+          <SelectTrigger aria-label="Status check-in" className="md:w-48">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

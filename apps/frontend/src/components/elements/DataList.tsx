@@ -12,10 +12,16 @@ export type DataColumn<T> = {
 
 /** Kolom tindakan (key "action" atau "actions") rata kanan dan diberi jarak dari kolom sebelumnya. */
 const isAction = (key: string) => key === "action" || key === "actions";
-const align = (key: string, numeric?: boolean) =>
+/**
+ * Kolom terakhir selalu rata kanan supaya tabel seimbang (tidak ada ruang kosong di kanan),
+ * termasuk bila isinya badge. Kolom angka juga rata kanan.
+ */
+const align = (key: string, numeric?: boolean, last?: boolean) =>
   isAction(key)
     ? "w-64 pl-6 pr-0 text-right whitespace-nowrap [&>*]:ml-auto"
-    : `pr-6 ${numeric ? "text-right" : ""}`;
+    : last
+      ? "pl-6 pr-0 text-right [&>*]:ml-auto"
+      : `pr-6 ${numeric ? "text-right" : ""}`;
 export function DataList<T>({
   rows,
   columns,
@@ -66,11 +72,11 @@ export function DataList<T>({
       <table className="hidden w-full table-fixed text-left text-sm md:table">
         <thead>
           <tr>
-            {columns.map((col) => (
+            {columns.map((col, i) => (
               <th
                 key={col.key}
                 scope="col"
-                className={`border-b border-border py-3 font-semibold text-text-secondary ${align(col.key, col.numeric)}`}
+                className={`border-b border-border py-3 font-semibold text-text-secondary ${align(col.key, col.numeric, i === columns.length - 1)}`}
               >
                 {col.title}
               </th>
@@ -83,10 +89,10 @@ export function DataList<T>({
               key={rowKey(row)}
               className="border-b border-border last:border-0"
             >
-              {columns.map((col) => (
+              {columns.map((col, i) => (
                 <td
                   key={col.key}
-                  className={`break-words py-4 align-middle ${align(col.key, col.numeric)} ${col.numeric ? "tabular-nums" : ""}`}
+                  className={`break-words py-4 align-middle ${align(col.key, col.numeric, i === columns.length - 1)} ${col.numeric ? "tabular-nums" : ""}`}
                 >
                   {col.render(row)}
                 </td>
