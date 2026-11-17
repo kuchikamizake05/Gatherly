@@ -8,8 +8,10 @@ import express, {
   type RequestHandler,
 } from "express";
 import helmetModule, { type HelmetOptions } from "helmet";
+import { ZodError } from "zod";
 
 import { env } from "./config/env.js";
+import { isAllowedOrigin } from "./lib/origins.js";
 import { connectDatabase } from "./config/database.js";
 import { reconcileDuePayments } from "./modules/payments/payment-reconciliation.service.js";
 import { issueDueTickets } from "./modules/tickets/ticket-issuance.service.js";
@@ -69,7 +71,7 @@ app.use(
 );
 app.use(
   cors({
-    origin: (env.WEB_ORIGINS ?? env.WEB_ORIGIN).split(",").map((s) => s.trim()),
+    origin: (origin, callback) => callback(null, !origin || isAllowedOrigin(origin)),
     credentials: true,
   }),
 );
@@ -160,14 +162,24 @@ export default app;
 
 app.use((error: unknown, _request: Request, response: Response, _next: NextFunction) => {
   if (error instanceof multer.MulterError) {
-    response
-      .status(400)
-      .json({
-        error: {
-          code: error.code === "LIMIT_FILE_SIZE" ? "FILE_TOO_LARGE" : "INVALID_UPLOAD",
-          message: "Upload exceeds the supported limits.",
-        },
-      });
+    response.status(400).json({
+      error: {
+        code: error.code === "LIMIT_FILE_SIZE" ? "FILE_TOO_LARGE" : "INVALID_UPLOAD",
+        message: "Upload exceeds the supported limits.",
+      },
+    });
+    return;
+  }
+  if (error instanceof ZodError) {
+    const fields: Record<string, string> = {};
+    for (const issue of error.issues) {
+      const key = issue.path.join(".") || "body";
+      fields[key] ??= issue.message;
+    }
+    response.status(400).json({
+      error: { code: "VALIDATION_ERROR", message: "Please check the submitted fields.", fields },
+      requestId: response.locals.requestId,
+    });
     return;
   }
   if ((error as { name?: string })?.name === "CastError") {
