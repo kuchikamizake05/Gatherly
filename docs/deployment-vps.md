@@ -35,7 +35,9 @@ curl https://api.gatherlyy.fun/api/v1/health
 ## Hal yang perlu diketahui
 
 - Backend VPS dan backend lokal memakai database Atlas yang sama (`test`). Bila worker lokal ikut berjalan, keduanya memproses antrean yang sama. Lease di setiap job mencegah pekerjaan ganda, tetapi matikan worker lokal saat menguji perilaku VPS.
-- `ADMIN_ENCRYPTION_KEY` di VPS dibuat acak saat setup pertama dan dipakai untuk mengenkripsi secret 2FA admin. Jangan diganti, karena 2FA admin yang sudah ada tidak akan bisa dibaca lagi.
-- Login Google memakai callback `http://localhost:3000/api/v1/auth/google/callback` selama frontend berjalan lokal, supaya cookie sesi jatuh di domain frontend. URL ini harus terdaftar di Google Cloud Console. Ganti nilainya saat frontend sudah punya domain.
+- `ADMIN_ENCRYPTION_KEY` mengenkripsi secret 2FA admin. Nilainya di VPS sama dengan kunci yang dipakai saat akun admin tim dibuat. Jangan diganti tanpa migrasi, karena 2FA semua admin akan berhenti berfungsi (login admin gagal 500 di langkah kode authenticator). `OTP_SECRET` tidak lagi dipakai untuk enkripsi admin, jadi boleh diganti.
+- `WEB_ORIGINS` adalah daftar situs yang boleh memanggil API, dipakai untuk CORS, cek origin CSRF, dan WebSocket. Nilainya di VPS: `https://gatherlyy.fun`, `https://organizer.gatherlyy.fun`, `https://admin.gatherlyy.fun`, `http://localhost:3000`, `http://organizer.localhost:3000`, dan `http://admin.localhost:3000`. Situs lain ditolak 403.
+- Login Google tidak memakai `GOOGLE_CALLBACK_URL`. Callback dibentuk dari situs tempat login dimulai (`<origin>/api/v1/auth/google/callback`), lewat rewrite frontend supaya cookie sesi jatuh di domain frontend. Google Cloud Console harus mendaftarkan `https://gatherlyy.fun/api/v1/auth/google/callback` dan `http://localhost:3000/api/v1/auth/google/callback`.
+- Baca `/etc/gatherly/backend.env` dengan dotenv atau `EnvironmentFile` systemd, bukan `source` di bash. Baris `SMTP_FROM` berisi `<...>` yang membuat bash gagal membaca sisa file.
 - URL notifikasi Midtrans sandbox adalah `https://api.gatherlyy.fun/api/v1/payments/midtrans/notifications`. URL ini diatur di dashboard Midtrans.
 - VPS yang sama juga menjalankan Kalis dan Simpleart. Selalu jalankan `caddy validate` sebelum `systemctl reload caddy`. Cadangan sebelum blok Gatherly ditambahkan ada di `/etc/caddy/Caddyfile.bak-gatherly`.
