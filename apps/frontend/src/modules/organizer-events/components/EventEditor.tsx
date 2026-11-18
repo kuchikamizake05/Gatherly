@@ -64,20 +64,9 @@ const categories = CATEGORIES.map((category) => category.name);
  * Backend baru menerima acara bila kolom wajib lengkap (deskripsi, kategori, jadwal, tempat).
  * Sebelum itu draf hanya disimpan di perangkat, supaya autosave tidak terus ditolak server.
  */
+/** Backend menerima draf yang belum lengkap asal sudah ada nama acara (minimal 2 karakter). */
 function serverReady(values: EditorValues) {
-  const filled = (v: unknown, min = 1) =>
-    typeof v === "string" && v.trim().length >= min;
-  return (
-    filled(values.title, 2) &&
-    filled(values.description) &&
-    filled(values.category, 2) &&
-    filled(values.startsAt) &&
-    filled(values.endsAt) &&
-    values.endsAt > values.startsAt &&
-    filled(values.venueName, 2) &&
-    filled(values.address, 2) &&
-    filled(values.city, 2)
-  );
+  return values.title.trim().length >= 2;
 }
 
 /**
@@ -170,6 +159,7 @@ const FIELD_SECTIONS: Record<string, string> = {
   performerLabel: "sebutan pengisi acara",
   checkInOpensAt: "waktu buka check-in",
   checkInClosesAt: "waktu tutup check-in",
+  ticketTypes: "periode jual tiket",
 };
 function rejectedSections(fields?: Record<string, string>) {
   const names = [
@@ -343,7 +333,7 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
         toast("Draf disimpan di perangkat", {
           id: "draft-local",
           description:
-            "Lengkapi deskripsi, kategori, jadwal, dan tempat agar draf tersimpan di akun Anda.",
+            "Isi nama acara agar draf tersimpan di akun Anda.",
         });
       return true;
     }
@@ -557,7 +547,7 @@ function EditorForm({ initial }: { initial?: OrgEvent }) {
         : !online
           ? "Luring. Perubahan disimpan di perangkat."
           : !revision.current && !serverReady(values)
-            ? "Perubahan disimpan di perangkat. Lengkapi deskripsi, kategori, jadwal, dan tempat untuk menyimpan ke akun."
+            ? "Perubahan disimpan di perangkat. Isi nama acara untuk menyimpan ke akun."
             : status === "Draf tersimpan di perangkat" && error
               ? "Perubahan belum tersimpan ke akun."
               : "Ada perubahan yang belum disimpan.";

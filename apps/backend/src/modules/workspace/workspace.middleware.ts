@@ -56,7 +56,12 @@ export async function requireWorkspace(request: Request, _res: Response, next: N
     const req = request as WorkspaceRequest;
     if (!["GET", "HEAD", "OPTIONS"].includes(req.method)) {
       requireWorkspaceCsrf(req);
-      if (req.workspace!.organizer.status === "frozen" && !req.path.startsWith("/auth/"))
+      // req.path relatif terhadap router (misalnya "/logout"), jadi pakai baseUrl supaya logout dan
+      // ganti password di /workspace/auth tetap bisa dipakai organizer yang dibekukan.
+      if (
+        req.workspace!.organizer.status === "frozen" &&
+        !`${req.baseUrl}${req.path}`.includes("/workspace/auth/")
+      )
         throw new AppError(403, "ORGANIZER_FROZEN", "Organizer writes are disabled.");
     }
     next();

@@ -42,19 +42,24 @@ export interface EventDocument {
   updatedAt: Date;
 }
 
+/** Draf boleh belum lengkap; kelengkapan diperiksa saat diterbitkan. */
+function unlessDraft(this: { publicationStatus?: string }) {
+  return this.publicationStatus !== "draft";
+}
+
 const eventSchema = new Schema<EventDocument>(
   {
     organizerId: { type: Schema.Types.ObjectId, required: true, ref: "Organizer", index: true },
     slug: { type: String, required: true, unique: true, index: true },
     title: { type: String, required: true, trim: true },
-    description: { type: String, required: true, trim: true },
-    category: { type: String, required: true, trim: true },
-    startsAt: { type: Date, required: true, index: true },
-    endsAt: { type: Date, required: true },
-    timezone: { type: String, required: true },
-    venueName: { type: String, required: true, trim: true },
-    address: { type: String, required: true, trim: true },
-    city: { type: String, required: true, trim: true },
+    description: { type: String, required: unlessDraft, trim: true },
+    category: { type: String, required: unlessDraft, trim: true },
+    startsAt: { type: Date, required: unlessDraft, index: true },
+    endsAt: { type: Date, required: unlessDraft },
+    timezone: { type: String, required: true, default: "Asia/Jakarta" },
+    venueName: { type: String, required: unlessDraft, trim: true },
+    address: { type: String, required: unlessDraft, trim: true },
+    city: { type: String, required: unlessDraft, trim: true },
     posterAssetId: { type: String },
     publicationStatus: {
       type: String,

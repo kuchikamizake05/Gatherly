@@ -343,6 +343,33 @@ export function ticketEmail(
   );
 }
 
+export function reminderEmail(
+  key: string,
+  to: string,
+  opts: {
+    attendeeName: string;
+    eventTitle: string;
+    startsAt: Date;
+    timezone: string;
+    venueName: string;
+    ticketCode: string;
+  },
+) {
+  return build(key, to, `Besok: ${opts.eventTitle}`, {
+    preheader: `${opts.eventTitle} dimulai ${formatWib(opts.startsAt, opts.timezone)}.`,
+    title: "Acara Anda segera dimulai",
+    intro: [`Halo ${opts.attendeeName}, ini pengingat untuk acara yang akan Anda hadiri.`],
+    rows: [
+      ["Acara", opts.eventTitle],
+      ["Waktu", formatWib(opts.startsAt, opts.timezone)],
+      ["Lokasi", opts.venueName],
+      ["Kode tiket", opts.ticketCode],
+    ],
+    button: { label: "Buka Tiketku", url: `${web()}/tickets` },
+    after: ["Siapkan kode QR e-tiket di ponsel Anda saat datang. Tidak perlu dicetak."],
+  });
+}
+
 export function orderSummaryEmail(
   key: string,
   to: string,
