@@ -16,6 +16,11 @@ import { WorkspaceAccount } from "../workspace/workspace.models.js";
 import { temporaryCredentials, setTemporaryPassword } from "../workspace/workspace.routes.js";
 import { signedDocumentUrl, StorageAsset } from "../storage/storage.service.js";
 import { queueEmail } from "../notifications/email.service.js";
+import {
+  applicationFixEmail,
+  applicationRejectedEmail,
+  organizerAccessEmail,
+} from "../notifications/email-templates.js";
 import { requireAdmin, type AdminRequest } from "./admin.middleware.js";
 import { AuditLog } from "./admin.models.js";
 
@@ -169,12 +174,15 @@ adminOrganizersRouter.post(
     if (!result.modifiedCount)
       throw new AppError(409, "REVIEW_CONFLICT", "Application was reviewed by another admin.");
     await audit(req as AdminRequest, "application.request_fix", app.id);
-    await queueEmail({
-      key: `application-fix:${app.id}:${app.version + 1}`,
-      to: app.pic!.email!,
-      subject: "Perbaikan pengajuan organizer Gatherly",
-      text: `Pengajuan ${app.number} memerlukan perbaikan paling lambat ${deadline.toISOString()}.\n${flags.map((f) => `${f.field} — ${f.note}`).join("\n")}`,
-    });
+    await queueEmail(
+      applicationFixEmail(
+        `application-fix:${app.id}:${app.version + 1}`,
+        app.pic!.email!,
+        app.number,
+        deadline,
+        flags,
+      ),
+    );
     res.sendStatus(204);
   }),
 );
@@ -204,12 +212,9 @@ adminOrganizersRouter.post(
       { $set: { deleteAfter: new Date(now.getTime() + 90 * 86400_000) } },
     );
     await audit(req as AdminRequest, "application.rejected", app.id, reason);
-    await queueEmail({
-      key: `application-rejected:${app.id}`,
-      to: app.pic!.email!,
-      subject: "Hasil pengajuan organizer Gatherly",
-      text: `Pengajuan ${app.number} ditolak. ${reason}. Anda dapat mengajukan kembali setelah 30 hari.`,
-    });
+    await queueEmail(
+      applicationRejectedEmail(`application-rejected:${app.id}`, app.pic!.email!, app.number, reason),
+    );
     res.sendStatus(204);
   }),
 );
@@ -299,12 +304,12 @@ adminOrganizersRouter.post(
           { session },
         );
         await queueEmail(
-          {
-            key: `application-approved:${app.id}`,
-            to: app.pic!.email!,
-            subject: "Pengajuan organizer Gatherly disetujui",
-            text: `Pengajuan ${app.number} disetujui. Username ${app.username}. Password sementara ${credentials.temporaryPassword}. Berlaku sampai ${credentials.expiresAt.toISOString()}. Ganti password saat login pertama.`,
-          },
+          organizerAccessEmail(`application-approved:${app.id}`, app.pic!.email!, {
+            number: app.number,
+            username: app.username!,
+            password: credentials.temporaryPassword,
+            expiresAt: credentials.expiresAt,
+          }),
           session,
         );
       });
@@ -440,12 +445,13 @@ adminOrganizersRouter.post(
     });
     if (!account) throw new AppError(409, "ALREADY_LOGGED_IN", "Organizer has already signed in.");
     const credentials = await setTemporaryPassword(account);
-    await queueEmail({
-      key: `organizer-resend:${org.id}:${credentials.expiresAt.getTime()}`,
-      to: org.contactEmail,
-      subject: "Akses organizer Gatherly",
-      text: `Username ${account.username}. Password sementara ${credentials.temporaryPassword}. Berlaku sampai ${credentials.expiresAt.toISOString()}.`,
-    });
+    await queueEmail(
+      organizerAccessEmail(`organizer-resend:${org.id}:${credentials.expiresAt.getTime()}`, org.contactEmail, {
+        username: account.username,
+        password: credentials.temporaryPassword,
+        expiresAt: credentials.expiresAt,
+      }),
+    );
     await audit(req as AdminRequest, "organizer.access_resent", org.id);
     res.sendStatus(204);
   }),

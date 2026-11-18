@@ -9,6 +9,11 @@ import { Payout } from "../payouts/payout.model.js";
 import { env } from "../../config/env.js";
 import { getTransactionStatus } from "../payments/midtrans.client.js";
 import { queueEmail } from "../notifications/email.service.js";
+import {
+  refundCompletedEmail,
+  refundEmail,
+  refundReviewEmail,
+} from "../notifications/email-templates.js";
 import { publishUpdate } from "../realtime/events.js";
 
 export function validId(id: string) {
@@ -124,6 +129,130 @@ export async function requestBuyerRefund(
   return refundDto(result);
 }
 
+/**
+ * Pengembalian dana yang dimulai organizer dari detail pesanan. Organizer adalah penjual, jadi
+ * pengembalian langsung disetujui tanpa tinjauan admin. Tiket yang dipilih dibatalkan seketika,
+ * lalu worker meneruskan refund ke Midtrans (atau menandainya transfer manual untuk admin).
+ * Nominal mengikuti harga tiket; biaya layanan tidak dikembalikan, sama dengan aturan pembeli.
+ */
+export async function requestOrganizerRefund(
+  eventId: string,
+  orderId: string,
+  organizerId: string,
+  input: { mode: "full" | "partial"; ticketIds?: string[]; reason: string },
+) {
+  const session = await mongoose.startSession();
+  let result: any;
+  let buyerEmail = "";
+  let orderCode = "";
+  let eventTitle = "";
+  try {
+    await session.withTransaction(async () => {
+      const owned = await Event.exists({ _id: validId(eventId), organizerId: validId(organizerId) }).session(
+        session,
+      );
+      if (!owned) throw new AppError(404, "NOT_FOUND", "Event not found.");
+      const order = await Order.findOne({ _id: validId(orderId), eventId: owned._id }).session(session);
+      if (!order) throw new AppError(404, "NOT_FOUND", "Order not found.");
+      const event = await lockEvent(order.eventId, session);
+      if (event.publicationStatus === "cancelled")
+        throw new AppError(
+          409,
+          "EVENT_CANCELLED",
+          "The event cancellation refund is handled separately.",
+        );
+      if (order.paymentStatus !== "paid" || order.issuanceStatus !== "issued")
+        throw new AppError(409, "NOT_REFUNDABLE", "Only issued paid orders can be refunded.");
+      if (await Payout.exists({ eventId: event._id }).session(session))
+        throw new AppError(409, "PAYOUT_EXISTS", "This event already has a payout request.");
+      if (
+        await Refund.exists({
+          orderId: order._id,
+          status: { $nin: ["rejected", "refunded"] },
+        }).session(session)
+      )
+        throw new AppError(
+          409,
+          "REFUND_EXISTS",
+          "A refund request is already being reviewed or processed.",
+        );
+      const selected = input.mode === "partial" ? (input.ticketIds ?? []).map(validId) : undefined;
+      if (selected && !selected.length)
+        throw new AppError(409, "INVALID_TICKETS", "Select unused tickets belonging to this order.");
+      const tickets = await Ticket.find({
+        orderId: order._id,
+        checkInStatus: "unused",
+        ...(selected ? { _id: { $in: selected } } : {}),
+      }).session(session);
+      if (!tickets.length || (selected && tickets.length !== selected.length))
+        throw new AppError(
+          409,
+          "INVALID_TICKETS",
+          "Select unused tickets belonging to this order.",
+        );
+      const amount = order.unitPrice * tickets.length;
+      if (amount <= 0)
+        throw new AppError(409, "NOT_REFUNDABLE", "Free tickets have no refundable payment.");
+      const id = new Types.ObjectId();
+      const now = new Date();
+      [result] = await Refund.create(
+        [
+          {
+            _id: id,
+            orderId: order._id,
+            eventId: order.eventId,
+            buyerId: order.buyerId,
+            ticketIds: tickets.map((t) => t._id),
+            kind: "organizer",
+            reason: input.reason,
+            amount,
+            baseAmount: amount,
+            refundKey: `gth-${id}`,
+            status: "approved",
+            decidedAt: now,
+            decisionNote: input.reason,
+            nextAttemptAt: now,
+          },
+        ],
+        { session },
+      );
+      const updated = await Ticket.updateMany(
+        { _id: { $in: tickets.map((t) => t._id) }, checkInStatus: "unused" },
+        {
+          $set: {
+            refundId: id,
+            checkInStatus: "cancelled",
+            cancelledAt: now,
+            cancellationReason: input.reason,
+          },
+        },
+        { session },
+      );
+      if (updated.modifiedCount !== tickets.length)
+        throw new AppError(409, "INVALID_TICKETS", "A selected ticket is no longer refundable.");
+      buyerEmail = order.buyerSnapshot.email;
+      orderCode = order.orderCode;
+      eventTitle = event.title;
+      await queueEmail(
+        refundEmail({
+          key: `refund-organizer-${id}`,
+          to: buyerEmail,
+          orderCode,
+          eventTitle,
+          amount,
+          tickets: tickets.length,
+          reason: input.reason,
+        }),
+        session,
+      );
+    });
+  } finally {
+    await session.endSession();
+  }
+  await publishUpdate({ topic: "order", id: String(result.orderId), type: "refund.updated" });
+  return refundDto(result);
+}
+
 export async function decideRefund(id: string, adminId: string, approve: boolean, note: string) {
   const session = await mongoose.startSession();
   let result: any;
@@ -162,12 +291,13 @@ export async function decideRefund(id: string, adminId: string, approve: boolean
       const order = await Order.findById(refund.orderId).session(session);
       if (order)
         await queueEmail(
-          {
-            key: `refund-review-${refund._id}`,
-            to: order.buyerSnapshot.email,
-            subject: approve ? "Pengajuan refund disetujui" : "Pengajuan refund ditolak",
-            text: `${order.orderCode}\n${note}\n${approve ? "Pengembalian dana akan diproses. Biaya layanan tidak dikembalikan." : "Pengajuan tidak disetujui."}`,
-          },
+          refundReviewEmail(
+            `refund-review-${refund._id}`,
+            order.buyerSnapshot.email,
+            order.orderCode,
+            approve,
+            note,
+          ),
           session,
         );
     });
@@ -372,12 +502,13 @@ async function completeRefund(id: string, reference?: string, transferredAt = ne
       refund.leaseUntil = undefined;
       await refund.save({ session });
       await queueEmail(
-        {
-          key: `refund-completed-${id}`,
-          to: order.buyerSnapshot.email,
-          subject: "Refund Gatherly selesai",
-          text: `Refund ${order.orderCode} sebesar Rp${refund.amount} telah diproses. ${reference ?? ""}`,
-        },
+        refundCompletedEmail(
+          `refund-completed-${id}`,
+          order.buyerSnapshot.email,
+          order.orderCode,
+          refund.amount,
+          reference,
+        ),
         session,
       );
       orderId = order._id.toString();

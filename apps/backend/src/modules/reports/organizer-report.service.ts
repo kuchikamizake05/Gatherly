@@ -43,6 +43,7 @@ function orderListDto(order: OrderDocument & { _id: Types.ObjectId }) {
     refundStatus: order.refundStatus ?? "none",
     currency: order.currency,
     paymentStatus: order.paymentStatus,
+    paymentMethod: order.paymentMethod ?? null,
     reservationStatus: order.reservationStatus,
     issuanceStatus: order.issuanceStatus,
     createdAt: order.createdAt,

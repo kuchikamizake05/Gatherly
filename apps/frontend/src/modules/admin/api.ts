@@ -16,7 +16,7 @@ import type { Application, FieldFlag } from "@/modules/applications/api";
  * login + 2FA (B30), pengajuan (B31), organizer (B32), pencairan (B39), laporan (B40).
  */
 
-/** Pengajuan pengembalian dana dari peserta (GET /admin/refunds). Backend belum mengirim judul acara dan kode pesanan. */
+/** Pengembalian dana (GET /admin/refunds): dari pembeli, dari penyelenggara, atau karena acara dibatalkan. */
 export type AdminRefund = {
   id: string;
   orderId: string;
@@ -38,8 +38,9 @@ export type AdminRefund = {
   decidedAt: string | null;
   refundedAt: string | null;
   transferReference: string | null;
-  eventTitle?: string;
-  orderCode?: string;
+  eventTitle?: string | null;
+  orderCode?: string | null;
+  buyerName?: string | null;
 };
 
 /** Pengajuan pembatalan acara dari organizer (GET /admin/cancellations). */
@@ -47,7 +48,7 @@ export type AdminCancellation = {
   id: string;
   title: string;
   organizerId: string;
-  organizerName?: string;
+  organizerName?: string | null;
   reason: string;
   requestedAt: string;
 };

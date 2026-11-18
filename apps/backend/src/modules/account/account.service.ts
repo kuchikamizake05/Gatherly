@@ -9,6 +9,7 @@ import { Ticket } from "../tickets/ticket.model.js";
 import { Organizer } from "../organizers/organizer.model.js";
 import { Order } from "../orders/order.model.js";
 import { queueEmail } from "../notifications/email.service.js";
+import { passwordResetEmail } from "../notifications/email-templates.js";
 import { PasswordReset } from "./account.models.js";
 
 export async function accountView(userId: string, now = new Date()) {
@@ -124,10 +125,11 @@ export async function forgotPassword(email: string, now = new Date()) {
       );
       await queueEmail(
         {
-          key: `password-reset:${reset!._id}`,
-          to: user.emailNormalized,
-          subject: "Atur ulang password Gatherly",
-          text: `Buka ${env.WEB_ORIGIN}/reset-password?token=${encodeURIComponent(token)} untuk mengatur ulang password. Tautan berlaku 30 menit dan hanya dapat digunakan sekali.`,
+          ...passwordResetEmail(
+            `password-reset:${reset!._id}`,
+            user.emailNormalized,
+            `${env.WEB_ORIGIN}/reset-password?token=${encodeURIComponent(token)}`,
+          ),
           expiresAt: new Date(now.getTime() + 30 * 60_000),
         },
         session,

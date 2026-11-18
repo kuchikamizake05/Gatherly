@@ -6,6 +6,7 @@ import { Organizer } from "../organizers/organizer.model.js";
 import { User } from "../auth/auth.models.js";
 import { Ticket } from "../tickets/ticket.model.js";
 import { queueEmail } from "../notifications/email.service.js";
+import { eventReportReviewedEmail } from "../notifications/email-templates.js";
 import { parseInput } from "../account/account.schemas.js";
 import { EventReport } from "./event-report.model.js";
 
@@ -145,12 +146,12 @@ export async function closeEventReport(
         .lean();
       if (reporter)
         await queueEmail(
-          {
-            key: `report-reviewed:${report._id}`,
-            to: reporter.emailNormalized,
-            subject: "Laporan acara Anda telah ditinjau",
-            text: `Tim Gatherly telah meninjau laporan Anda mengenai ${report.eventTitle}.\n\n${note}`,
-          },
+          eventReportReviewedEmail(
+            `report-reviewed:${report._id}`,
+            reporter.emailNormalized,
+            report.eventTitle,
+            note,
+          ),
           session,
         );
     });

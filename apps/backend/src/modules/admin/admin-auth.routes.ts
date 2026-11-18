@@ -5,6 +5,7 @@ import { asyncHandler } from "../../lib/async-handler.js";
 import { AppError } from "../../lib/app-error.js";
 import { createToken, hashToken } from "../../lib/crypto.js";
 import { queueEmail } from "../notifications/email.service.js";
+import { adminBackupUsedEmail } from "../notifications/email-templates.js";
 import { AdminAccount, AdminChallenge, AdminSession, AuditLog } from "./admin.models.js";
 import { adminCookie, requireAdmin, type AdminRequest } from "./admin.middleware.js";
 import { decryptTotpSecret, encryptTotpSecret, verifyTotp } from "./totp.js";
@@ -141,12 +142,9 @@ for (const method of ["totp", "backup-code"] as const)
       if (method === "backup-code") {
         const primary = await AdminAccount.findOne({ primary: true, active: true });
         if (primary)
-          await queueEmail({
-            key: `admin-backup:${challenge.id}`,
-            to: primary.email,
-            subject: "Kode cadangan admin Gatherly digunakan",
-            text: `Kode cadangan digunakan oleh ${account.email}.`,
-          });
+          await queueEmail(
+            adminBackupUsedEmail(`admin-backup:${challenge.id}`, primary.email, account.email),
+          );
       }
       res
         .cookie(adminCookie.name, token, { ...adminCookie.options, maxAge })

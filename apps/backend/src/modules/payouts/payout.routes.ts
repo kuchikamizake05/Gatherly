@@ -13,6 +13,7 @@ import { validId } from "../refunds/refund.service.js";
 import { BankAccount, Payout } from "./payout.model.js";
 import { Organizer } from "../organizers/organizer.model.js";
 import { queueEmail } from "../notifications/email.service.js";
+import { payoutDoneEmail } from "../notifications/email-templates.js";
 
 async function eventBalance(eventId: mongoose.Types.ObjectId, session?: mongoose.ClientSession) {
   const rows = await Order.find({ eventId, paymentStatus: "paid" })
@@ -273,12 +274,7 @@ adminPayoutRouter.post(
         const org = await Organizer.findById(payout.organizerId).session(session);
         if (org)
           await queueEmail(
-            {
-              key: `payout-${payout._id}`,
-              to: org.contactEmail,
-              subject: "Pencairan Gatherly selesai",
-              text: `Dana Rp${payout.amount} telah ditransfer. Referensi ${input.transferReference}.`,
-            },
+            payoutDoneEmail(`payout-${payout._id}`, org.contactEmail, payout.amount, input.transferReference),
             session,
           );
       });

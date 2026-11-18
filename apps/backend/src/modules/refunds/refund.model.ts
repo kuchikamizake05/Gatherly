@@ -13,7 +13,7 @@ export interface RefundDocument {
   buyerId: Types.ObjectId;
   ticketIds: Types.ObjectId[];
   reason: string;
-  kind: "buyer" | "event_cancelled";
+  kind: "buyer" | "event_cancelled" | "organizer";
   status: RefundState;
   amount: number;
   baseAmount: number;
@@ -39,7 +39,7 @@ const schema = new Schema<RefundDocument>(
     buyerId: { type: Schema.Types.ObjectId, required: true, ref: "User" },
     ticketIds: [{ type: Schema.Types.ObjectId, ref: "Ticket" }],
     reason: { type: String, required: true },
-    kind: { type: String, enum: ["buyer", "event_cancelled"], required: true },
+    kind: { type: String, enum: ["buyer", "event_cancelled", "organizer"], required: true },
     status: {
       type: String,
       enum: ["requested", "approved", "processing", "manual_required", "refunded", "rejected"],
