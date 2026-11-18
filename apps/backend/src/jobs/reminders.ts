@@ -2,6 +2,7 @@ import { Event } from "../modules/events/event.models.js";
 import { Ticket } from "../modules/tickets/ticket.model.js";
 import { User } from "../modules/auth/auth.models.js";
 import { queueEmail } from "../modules/notifications/email.service.js";
+import { reminderEmail } from "../modules/notifications/email-templates.js";
 export async function queueReminders(now = new Date()) {
   const events = await Event.find({
     publicationStatus: "published",
@@ -14,12 +15,16 @@ export async function queueReminders(now = new Date()) {
       if (user?.notifications?.reminders === false) continue;
       const email = ticket.attendeeEmail;
       if (email)
-        await queueEmail({
-          key: `reminder:${ticket.id}:${event.startsAt.toISOString()}`,
-          to: email,
-          subject: `Pengingat ${event.title}`,
-          text: `Halo ${ticket.attendeeName},\nAcara ${event.title} akan berlangsung ${new Intl.DateTimeFormat("id-ID", { dateStyle: "full", timeStyle: "short", timeZone: event.timezone }).format(event.startsAt)} di ${event.venueName}. Siapkan e-ticket Anda.`,
-        });
+        await queueEmail(
+          reminderEmail(`reminder:${ticket.id}:${event.startsAt.toISOString()}`, email, {
+            attendeeName: ticket.attendeeName,
+            eventTitle: event.title,
+            startsAt: event.startsAt,
+            timezone: event.timezone,
+            venueName: event.venueName,
+            ticketCode: ticket.ticketCode,
+          }),
+        );
     }
   }
 }

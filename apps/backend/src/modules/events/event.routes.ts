@@ -59,6 +59,66 @@ const eventUpdateSchema = eventSchema
   .innerType()
   .partial()
   .extend({ salesClosed: z.boolean().optional() });
+
+/**
+ * Draf boleh disimpan sebelum lengkap: cukup nama acara. Teks kosong diterima dan tanggal kosong
+ * diabaikan. Kelengkapan diperiksa dengan eventSchema saat diterbitkan.
+ */
+const blank = (value: unknown) => (value === "" || value === null ? undefined : value);
+const draftDate = z.preprocess(blank, date.optional());
+const draftObject = z.object({
+  title: z.string().trim().min(2).max(160),
+  description: z.string().trim().max(5_000).optional(),
+  category: z.string().trim().max(80).optional(),
+  startsAt: draftDate,
+  endsAt: draftDate,
+  timezone: z.string().trim().min(1).max(100).optional(),
+  venueName: z.string().trim().max(160).optional(),
+  address: z.string().trim().max(300).optional(),
+  city: z.string().trim().max(100).optional(),
+  posterAssetId: z.preprocess(blank, z.string().trim().min(1).optional()),
+  locationType: z.enum(["offline", "online"]).default("offline"),
+  terms: z.array(z.string().trim().max(1000)).max(30).default([]),
+  performerLabel: z.string().trim().min(1).max(80).default("Performers"),
+  performers: eventSchema.innerType().shape.performers,
+  showRemaining: z.boolean().default(true),
+  checkInOpensAt: draftDate,
+  checkInClosesAt: draftDate,
+});
+const draftSchema = draftObject.refine(
+  (data) => !data.startsAt || !data.endsAt || data.endsAt > data.startsAt,
+  { message: "endsAt must be after startsAt", path: ["endsAt"] },
+);
+const draftUpdateSchema = draftObject.partial().extend({ salesClosed: z.boolean().optional() });
+
+/** Field acara yang diperiksa ulang dengan eventSchema saat terbit atau saat acara terbit diubah. */
+function completeFields(event: any) {
+  return {
+    title: event.title,
+    description: event.description ?? "",
+    category: event.category ?? "",
+    startsAt: event.startsAt ?? "",
+    endsAt: event.endsAt ?? "",
+    timezone: event.timezone,
+    venueName: event.venueName ?? "",
+    address: event.address ?? "",
+    city: event.city ?? "",
+    posterAssetId: event.posterAssetId ?? undefined,
+    locationType: event.locationType,
+    terms: event.terms ?? [],
+    performerLabel: event.performerLabel,
+    performers: (event.performers ?? []).map((p: any) => ({
+      name: p.name,
+      note: p.note ?? "",
+      time: p.time ?? "",
+      photoAssetId: p.photoAssetId ?? undefined,
+      photoUrl: /^https?:\/\//.test(p.photoUrl ?? "") ? p.photoUrl : undefined,
+    })),
+    showRemaining: event.showRemaining,
+    checkInOpensAt: event.checkInOpensAt ?? undefined,
+    checkInClosesAt: event.checkInClosesAt ?? undefined,
+  };
+}
 const ticketSchema = z.object({
   name: z.string().trim().min(2).max(80),
   description: z.string().trim().max(500).default(""),
@@ -92,12 +152,13 @@ async function validateEventUploads(
     if (performer.photoAssetId) performer.photoUrl = `/api/v1/media/${performer.photoAssetId}`;
 }
 function validateCheckInWindow(event: {
-  startsAt: Date;
-  endsAt: Date;
+  startsAt?: Date;
+  endsAt?: Date;
   checkInOpensAt?: Date;
   checkInClosesAt?: Date;
   timezone?: string;
 }) {
+  if (!event.startsAt || !event.endsAt) return;
   try {
     if (event.timezone) new Intl.DateTimeFormat("en", { timeZone: event.timezone }).format();
   } catch {
@@ -135,8 +196,10 @@ function dto(event: any) {
     performerLabel: event.performerLabel ?? "Performers",
     performers: event.performers ?? [],
     showRemaining: event.showRemaining ?? true,
-    checkInOpensAt: event.checkInOpensAt ?? new Date(event.startsAt.getTime() - 2 * 3600000),
-    checkInClosesAt: event.checkInClosesAt ?? event.endsAt,
+    checkInOpensAt:
+      event.checkInOpensAt ??
+      (event.startsAt ? new Date(event.startsAt.getTime() - 2 * 3600000) : null),
+    checkInClosesAt: event.checkInClosesAt ?? event.endsAt ?? null,
     cancellationStatus: event.cancellationStatus ?? null,
     cancellationReason: event.cancellationReason ?? null,
     updatedAt: event.updatedAt,
@@ -145,7 +208,7 @@ function dto(event: any) {
         ? "cancelled"
         : event.publicationStatus === "draft"
           ? "draft"
-          : event.endsAt <= new Date()
+          : event.endsAt && event.endsAt <= new Date()
             ? "ended"
             : event.salesClosed
               ? "scheduled"
@@ -190,6 +253,7 @@ eventRouter.get(
       );
       data.push({
         ...dto(event),
+        startsAt: event.startsAt ?? null,
         sold: types.reduce((n, t) => n + t.sold, 0),
         capacity: types.reduce((n, t) => n + t.capacity, 0),
         gross: orders.reduce(
@@ -206,10 +270,12 @@ eventRouter.post(
   "/",
   requireCsrf,
   asyncHandler(async (request: AuthenticatedRequest, response) => {
-    const parsed = eventSchema.safeParse(request.body);
+    const parsed = draftSchema.safeParse(request.body);
     if (!parsed.success) invalid(parsed);
-    if (parsed.data!.startsAt <= new Date())
-      throw new AppError(400, "VALIDATION_ERROR", "The event must start in the future.");
+    if (parsed.data!.startsAt && parsed.data!.startsAt <= new Date())
+      throw new AppError(400, "VALIDATION_ERROR", "The event must start in the future.", {
+        startsAt: "The event must start in the future.",
+      });
     validateCheckInWindow(parsed.data!);
     await validateEventUploads(parsed.data!, request.auth!.user._id);
     const event = await Event.create({
@@ -241,9 +307,11 @@ eventRouter.patch(
   "/:id",
   requireCsrf,
   asyncHandler(async (request: AuthenticatedRequest, response) => {
-    const parsed = eventUpdateSchema.safeParse(request.body);
-    if (!parsed.success) invalid(parsed);
     const event = await owned(request);
+    const parsed = (
+      event.publicationStatus === "draft" ? draftUpdateSchema : eventUpdateSchema
+    ).safeParse(request.body);
+    if (!parsed.success) invalid(parsed);
     if (event.publicationStatus === "cancelled")
       throw new AppError(409, "EVENT_CANCELLED", "Cancelled events cannot be changed.");
     const changedSchedule = ["startsAt", "endsAt", "venueName", "address", "city"].some(
@@ -251,9 +319,15 @@ eventRouter.patch(
     );
     await validateEventUploads(parsed.data!, request.auth!.user._id);
     Object.assign(event, parsed.data!);
+    if (event.publicationStatus !== "draft") {
+      const complete = eventSchema.safeParse(completeFields(event));
+      if (!complete.success) invalid(complete);
+    }
     validateCheckInWindow(event);
-    if (event.endsAt <= event.startsAt)
-      throw new AppError(400, "VALIDATION_ERROR", "endsAt must be after startsAt");
+    if (event.startsAt && event.endsAt && event.endsAt <= event.startsAt)
+      throw new AppError(400, "VALIDATION_ERROR", "endsAt must be after startsAt", {
+        endsAt: "endsAt must be after startsAt",
+      });
     event.checkoutVersion += 1;
     await event.save();
     if (changedSchedule) {
@@ -298,6 +372,19 @@ eventRouter.post(
     if (event.publicationStatus === "cancelled")
       throw new AppError(409, "EVENT_CANCELLED", "Cancelled events cannot be republished.");
     const types = await TicketType.find({ eventId: event._id });
+    if (event.publicationStatus === "draft") {
+      const complete = eventSchema.safeParse(completeFields(event));
+      if (!complete.success) invalid(complete);
+      if (event.startsAt <= new Date())
+        throw new AppError(400, "VALIDATION_ERROR", "The event must start in the future.", {
+          startsAt: "The event must start in the future.",
+        });
+      validateCheckInWindow(event);
+      if (types.some((t) => t.salesEndsAt > event.startsAt))
+        throw new AppError(400, "VALIDATION_ERROR", "Ticket sales must end before the event starts.", {
+          ticketTypes: "Ticket sales must end before the event starts.",
+        });
+    }
     if (!event.posterAssetId || types.length === 0)
       throw new AppError(409, "CONFLICT", "A poster and at least one ticket type are required.");
     event.publicationStatus = "published";
@@ -315,7 +402,7 @@ eventRouter.post(
     if (!parsed.success) invalid(parsed);
     if (
       parsed.data!.salesEndsAt <= parsed.data!.salesStartsAt ||
-      parsed.data!.salesEndsAt > event.startsAt
+      (event.startsAt && parsed.data!.salesEndsAt > event.startsAt)
     )
       throw new AppError(400, "VALIDATION_ERROR", "Invalid ticket sales period.");
     const ticket = await TicketType.create({ ...parsed.data!, eventId: event._id });

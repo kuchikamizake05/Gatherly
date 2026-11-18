@@ -14,7 +14,8 @@
     "test:smoke:midtrans": "tsx --test test/midtrans-sandbox.smoke.ts",
     "seed:demo": "tsx scripts/seed-demo.ts",
     "format": "prettier --write",
-    "format:check": "prettier --check"
+    "format:check": "prettier --check",
+    "swagger:generate": "node scripts/generate-swagger-extra.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1170.0",

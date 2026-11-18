@@ -1,7 +1,9 @@
+import { extraPaths, extraTags } from "./swagger-paths-extra.js";
+
 export const swaggerSpec = {
   openapi: "3.0.3",
   info: {
-    title: "Gatherly API",
+    title: "Gatherlyy API",
     version: "1.0.0",
     description:
       "Platform tiket acara komunitas dengan reservasi kuota atomik, integrasi Midtrans Sandbox, penerbitan tiket QR, dan validasi check-in panitia.",
@@ -12,7 +14,7 @@ export const swaggerSpec = {
   servers: [
     {
       url: "/api/v1",
-      description: "Local Development Server",
+      description: "Server yang sedang dibuka (produksi: https://api.gatherlyy.fun/api/v1)",
     },
   ],
   tags: [
@@ -39,6 +41,18 @@ export const swaggerSpec = {
         in: "header",
         name: "X-CSRF-Token",
         description: "Token CSRF dari GET /auth/me untuk mutasi (POST/PATCH/DELETE)",
+      },
+      workspaceCookie: {
+        type: "apiKey",
+        in: "cookie",
+        name: "gatherly_workspace",
+        description: "Cookie sesi workspace organizer atau panitia setelah POST /workspace/auth/login",
+      },
+      adminCookie: {
+        type: "apiKey",
+        in: "cookie",
+        name: "gatherly_admin",
+        description: "Cookie sesi admin setelah login dan verifikasi 2FA",
       },
       idempotencyKey: {
         type: "apiKey",
@@ -1013,3 +1027,27 @@ export const swaggerSpec = {
     },
   },
 };
+
+// Endpoint yang belum ditulis manual di atas, dibuat dari docs/api-contract.md
+// lewat scripts/generate-swagger-extra.mjs.
+const TAG_DESCRIPTIONS: Record<string, string> = {
+  Account: "Akun peserta: profil, foto, kata sandi, sesi, notifikasi, hapus akun",
+  "Organizer Applications": "Pengajuan organizer, dokumen, verifikasi email PIC, perbaikan",
+  "Workspace Auth": "Login dan kata sandi workspace organizer dan panitia",
+  "Organizer Workspace": "Profil organizer dan tim panitia",
+  "Organizer Payouts": "Rekening bank dan pencairan dana organizer",
+  Refunds: "Pengembalian dana dari pembeli",
+  "Admin Auth": "Login admin dengan 2FA authenticator atau kode cadangan",
+  "Admin Organizers": "Tinjauan pengajuan dan pengelolaan organizer",
+  "Admin Finance": "Pengembalian dana, pembatalan acara, dan pencairan",
+  "Admin Reports": "Laporan acara dari pengguna",
+  "Saved Events": "Acara yang disimpan peserta",
+  "Event Reports": "Laporan acara oleh peserta",
+};
+const tags = swaggerSpec.tags as { name: string; description?: string }[];
+for (const tag of extraTags)
+  if (!tags.some((t) => t.name === tag.name))
+    tags.push({ name: tag.name, description: TAG_DESCRIPTIONS[tag.name] ?? "" });
+const paths = swaggerSpec.paths as Record<string, Record<string, unknown>>;
+for (const [path, operations] of Object.entries(extraPaths))
+  paths[path] = { ...operations, ...(paths[path] ?? {}) };
