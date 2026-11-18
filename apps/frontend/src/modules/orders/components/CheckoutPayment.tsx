@@ -128,7 +128,9 @@ function PaymentForm({ order, router }: { order: Order; router: ReturnType<typeo
   const online = useOnline();
   const session = usePaymentSession();
   const cancel = useCancelOrder();
-  const [method, setMethod] = useState<string>(() => order.paymentMethod ?? readLastMethod() ?? "qris");
+  const [method, setMethod] = useState<string>(
+    () => paymentMethod(order.paymentMethod ?? readLastMethod())?.code ?? "qris",
+  );
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [snapError, setSnapError] = useState(false);
@@ -145,12 +147,13 @@ function PaymentForm({ order, router }: { order: Order; router: ReturnType<typeo
   const pay = () => {
     setSnapError(false);
     try {
-      localStorage.setItem(LAST_METHOD, method);
+      localStorage.setItem(LAST_METHOD, chosen.code);
     } catch {
       /* abaikan */
     }
     session.mutate(
-      { orderId: order.id, method },
+      // Pakai kode yang masih tersedia; pilihan lama yang sudah dihapus (misalnya OVO) jatuh ke QRIS.
+      { orderId: order.id, method: chosen.code },
       {
         onSuccess: async ({ data }) => {
           try {

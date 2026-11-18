@@ -11,6 +11,10 @@ import { multipartUpload } from "../storage/storage.middleware.js";
 import { storeUpload, claimUploads } from "../storage/storage.service.js";
 import { queueEmail } from "../notifications/email.service.js";
 import {
+  applicationEmailChangedEmail,
+  applicationReceivedEmail,
+} from "../notifications/email-templates.js";
+import {
   ApplicationCounter,
   ApplicationDocument,
   OrganizerApplication,
@@ -214,14 +218,13 @@ applicationRouter.post(
           hashToken(req.cookies[uploadCookie]),
           session,
         );
-        const apiOrigin = process.env.PUBLIC_API_ORIGIN ?? "http://localhost:4000";
         await queueEmail(
-          {
-            key: `application-received:${app!.id}`,
-            to: input.pic.email,
-            subject: "Verifikasi pengajuan organizer Gatherly",
-            text: `Nomor pengajuan Anda ${number}. Verifikasi email PIC melalui ${apiOrigin}/api/v1/organizer-applications/verify-email?token=${encodeURIComponent(verificationToken)}. Tautan berlaku 24 jam. Tim Gatherly akan meninjau data Anda setelah email diverifikasi.`,
-          },
+          applicationReceivedEmail(
+            `application-received:${app!.id}`,
+            input.pic.email,
+            number,
+            verificationToken,
+          ),
           session,
         );
       });
@@ -395,12 +398,12 @@ applicationRouter.post(
           );
         if (emailChanged)
           await queueEmail(
-            {
-              key: `application-email:${app.id}:${app.version + 1}`,
-              to: merged.pic.email,
-              subject: "Verifikasi email PIC Gatherly",
-              text: `Verifikasi email baru untuk ${app.number} melalui ${process.env.PUBLIC_API_ORIGIN ?? "http://localhost:4000"}/api/v1/organizer-applications/verify-email?token=${encodeURIComponent(verificationToken!)}.`,
-            },
+            applicationEmailChangedEmail(
+              `application-email:${app.id}:${app.version + 1}`,
+              merged.pic.email,
+              app.number,
+              verificationToken!,
+            ),
             session,
           );
       });

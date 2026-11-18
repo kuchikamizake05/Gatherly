@@ -9,6 +9,7 @@ import { User } from "../auth/auth.models.js";
 import { Event } from "../events/event.models.js";
 import { CommitteeAssignment } from "../committee/committee-assignment.model.js";
 import { queueEmail } from "../notifications/email.service.js";
+import { passwordResetEmail } from "../notifications/email-templates.js";
 import { WorkspaceAccount, WorkspaceSession } from "./workspace.models.js";
 import {
   requireWorkspace,
@@ -125,12 +126,14 @@ workspaceAuthRouter.post(
       account.resetTokenHash = hashToken(token);
       account.resetExpiresAt = new Date(Date.now() + 1800_000);
       await account.save();
-      await queueEmail({
-        key: `workspace-reset:${account.id}:${account.resetTokenHash}`,
-        to: account.email,
-        subject: "Atur ulang password Gatherly",
-        text: `Buka ${process.env.ORGANIZER_ORIGIN ?? "http://organizer.localhost:3000"}/reset-password?token=${encodeURIComponent(token)}. Tautan berlaku 30 menit.`,
-      });
+      await queueEmail(
+        passwordResetEmail(
+          `workspace-reset:${account.id}:${account.resetTokenHash}`,
+          account.email,
+          `${process.env.ORGANIZER_ORIGIN ?? "http://organizer.localhost:3000"}/reset-password?token=${encodeURIComponent(token)}`,
+          true,
+        ),
+      );
     }
     res.json({ data: { isCommittee: false } });
   }),

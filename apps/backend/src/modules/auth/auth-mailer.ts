@@ -2,6 +2,7 @@ import nodemailer from "nodemailer";
 
 import { env } from "../../config/env.js";
 import { AppError } from "../../lib/app-error.js";
+import { otpEmail } from "../notifications/email-templates.js";
 
 export interface OtpMail {
   to: string;
@@ -21,11 +22,12 @@ export const sendOtpEmail: OtpMailer = async ({ to, code, purpose }) => {
     secure: env.SMTP_SECURE,
     auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
   });
-  const action = purpose === "register" ? "verify your Gatherly account" : "complete your Gatherly login";
+  const mail = otpEmail(code, purpose);
   await transporter.sendMail({
     from: env.SMTP_FROM,
     to,
-    subject: "Your Gatherly verification code",
-    text: `Use ${code} to ${action}. This code expires in 10 minutes.`,
+    subject: mail.subject,
+    text: mail.text,
+    html: mail.html,
   });
 };

@@ -5,6 +5,7 @@ import { env } from "../../config/env.js";
 import { Order } from "../orders/order.model.js";
 import { Ticket } from "../tickets/ticket.model.js";
 import { EmailJob, queueEmail } from "./email.service.js";
+import { orderSummaryEmail, ticketEmail } from "./email-templates.js";
 
 async function ticketPdf(ticket: {
   attendeeName: string;
@@ -21,7 +22,7 @@ async function ticketPdf(ticket: {
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
   });
-  doc.fontSize(24).text("Gatherly e-ticket").moveDown();
+  doc.fontSize(24).text("E-tiket Gatherlyy").moveDown();
   doc.fontSize(16).text(ticket.eventSnapshot.title).moveDown();
   doc
     .fontSize(11)
@@ -62,27 +63,40 @@ export async function notifyOrderTickets(orderId: string, resendKey?: string) {
     const key = `ticket:${ticket.id}:${resendKey ?? "issued"}`;
     if (await EmailJob.exists({ key })) continue;
     const link = `${env.PUBLIC_WEB_URL}/tickets/shared/${ticket.qrToken}`;
-    await queueEmail({
-      key,
-      to: recipient,
-      subject: `E-ticket ${order.eventSnapshot.title}`,
-      text: `Halo ${ticket.attendeeName},\n\nE-ticket Anda terlampir. Buka tiket melalui ${link}\n\nJangan bagikan QR atau tautan tiket Anda.`,
-      attachments: [
+    await queueEmail(
+      ticketEmail(
+        key,
+        recipient,
         {
-          filename: `${ticket.ticketCode}.pdf`,
-          content: (await ticketPdf(ticket)).toString("base64"),
-          contentType: "application/pdf",
+          attendeeName: ticket.attendeeName,
+          eventTitle: ticket.eventSnapshot.title,
+          startsAt: ticket.eventSnapshot.startsAt,
+          timezone: ticket.eventSnapshot.timezone,
+          venueName: ticket.eventSnapshot.venueName,
+          ticketTypeName: ticket.ticketTypeSnapshot.name,
+          ticketCode: ticket.ticketCode,
+          link,
         },
-      ],
-    });
+        [
+          {
+            filename: `${ticket.ticketCode}.pdf`,
+            content: (await ticketPdf(ticket)).toString("base64"),
+            contentType: "application/pdf",
+          },
+        ],
+      ),
+    );
   }
   if (!resendKey)
-    await queueEmail({
-      key: `order-summary:${order.id}`,
-      to: order.buyerSnapshot.email,
-      subject: `Ringkasan pesanan ${order.orderCode}`,
-      text: `Pesanan ${order.orderCode}\nAcara ${order.eventSnapshot.title}\nJumlah ${order.quantity} tiket\nTotal Rp${order.totalAmount.toLocaleString("id-ID")}\nE-ticket dikirim ke setiap peserta.\n${env.PUBLIC_WEB_URL}/orders/${order.id}`,
-    });
+    await queueEmail(
+      orderSummaryEmail(`order-summary:${order.id}`, order.buyerSnapshot.email, {
+        orderCode: order.orderCode,
+        eventTitle: order.eventSnapshot.title,
+        quantity: order.quantity,
+        total: order.totalAmount,
+        url: `${env.PUBLIC_WEB_URL}/orders/${order.id}`,
+      }),
+    );
 }
 
 // Repairs the gap if the process crashes after issuance commits but before email jobs are created.

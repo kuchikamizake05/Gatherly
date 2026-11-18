@@ -38,6 +38,7 @@ import { useOnline } from "@/hooks/use-online";
 import { useWorkspaceMe } from "@/modules/organizer-auth/hooks";
 import { formatRupiah, formatDateTimeCompact } from "@/lib/format";
 import { useOrgEventOrders, useOrgEventOrder, useRefundOrder } from "../hooks";
+import { paymentMethod } from "@/modules/orders/payment-methods";
 import { organizerEventsApi } from "../api";
 import { downloadCsv } from "../csv";
 import { ListPagination } from "./ListPagination";
@@ -108,7 +109,9 @@ export function OrderList() {
                 ["Dibuat", formatDateTimeCompact(order.data.createdAt)],
                 [
                   "Metode pembayaran",
-                  order.data.paymentMethod ?? "Belum tersedia",
+                  paymentMethod(order.data.paymentMethod)?.name ??
+                    order.data.paymentMethod ??
+                    "Tidak tercatat",
                 ],
               ].map(([key, value]) => (
                 <div key={key} className="min-w-0">

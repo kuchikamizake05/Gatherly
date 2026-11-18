@@ -6,6 +6,8 @@ import { requireSession, requireCsrf, type AuthenticatedRequest } from "../auth/
 import { requireAdmin } from "../admin/admin.middleware.js";
 import { Refund } from "./refund.model.js";
 import { Event } from "../events/event.models.js";
+import { Order } from "../orders/order.model.js";
+import { Organizer } from "../organizers/organizer.model.js";
 import {
   requestBuyerRefund,
   decideRefund,
@@ -78,8 +80,21 @@ adminFinanceRouter.get(
     const refunds = await Refund.find(status ? { status } : {})
       .sort({ createdAt: -1 })
       .limit(100);
+    // Lengkapi dengan judul acara, kode pesanan, dan nama pembeli supaya admin tidak perlu membuka tiap pesanan.
+    const orders = await Order.find({ _id: { $in: refunds.map((r) => r.orderId) } })
+      .select("orderCode buyerSnapshot eventSnapshot")
+      .lean();
+    const byId = new Map(orders.map((o) => [o._id.toString(), o]));
     res.json({
-      data: refunds.map(refundDto),
+      data: refunds.map((r) => {
+        const order = byId.get(r.orderId.toString());
+        return {
+          ...refundDto(r),
+          eventTitle: order?.eventSnapshot?.title ?? null,
+          orderCode: order?.orderCode ?? null,
+          buyerName: order?.buyerSnapshot?.name ?? null,
+        };
+      }),
       meta: { page: 1, limit: 100, total: refunds.length },
     });
   }),
@@ -115,11 +130,16 @@ adminFinanceRouter.get(
     const events = await Event.find({ cancellationStatus: "requested" })
       .sort({ cancellationRequestedAt: 1 })
       .lean();
+    const organizers = await Organizer.find({ _id: { $in: events.map((e) => e.organizerId) } })
+      .select("name")
+      .lean();
+    const names = new Map(organizers.map((o) => [o._id.toString(), o.name]));
     res.json({
       data: events.map((e) => ({
         id: e._id.toString(),
         title: e.title,
         organizerId: e.organizerId.toString(),
+        organizerName: names.get(e.organizerId.toString()) ?? null,
         reason: e.cancellationReason,
         requestedAt: e.cancellationRequestedAt,
       })),

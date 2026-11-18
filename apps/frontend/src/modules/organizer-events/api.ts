@@ -709,7 +709,6 @@ export const organizerEventsApi = {
       },
     }),
 
-  // Pending B35
   refund: (
     id: string,
     orderId: string,

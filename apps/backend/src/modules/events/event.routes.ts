@@ -8,8 +8,11 @@ import { requireCsrf, requireSession, type AuthenticatedRequest } from "../auth/
 import { requireOrganizer } from "../authorization/authorization.middleware.js";
 import { CommitteeAssignment } from "../committee/committee-assignment.model.js";
 import { Order } from "../orders/order.model.js";
-import { requestEventCancellation } from "../refunds/refund.service.js";
+import { requestEventCancellation, requestOrganizerRefund } from "../refunds/refund.service.js";
 import { queueEmail } from "../notifications/email.service.js";
+import { scheduleChangedEmail } from "../notifications/email-templates.js";
+import { notifyOrderTickets, resendBatchKey } from "../notifications/tickets.js";
+import { env } from "../../config/env.js";
 import { publishUpdate } from "../realtime/events.js";
 import { StorageAsset, claimUploads } from "../storage/storage.service.js";
 import mongoose from "mongoose";
@@ -109,8 +112,13 @@ function validateCheckInWindow(event: {
       "Check-in must open before closing and close no later than event end.",
     );
 }
-function invalid(result: { success: false }) {
-  throw new AppError(400, "VALIDATION_ERROR", "Please check the submitted fields.");
+function invalid(result: { success: false; error?: z.ZodError }) {
+  const fields = result.error
+    ? Object.fromEntries(
+        result.error.issues.map((issue) => [issue.path.join(".") || "request", issue.message]),
+      )
+    : undefined;
+  throw new AppError(400, "VALIDATION_ERROR", "Please check the submitted fields.", fields);
 }
 function slugify(value: string) {
   return `${value
@@ -255,12 +263,14 @@ eventRouter.patch(
           order.buyerSnapshot.email,
           ...order.attendees.map((a) => a.email).filter((e): e is string => !!e),
         ]))
-          await queueEmail({
-            key: `schedule-${event._id}-${event.checkoutVersion}-${order._id}-${email}`,
-            to: email,
-            subject: "Informasi acara diperbarui",
-            text: `Jadwal atau lokasi ${event.title} diperbarui. Buka Gatherly untuk melihat informasi terbaru.`,
-          });
+          await queueEmail(
+            scheduleChangedEmail(
+              `schedule-${event._id}-${event.checkoutVersion}-${order._id}-${email}`,
+              email,
+              event.title,
+              `${env.PUBLIC_WEB_URL}/tickets`,
+            ),
+          );
     }
     await publishUpdate({ topic: "event", id: event._id.toString(), type: "event.updated" });
     response.json({ data: dto(event) });
@@ -490,6 +500,59 @@ eventRouter.post(
           parsed.data!.reason,
         ),
       });
+  }),
+);
+eventRouter.post(
+  "/:id/orders/:orderId/refunds",
+  requireCsrf,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const parsed = z
+      .object({
+        mode: z.enum(["full", "partial"]),
+        ticketIds: z.array(z.string()).max(20).optional(),
+        reason: z.string().trim().min(3).max(500),
+      })
+      .safeParse(req.body);
+    if (!parsed.success) invalid(parsed);
+    res.status(201).json({
+      data: await requestOrganizerRefund(
+        String(req.params.id),
+        String(req.params.orderId),
+        req.auth!.organizerId!,
+        parsed.data!,
+      ),
+    });
+  }),
+);
+eventRouter.post(
+  "/:id/orders/:orderId/resend",
+  requireCsrf,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const event = await owned(req);
+    if (!Types.ObjectId.isValid(String(req.params.orderId)))
+      throw new AppError(404, "NOT_FOUND", "Order not found.");
+    const order = await Order.findOneAndUpdate(
+      {
+        _id: req.params.orderId,
+        eventId: event._id,
+        paymentStatus: "paid",
+        issuanceStatus: "issued",
+        $or: [
+          { lastTicketResendAt: { $exists: false } },
+          { lastTicketResendAt: { $lt: new Date(Date.now() - 60_000) } },
+        ],
+      },
+      { $set: { lastTicketResendAt: new Date() } },
+      { strict: false, returnDocument: "after" },
+    );
+    if (!order)
+      throw new AppError(
+        409,
+        "RESEND_UNAVAILABLE",
+        "Tickets cannot be resent yet. Wait 60 seconds and retry.",
+      );
+    await notifyOrderTickets(order.id, resendBatchKey());
+    res.status(202).json({ data: { queued: true } });
   }),
 );
 eventRouter.post(

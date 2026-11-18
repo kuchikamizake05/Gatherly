@@ -1,6 +1,7 @@
 /**
  * Metode pembayaran di halaman Bayar (pita 05 A2, C). Urutan dan kelompok sesuai desain.
  * code dikirim ke backend lalu diteruskan sebagai enabled_payments Midtrans Snap.
+ * OVO tidak tersedia di Midtrans Snap, jadi pengguna OVO membayar lewat QRIS.
  * Logo Visa, Mastercard, dan JCB dari thesvg.org. Logo lain dari file desain (paylogos), karena thesvg.org belum punya.
  */
 
@@ -37,7 +38,6 @@ export const PAYMENT_GROUPS: { title: string; methods: PaymentMethod[] }[] = [
       { code: "gopay", name: "GoPay", short: "GoPay", logos: ["/brands/pay/gopay.png"] },
       { code: "shopeepay", name: "ShopeePay", short: "ShopeePay", logos: [], wordmark: { text: "ShopeePay", color: "#EE4D2D" } },
       { code: "dana", name: "DANA", short: "DANA", logos: ["/brands/pay/dana.png"] },
-      { code: "ovo", name: "OVO", short: "OVO", logos: ["/brands/pay/ovo.png"] },
     ],
   },
   {

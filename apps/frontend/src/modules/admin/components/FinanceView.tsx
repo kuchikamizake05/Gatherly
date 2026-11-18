@@ -156,6 +156,14 @@ export function FinanceView() {
       const status = REFUND_STATUS[row.status];
       const order = row.orderCode ?? `Pesanan ${shortId(row.orderId)}`;
       const event = row.eventTitle ?? `Acara ${shortId(row.eventId)}`;
+      const source =
+        row.kind === "organizer"
+          ? "Dari penyelenggara"
+          : row.kind === "event_cancelled"
+            ? "Pembatalan acara"
+            : row.buyerName
+              ? `Pembeli ${row.buyerName}`
+              : null;
       const action =
         row.status === "requested" ? (
           <div className="flex justify-end gap-2">
@@ -199,6 +207,9 @@ export function FinanceView() {
           <span key="order" className="flex flex-col">
             <strong>{order}</strong>
             <span className="text-xs text-text-secondary">{event}</span>
+            {source && (
+              <span className="text-xs text-text-secondary">{source}</span>
+            )}
           </span>,
           <span key="reason" className="text-sm">
             {row.reason}
@@ -210,7 +221,7 @@ export function FinanceView() {
         number: order,
         title: event,
         status: <strong className="text-sm">{formatRupiah(row.amount)}</strong>,
-        meta: `${row.reason}, diajukan ${formatDateTimeCompact(row.requestedAt)}`,
+        meta: `${source ? `${source}. ` : ""}${row.reason}, diajukan ${formatDateTimeCompact(row.requestedAt)}`,
         action,
       };
     });

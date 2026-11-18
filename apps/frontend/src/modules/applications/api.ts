@@ -91,6 +91,12 @@ const mockApplication: Application = {
 };
 
 export const applicationsApi = {
+  /** Dibuka dari tautan di email penanggung jawab. Token hanya berlaku sekali. */
+  verifyEmail: (token: string) =>
+    api.get<{ data: { number: string; verified: boolean } }>("/organizer-applications/verify-email", {
+      query: { token },
+      mock: () => wrap({ number: "PNG-2611-0001", verified: true }),
+    }),
   checkUsername: (username: string) =>
     api.get<{ data: { available: boolean; suggestions: string[] } }>("/organizer-applications/username", {
       query: { username },

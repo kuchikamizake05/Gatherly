@@ -5,12 +5,15 @@ import { Order, type OrderDocument } from "../orders/order.model.js";
 import { createSnapTransaction, type SnapTransport } from "./midtrans.client.js";
 import type { SnapRequest } from "./payment.schemas.js";
 
+/**
+ * Kode metode Gatherlyy ke enabled_payments Snap. QRIS umum di Snap memakai "other_qris";
+ * nilai "qris" saja tidak memunculkan metode apa pun. OVO tidak tersedia di Snap.
+ */
 const paymentOptions: Record<string, string[]> = {
-  qris: ["qris"],
+  qris: ["other_qris"],
   gopay: ["gopay"],
   shopeepay: ["shopeepay"],
   dana: ["dana"],
-  ovo: ["ovo"],
   bca_va: ["bca_va"],
   mandiri_va: ["echannel"],
   bni_va: ["bni_va"],
@@ -164,6 +167,8 @@ export async function createPaymentSession(
         paymentSessionState: "creating",
         leaseUntil: new Date(now.getTime() + creationLeaseMs),
         nextReconcileAt: new Date(now.getTime() + creationLeaseMs),
+        // Simpan metode pilihan supaya Snap hanya menampilkan metode itu dan organizer bisa melihatnya.
+        ...(method ? { paymentMethod: method } : {}),
       },
       $unset: { paymentSessionLastError: 1 },
       $inc: { paymentSessionAttempts: 1 },
