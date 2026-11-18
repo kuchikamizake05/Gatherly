@@ -14,6 +14,7 @@ Diperbarui 30 September 2026. Dokumen ini memuat acuan produk dan teknis Gatherl
 
 | Dokumen | Fungsi | Pemakai utama |
 | --- | --- | --- |
+| [panduan-mencoba.md](panduan-mencoba.md) | Langkah mencoba aplikasi di produksi dan akun admin demo | Penguji dan semua anggota |
 | [requirements.md](requirements.md) | PRD ringkas: tujuan, scope, aturan bisnis, penerimaan | Semua anggota |
 | [user-flows.md](user-flows.md) | Halaman, alur, dan keadaan gagal | FE dan reviewer BE |
 | [architecture.md](architecture.md) | Struktur dan batas tanggung jawab teknis | Semua anggota |

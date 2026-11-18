@@ -130,6 +130,25 @@ Dokumentasi proyek tersedia dalam folder [`docs`](docs/README.md).
 - **File presentasi:** [PPT Kelompok 11](https://bit.ly/PPT_Kel11_PAW)
 - **Repositori:** [Gatherlyy di GitHub](https://github.com/kuchikamizake05/Gatherlyy)
 
+## Mencoba Aplikasi
+
+Aplikasi bisa langsung dicoba di produksi tanpa memasang apa pun. Pembayaran memakai Midtrans mode Sandbox, jadi tidak ada uang sungguhan.
+
+| Peran | Alamat | Akun |
+| --- | --- | --- |
+| Peserta | [gatherlyy.fun](https://gatherlyy.fun) | Daftar sendiri dengan email atau Google |
+| Organizer dan panitia | [organizer.gatherlyy.fun](https://organizer.gatherlyy.fun) | Ajukan diri sebagai organizer, lalu setujui dengan akun admin demo |
+| Admin | [admin.gatherlyy.fun](https://admin.gatherlyy.fun) | `demo@gatherlyy.fun` / `Demo-ArwUvveEc2My`, kode 2FA dari kunci authenticator di panduan |
+
+Ringkasan alurnya:
+
+1. **Peserta**: daftar, cari acara, beli tiket, bayar lewat [simulator Midtrans](https://simulator.sandbox.midtrans.com/bca/va/index), lalu buka e-tiket di **Tiketku**.
+2. **Organizer**: ajukan diri di [halaman pengajuan](https://gatherlyy.fun/become-organizer), setujui pengajuannya dari konsol admin, masuk dengan kredensial dari email, lalu buat dan kelola acara.
+3. **Panitia**: organizer menambah anggota tim dan menugaskannya ke acara. Panitia memindai QR e-tiket. Pemindaian kedua untuk tiket yang sama ditolak.
+4. **Admin**: tinjau pengajuan organizer, kelola organizer, putuskan pembatalan acara dan pengembalian dana, tandai pencairan, dan tinjau laporan.
+
+Langkah lengkap, kunci authenticator, dan kode cadangan admin ada di [panduan mencoba](docs/panduan-mencoba.md).
+
 ## Deployment
 
 | Bagian | Alamat | Keterangan |
