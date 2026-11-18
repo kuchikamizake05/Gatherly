@@ -16,6 +16,7 @@
   <a href="docs/README.md">Dokumentasi</a> ·
   <a href="docs/requirements.md">Analisis Kebutuhan</a> ·
   <a href="docs/api-contract.md">Kontrak API</a> ·
+  <a href="https://api.gatherlyy.fun/api/v1/docs/">Swagger</a> ·
   <a href="postman/README.md">Postman</a> ·
   <a href="https://github.com/users/kuchikamizake05/projects/3/views/1">Project Board</a>
 </p>
@@ -181,7 +182,7 @@ Gatherly/
 │   │   │   ├── server.ts     Server API dan WebSocket
 │   │   │   └── worker.ts     Proses latar: job terjadwal dan email
 │   │   ├── deploy/          Caddy, service systemd API dan worker, skrip deploy VPS
-│   │   ├── scripts/         Provisioning akun admin dan aset Swagger
+│   │   ├── scripts/         Provisioning akun admin, aset Swagger, dan generator Swagger
 │   │   ├── test/            Tes integrasi dan smoke test Midtrans
 │   │   ├── .env.example     Contoh variabel environment tanpa secret nyata
 │   │   └── package.json     Script dan dependency backend
@@ -270,6 +271,8 @@ Domain frontend diatur lewat `NEXT_PUBLIC_SITE_DOMAIN`, dan domain email admin l
 ## Ringkasan API
 
 Semua endpoint ada di bawah `/api/v1`. Dokumentasi lengkap dengan contoh request ada di [Swagger](https://api.gatherlyy.fun/api/v1/docs/), [kontrak API](docs/api-contract.md), dan [koleksi Postman](postman/README.md).
+
+Swagger memuat seluruh rute backend. Endpoint yang belum ditulis manual dibuat dari tabel di kontrak API, jadi setelah kontrak diperbarui jalankan `pnpm swagger:generate` di `apps/backend` untuk memperbarui `src/docs/swagger-paths-extra.ts`.
 
 | Kelompok | Prefix | Isi |
 | --- | --- | --- |
